@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from datetime import date
 import json
 import os
@@ -178,7 +178,80 @@ def prepare_biggest_losers_csv():
 
 
 def analyze_biggest_losers_csv():
-    pass
+    lines = []
+    with open("/tmp/biggest_losers.csv", "r") as f:
+        lines.extend(f.readlines())
+
+    headers = lines[0].strip().split(",")
+    # remove newlines and header row
+    lines = [l.strip() for l in lines[1:]]
+
+    # convert to dicts
+    lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
+
+    lines = [{
+        "day_after": datetime.strptime(l["day_after"], "%Y-%m-%d").date(),
+        "loser_day": datetime.strptime(l["loser_day"], "%Y-%m-%d").date(),
+        "ticker": l["ticker"],
+        "loser_day_open": float(l["loser_day_open"]),
+        "loser_day_close": float(l["loser_day_close"]),
+        "loser_day_high": float(l["loser_day_high"]),
+        "loser_day_low": float(l["loser_day_low"]),
+        "loser_day_volume": float(l["loser_day_volume"]),
+        "loser_day_close_to_close_percent_change": float(l["loser_day_close_to_close_percent_change"]),
+        "loser_day_rank": int(l["loser_day_rank"]),
+        "day_after_open": float(l["day_after_open"]),
+        "day_after_close": float(l["day_after_close"]),
+        "day_after_high": float(l["day_after_high"]),
+        "day_after_low": float(l["day_after_low"]),
+        "day_after_volume": float(l["day_after_volume"]),
+    } for l in lines]
+
+    for l in lines:
+        l["close_to_open_roi"] = (
+            l["day_after_open"] - l["loser_day_close"]) / l["loser_day_close"]
+
+    print("baseline", evaluate_results(lines))
+
+    for volume_threshold in [10000, 100000]:
+        for price_criteria_i, price_criteria in enumerate([
+            lambda p: p < 1.0,
+            lambda p: p < 5,
+            lambda p: p < 10,
+            lambda p: p < 20,
+            lambda p: p > 1.0,
+            lambda p: p > 5,
+            lambda p: p > 10,
+            lambda p: p > 20,
+            lambda _: True,
+        ]):
+            filtered_lines = list(filter(
+                lambda l: l["loser_day_volume"] > volume_threshold and price_criteria(
+                    l["close_to_open_roi"]),
+                lines))
+
+            results = evaluate_results(filtered_lines)
+            if results:
+                print(f"volume threshold {volume_threshold} price criteria {price_criteria_i}",
+                      results)
+
+
+def evaluate_results(lines):
+    if not lines:
+        return None
+
+    plays = len(lines)
+
+    if plays < 10:
+        return None
+
+    total_roi = sum(list(map(lambda l: l["close_to_open_roi"], lines)))
+
+    average_roi = total_roi / plays
+    win_rate = sum(
+        list(map(lambda l: 1 if l["close_to_open_roi"] > 0 else 0, lines))) / plays
+
+    return {"roi": total_roi, "plays": plays, "average_roi": average_roi, "win_rate": win_rate}
 
 
 def main():
