@@ -1,3 +1,3 @@
 #!/bin/bash
 
-nodemon -e py -x ". .env ; python3 main.py"
+nodemon -e py -x ". paper.env ; python3 main.py"
