@@ -213,27 +213,61 @@ def analyze_biggest_losers_csv():
 
     print("baseline", evaluate_results(lines))
 
-    for volume_threshold in [10000, 100000]:
-        for price_criteria_i, price_criteria in enumerate([
-            lambda p: p < 1.0,
-            lambda p: p < 5,
-            lambda p: p < 10,
-            lambda p: p < 20,
-            lambda p: p > 1.0,
-            lambda p: p > 5,
-            lambda p: p > 10,
-            lambda p: p > 20,
-            lambda _: True,
-        ]):
-            filtered_lines = list(filter(
-                lambda l: l["loser_day_volume"] > volume_threshold and price_criteria(
-                    l["close_to_open_roi"]),
-                lines))
+    for volume_criteria_name, volume_criteria in {
+        '100k shares': lambda v: v > 100000,
+        # '200k shares': lambda v: v > 200000,
+    }.items():
+        for price_criteria_name, price_criteria in {
+            "p < 1": lambda p: p < 1,
+            "p < 5": lambda p: p < 5,
+            # "p < 10": lambda p: p < 10,
+            # "p < 20": lambda p: p < 20,
+            # "p > 5": lambda p: p > 5,
+            # "p > 10": lambda p: p > 10,
+            # "p > 20": lambda p: p > 20,
+            "all": lambda _: True,
+        }.items():
+            for weekday_criteria_name, weekday_criteria in {
+                # "no f": lambda w: w != 4,  # not friday
+                # "no m": lambda w: w != 0,  # not monday
+                "no m/f": lambda w: w != 4 and w != 0,  # not monday or friday
+                "all": lambda _: True,
+            }.items():
 
-            results = evaluate_results(filtered_lines)
-            if results:
-                print(f"volume threshold {volume_threshold} price criteria {price_criteria_i}",
-                      results)
+                for rank_criteria_name, rank_criteria in {
+                    "top 3": lambda r: r >= 3,
+                    "top 5": lambda r: r >= 5,
+                    # "top 7": lambda r: r >= 7,
+                    "top 10": lambda r: r >= 10,
+                    "top 20": lambda _: True,
+                }.items():
+                    filtered_lines = list(filter(
+                        lambda l: volume_criteria(l["loser_day_volume"]) and price_criteria(
+                            l["loser_day_close"]) and weekday_criteria(l["loser_day"].weekday()) and rank_criteria(l["loser_day_rank"]),
+                        lines))
+
+                    results = evaluate_results(filtered_lines)
+                    if not results:
+                        continue
+
+                    if results["roi"] < 5:
+                        continue
+
+                    if results["average_roi"] < .02:
+                        continue
+
+                    # if results["win_rate"] < .55:
+                    #     continue
+
+                    # if results["plays"] < 300:
+                    #     continue
+
+                    print(f"{volume_criteria_name}\t{price_criteria_name}\t{weekday_criteria_name}\t{rank_criteria_name}\t\t",
+                          "average_roi={average_roi:1.2f}% win_rate={win_rate:2.1f} plays={plays} roi={roi:.1f} ".format(
+                              average_roi=results["average_roi"] * 100,
+                              win_rate=results["win_rate"] * 100,
+                              plays=results["plays"],
+                              roi=results["roi"],))
 
 
 def evaluate_results(lines):
