@@ -140,12 +140,15 @@ def get_biggest_losers(today):
     return biggest_losers
 
 
-def buy_biggest_losers_at_close(today, target_price):
+def buy_biggest_losers_at_close(today, nominal):
 
     losers = get_biggest_losers(today)
 
     for loser in losers:
-        quantity = round((target_price / loser['c']) - 0.5)
+        if loser['c'] > 5:
+            continue
+
+        quantity = round((nominal / loser['c']) - 0.5)
         print(
             f"Submitting buy order of {loser['T']} {quantity} (current price {loser['c']}, target amount {quantity * loser['c']}) at close")
         try:
@@ -154,12 +157,18 @@ def buy_biggest_losers_at_close(today, target_price):
             print(e.response.status_code, e.response.json())
 
 
+def liquidate():
+    response = requests.delete(ALPACA_URL + '/v2/positions', headers={
+        'APCA-API-KEY-ID': APCA_API_KEY_ID,
+        'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
+    })
+    response.raise_for_status()
+    return response.json()
+
+
 if __name__ == '__main__':
     today = date.today()
     # today = date(2021, 11, 9)
-    target_price = 1000
-    # TODO: check purchasing power
-
     weekday = today.weekday()  # 0 is Monday, 4 is Friday
     if weekday not in [1, 2, 3]:
         print(f"today is not a good day for trading, exiting.")
@@ -170,4 +179,21 @@ if __name__ == '__main__':
     # if after 3pm
     #  - check for open orders (so no double buying)
     #  - buy biggest losers
-    buy_biggest_losers_at_close(today, target_price)
+
+    # hour in this timezone!
+    hour = datetime.now().time().hour
+    # hour = 20
+
+    print(
+        f"running on date {today} at hour {hour} in local timezone (should be America/New_York)")
+
+    if hour >= 15 and hour < 16:
+        print("3-4pm, buying biggest losers")
+        # TODO: check purchasing power in case need to reduce quantity
+        nominal = 5
+        buy_biggest_losers_at_close(today, nominal)
+    elif hour >= 20 or hour <= 10:
+        print("closing positions")
+        print(liquidate())
+    else:
+        print("not time to do anything yet")
