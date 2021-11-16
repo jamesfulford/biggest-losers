@@ -34,10 +34,11 @@ def buy_symbol_at_close(symbol, quantity):
 
 
 API_KEY = os.environ['POLYGON_API_KEY']
+HOME = os.environ['HOME']
 
 
 def read_json_cache(key):
-    path = f"/tmp/{key}"
+    path = f"{HOME}/data/{key}"
     try:
         with open(path, 'r') as f:
             return json.load(f)
@@ -46,13 +47,13 @@ def read_json_cache(key):
 
 
 def write_json_cache(key, value):
-    path = f"/tmp/{key}"
+    path = f"{HOME}/data/{key}"
     with open(path, 'w') as f:
         json.dump(value, f)
 
 
 def delete_json_cache(key):
-    path = f"/tmp/{key}"
+    path = f"{HOME}/data/{key}"
     try:
         os.remove(path)
     except Exception:

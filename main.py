@@ -6,10 +6,11 @@ import time
 import requests
 
 API_KEY = os.environ['POLYGON_API_KEY']
+HOME = os.environ['HOME']
 
 
 def read_json_cache(key):
-    path = f"/tmp/{key}"
+    path = f"{HOME}/data/{key}"
     try:
         with open(path, 'r') as f:
             return json.load(f)
@@ -18,13 +19,13 @@ def read_json_cache(key):
 
 
 def write_json_cache(key, value):
-    path = f"/tmp/{key}"
+    path = f"{HOME}/data/{key}"
     with open(path, 'w') as f:
         json.dump(value, f)
 
 
 def delete_json_cache(key):
-    path = f"/tmp/{key}"
+    path = f"{HOME}/data/{key}"
     try:
         os.remove(path)
     except Exception:
@@ -79,10 +80,13 @@ def next_trading_day(day):
 
 
 def prepare_biggest_losers_csv():
-    os.remove("/tmp/biggest_losers.csv")
+    try:
+        os.remove(f"{HOME}/biggest_losers.csv")
+    except:
+        pass
 
     def write_to_csv(line):
-        with open("/tmp/biggest_losers.csv", "a") as f:
+        with open(f"{HOME}/biggest_losers.csv", "a") as f:
             f.write(line + "\n")
     write_to_csv(",".join([
         "day_after",
