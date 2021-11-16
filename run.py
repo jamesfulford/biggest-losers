@@ -63,7 +63,9 @@ def fetch_grouped_aggs_with_cache(day):
 
     strftime = day.strftime("%Y-%m-%d")
 
-    key = f"grouped_aggs_{strftime}"
+    key = f"grouped_aggs_{strftime}" if datetime.now(
+    ).hour >= 16 else f"grouped_aggs_{strftime}.intraday"
+
     cached = read_json_cache(key)
     if cached:
         # print(f'cache hit of grouped aggs for {strftime}')
@@ -198,7 +200,6 @@ if __name__ == '__main__':
         print(f"today is not a good day for trading, exiting.")
         exit(0)
 
-    # TODO: work based on current time
     # if before 3pm, close all positions (or submit sell orders for market open)
     # if after 3pm
     #  - check for open orders (so no double buying)
@@ -209,7 +210,7 @@ if __name__ == '__main__':
         # TODO: check purchasing power in case need to reduce quantity
         nominal = 5
         buy_biggest_losers_at_close(today, nominal)
-    elif hour >= 20 or hour <= 10:
+    elif hour >= 20 or hour < 15:
         print("closing positions")
         print(liquidate())
     else:
