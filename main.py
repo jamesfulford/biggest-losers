@@ -36,7 +36,11 @@ def fetch_grouped_aggs_with_cache(day):
 
     strftime = day.strftime("%Y-%m-%d")
 
+    # cache intraday values separately
     key = f"grouped_aggs_{strftime}"
+    if day == date.today() and datetime.now().hour < 16:
+        key = f"grouped_aggs_{strftime}.intraday"
+
     cached = read_json_cache(key)
     if cached:
         # print(f'cache hit of grouped aggs for {strftime}')
@@ -293,8 +297,8 @@ def evaluate_results(lines):
 
 
 def main():
-    # prepare_biggest_losers_csv()
-    analyze_biggest_losers_csv()
+    prepare_biggest_losers_csv()
+    # analyze_biggest_losers_csv()
 
 
 if __name__ == "__main__":

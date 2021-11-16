@@ -64,8 +64,10 @@ def fetch_grouped_aggs_with_cache(day):
 
     strftime = day.strftime("%Y-%m-%d")
 
-    key = f"grouped_aggs_{strftime}" if datetime.now(
-    ).hour >= 16 else f"grouped_aggs_{strftime}.intraday"
+    # cache intraday values separately
+    key = f"grouped_aggs_{strftime}"
+    if day == date.today() and datetime.now().hour < 16:
+        key = f"grouped_aggs_{strftime}.intraday"
 
     cached = read_json_cache(key)
     if cached:
