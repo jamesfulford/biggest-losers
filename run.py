@@ -11,6 +11,11 @@ ALPACA_URL = os.environ['ALPACA_URL']
 APCA_API_KEY_ID = os.environ['APCA_API_KEY_ID']
 APCA_API_SECRET_KEY = os.environ['APCA_API_SECRET_KEY']
 
+APCA_HEADERS = {
+    'APCA-API-KEY-ID': APCA_API_KEY_ID,
+    'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
+}
+
 
 def buy_symbol_at_close(symbol, quantity):
     """
@@ -22,11 +27,8 @@ def buy_symbol_at_close(symbol, quantity):
         'side': 'buy',
         'type': 'market',
         # buy at close
-        'time_in_force': 'cls'
-    }, headers={
-        'APCA-API-KEY-ID': APCA_API_KEY_ID,
-        'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
-    })
+        'time_in_force': 'day'
+    }, headers=APCA_HEADERS)
     response.raise_for_status()
     return response.json()
 
@@ -144,9 +146,12 @@ def buy_biggest_losers_at_close(today, nominal):
 
     losers = get_biggest_losers(today)
 
+    losers = list(filter(lambda l: l["c"] < 5, losers))
+
+    positions = get_positions()
+    print(positions)
+
     for loser in losers:
-        if loser['c'] > 5:
-            continue
 
         quantity = round((nominal / loser['c']) - 0.5)
         print(
@@ -158,17 +163,36 @@ def buy_biggest_losers_at_close(today, nominal):
 
 
 def liquidate():
-    response = requests.delete(ALPACA_URL + '/v2/positions', headers={
-        'APCA-API-KEY-ID': APCA_API_KEY_ID,
-        'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
-    })
+    response = requests.delete(
+        ALPACA_URL + '/v2/positions', headers=APCA_HEADERS)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_positions():
+    response = requests.get(
+        ALPACA_URL + '/v2/positions', headers=APCA_HEADERS)
     response.raise_for_status()
     return response.json()
 
 
 if __name__ == '__main__':
-    today = date.today()
-    # today = date(2021, 11, 9)
+
+    now = datetime.now()
+    try:
+        import sys
+        datestr = sys.argv[1]
+        now = datetime.strptime(datestr, '%Y-%m-%d %H:%M:%S')
+    except Exception as e:
+        print(
+            "error occurred while parsing datetime, will continue with {now}", e)
+
+    today = now.date()
+    hour = now.hour
+
+    print(
+        f"running on date {today} at hour {hour} in local timezone (should be America/New_York)")
+
     weekday = today.weekday()  # 0 is Monday, 4 is Friday
     if weekday not in [1, 2, 3]:
         print(f"today is not a good day for trading, exiting.")
@@ -179,13 +203,6 @@ if __name__ == '__main__':
     # if after 3pm
     #  - check for open orders (so no double buying)
     #  - buy biggest losers
-
-    # hour in this timezone!
-    hour = datetime.now().time().hour
-    # hour = 20
-
-    print(
-        f"running on date {today} at hour {hour} in local timezone (should be America/New_York)")
 
     if hour >= 15 and hour < 16:
         print("3-4pm, buying biggest losers")
