@@ -175,6 +175,9 @@ biggest_losers_csv_headers = [
     #
     "spy_day_of_loss_percent_change",
     "spy_day_of_loss_intraday_percent_change",
+    #
+    "overnight_strategy_roi",
+    "overnight_strategy_is_win",
 ]
 
 
@@ -206,6 +209,9 @@ def prepare_biggest_losers_csv(path):
         intraday_percent_change = (loser_day_of_loss['c'] -
                                    loser_day_of_loss['o']) / loser_day_of_loss['o']
 
+        overnight_strategy_roi = (
+            loser_day_after['o'] - loser_day_of_loss['c']) / loser_day_of_loss['c']
+
         # keep in sync with headers
         write_to_csv(",".join(list(map(str, [
             day_of_loss.strftime("%Y-%m-%d"),
@@ -229,6 +235,9 @@ def prepare_biggest_losers_csv(path):
             # spy
             spy_day_of_loss_percent_change,
             spy_day_of_loss_intraday_percent_change,
+            # results
+            overnight_strategy_roi,
+            overnight_strategy_roi > 0,
         ]))))
 
 
