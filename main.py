@@ -83,6 +83,69 @@ def next_trading_day(day):
             return day
 
 
+def fetch_biggest_losers(day, end_date):
+    previous_day_grouped_aggs = None
+    previous_day_biggest_losers = []
+    total_losers = []
+
+    while day < end_date:
+        previous_day = day
+        day = next_trading_day(day)
+
+        raw_grouped_aggs = fetch_grouped_aggs_with_cache(day)
+        # skip days where API returns no data (like trading holiday)
+        if 'results' not in raw_grouped_aggs:
+            print(f'no results for {day}, might have been a trading holiday')
+            continue
+        grouped_aggs = enrich_grouped_aggs(raw_grouped_aggs)
+
+        if not previous_day_grouped_aggs:
+            previous_day_grouped_aggs = grouped_aggs
+            continue
+
+        #
+        # sell biggest losers
+        #
+
+        # for each of yesterday's biggest losers (if they are trading today)
+        for loser_yesterday in filter(lambda t: t["T"] in grouped_aggs['tickermap'], previous_day_biggest_losers):
+            loser_today = grouped_aggs['tickermap'][loser_yesterday["T"]]
+
+            total_losers.append({
+                "day": day,
+                "previous_day": previous_day,
+                "loser_yesterday": loser_yesterday,
+                "loser_today": loser_today,
+            })
+
+        #
+        # go find biggest losers for the next day
+        #
+
+        # skip if wasn't present yesterday
+        tickers_also_present_yesterday = list(filter(
+            lambda t: t['T'] in previous_day_grouped_aggs['tickermap'], grouped_aggs['results']))
+
+        for ticker in tickers_also_present_yesterday:
+            previous_day_ticker = previous_day_grouped_aggs['tickermap'][ticker['T']]
+
+            ticker['percent_change'] = (
+                ticker['c'] - previous_day_ticker['c']) / previous_day_ticker['c']
+
+        previous_day_biggest_losers = sorted(tickers_also_present_yesterday,
+                                             key=lambda t: t['percent_change'])[:20]
+
+        for loser in previous_day_biggest_losers:
+            loser['rank'] = previous_day_biggest_losers.index(loser) + 1
+
+        #
+        # advance to next day
+        #
+        previous_day_grouped_aggs = grouped_aggs
+
+    return total_losers
+
+
 def prepare_biggest_losers_csv():
     try:
         os.remove(f"{HOME}/biggest_losers.csv")
@@ -110,79 +173,36 @@ def prepare_biggest_losers_csv():
         "day_after_volume",
     ]))
 
-    day = date(2021, 1, 1)
+    start_date = date(2021, 1, 1)
     end_date = date.today()
 
-    previous_day_grouped_aggs = None
-    previous_day_biggest_losers = []
+    biggest_losers = fetch_biggest_losers(start_date, end_date)
 
-    while day < end_date:
-        previous_day = day
-        day = next_trading_day(day)
+    for biggest_loser in biggest_losers:
+        day = biggest_loser["day"]
+        previous_day = biggest_loser["previous_day"]
+        loser_yesterday = biggest_loser["loser_yesterday"]
+        loser_today = biggest_loser["loser_today"]
 
-        raw_grouped_aggs = fetch_grouped_aggs_with_cache(day)
-        # skip days where API returns no data (like trading holiday)
-        if 'results' not in raw_grouped_aggs:
-            print(f'no results for {day}, might have been a trading holiday')
-            continue
-        grouped_aggs = enrich_grouped_aggs(raw_grouped_aggs)
-
-        if not previous_day_grouped_aggs:
-            previous_day_grouped_aggs = grouped_aggs
-            continue
-
-        #
-        # sell biggest losers
-        #
-
-        # for each of yesterday's biggest losers (if they are trading today)
-        for loser_yesterday in filter(lambda t: t["T"] in grouped_aggs['tickermap'], previous_day_biggest_losers):
-            loser_today = grouped_aggs['tickermap'][loser_yesterday["T"]]
-
-            write_to_csv(",".join(list(map(str, [
-                day.strftime("%Y-%m-%d"),
-                previous_day.strftime("%Y-%m-%d"),
-                loser_yesterday['T'],
-                # yesterday stats
-                loser_yesterday['o'],
-                loser_yesterday['h'],
-                loser_yesterday['l'],
-                loser_yesterday['c'],
-                loser_yesterday['v'],
-                loser_yesterday["percent_change"],
-                loser_yesterday.get("rank", -1),
-                # today stats
-                loser_today['o'],
-                loser_today['h'],
-                loser_today['l'],
-                loser_today['c'],
-                loser_today['v'],
-            ]))))
-
-        #
-        # go find biggest losers for the next day
-        #
-
-        # skip if wasn't present yesterday
-        tickers_also_present_yesterday = list(filter(
-            lambda t: t['T'] in previous_day_grouped_aggs['tickermap'], grouped_aggs['results']))
-
-        for ticker in tickers_also_present_yesterday:
-            previous_day_ticker = previous_day_grouped_aggs['tickermap'][ticker['T']]
-
-            ticker['percent_change'] = (
-                ticker['c'] - previous_day_ticker['c']) / previous_day_ticker['c']
-
-        previous_day_biggest_losers = sorted(tickers_also_present_yesterday,
-                                             key=lambda t: t['percent_change'])[:20]
-
-        for loser in previous_day_biggest_losers:
-            loser['rank'] = previous_day_biggest_losers.index(loser) + 1
-
-        #
-        # advance to next day
-        #
-        previous_day_grouped_aggs = grouped_aggs
+        write_to_csv(",".join(list(map(str, [
+            day.strftime("%Y-%m-%d"),
+            previous_day.strftime("%Y-%m-%d"),
+            loser_yesterday['T'],
+            # yesterday stats
+            loser_yesterday['o'],
+            loser_yesterday['h'],
+            loser_yesterday['l'],
+            loser_yesterday['c'],
+            loser_yesterday['v'],
+            loser_yesterday["percent_change"],
+            loser_yesterday.get("rank", -1),
+            # today stats
+            loser_today['o'],
+            loser_today['h'],
+            loser_today['l'],
+            loser_today['c'],
+            loser_today['v'],
+        ]))))
 
 
 def analyze_biggest_losers_csv():
