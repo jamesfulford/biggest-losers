@@ -111,13 +111,16 @@ def fetch_biggest_losers(day, end_date):
         for loser_yesterday in filter(lambda t: t["T"] in grouped_aggs['tickermap'], previous_day_biggest_losers):
             loser_today = grouped_aggs['tickermap'][loser_yesterday["T"]]
 
+            spy_day_before = previous_day_grouped_aggs["tickermap"]["SPY"]
+            spy_day_of_loss = grouped_aggs["tickermap"]["SPY"]
+
             total_losers.append({
                 "day_of_loss": previous_day,
                 "day_after": day,
                 "loser_day_of_loss": loser_yesterday,
                 "loser_day_after": loser_today,
-                "spy_day_of_loss": previous_day_grouped_aggs["tickermap"].get("SPY"),
-                "spy_day_after": grouped_aggs["tickermap"].get("SPY"),
+                "spy_day_of_loss_percent_change": (spy_day_of_loss['c'] - spy_day_before['c']) / spy_day_before['c'],
+                "spy_day_of_loss_intraday_percent_change": (spy_day_of_loss['c'] - spy_day_of_loss['o']) / spy_day_of_loss['o'],
             })
 
         #
@@ -148,22 +151,30 @@ def fetch_biggest_losers(day, end_date):
     return total_losers
 
 
+# keep in sync with usage of write_csv
 biggest_losers_csv_headers = [
     "day_of_loss",
     "day_after",
     "ticker",
+    #
     "open_day_of_loss",
     "high_day_of_loss",
     "low_day_of_loss",
     "close_day_of_loss",
     "volume_day_of_loss",
+    #
     "close_to_close_percent_change_day_of_loss",
+    "intraday_percent_change_day_of_loss",
     "rank_day_of_loss",
+    #
     "open_day_after",
     "high_day_after",
     "low_day_after",
     "close_day_after",
     "volume_day_after",
+    #
+    "spy_day_of_loss_percent_change",
+    "spy_day_of_loss_intraday_percent_change",
 ]
 
 
@@ -188,7 +199,14 @@ def prepare_biggest_losers_csv(path):
         day_after = biggest_loser["day_after"]
         loser_day_of_loss = biggest_loser["loser_day_of_loss"]
         loser_day_after = biggest_loser["loser_day_after"]
+        spy_day_of_loss_percent_change = biggest_loser["spy_day_of_loss_percent_change"]
+        spy_day_of_loss_intraday_percent_change = biggest_loser[
+            "spy_day_of_loss_intraday_percent_change"]
 
+        intraday_percent_change = (loser_day_of_loss['c'] -
+                                   loser_day_of_loss['o']) / loser_day_of_loss['o']
+
+        # keep in sync with headers
         write_to_csv(",".join(list(map(str, [
             day_of_loss.strftime("%Y-%m-%d"),
             day_after.strftime("%Y-%m-%d"),
@@ -200,6 +218,7 @@ def prepare_biggest_losers_csv(path):
             loser_day_of_loss['c'],
             loser_day_of_loss['v'],
             loser_day_of_loss["percent_change"],
+            intraday_percent_change,
             loser_day_of_loss.get("rank", -1),
             # day_after stats
             loser_day_after['o'],
@@ -207,14 +226,17 @@ def prepare_biggest_losers_csv(path):
             loser_day_after['l'],
             loser_day_after['c'],
             loser_day_after['v'],
+            # spy
+            spy_day_of_loss_percent_change,
+            spy_day_of_loss_intraday_percent_change,
         ]))))
 
 
 def main():
     path = f"{HOME}/biggest_losers.csv"
-    # prepare_biggest_losers_csv(path)
-    from analyze import analyze_biggest_losers_csv
-    analyze_biggest_losers_csv(path)
+    prepare_biggest_losers_csv(path)
+    # from analyze import analyze_biggest_losers_csv
+    # analyze_biggest_losers_csv(path)
 
 
 if __name__ == "__main__":
