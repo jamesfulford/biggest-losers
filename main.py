@@ -112,10 +112,12 @@ def fetch_biggest_losers(day, end_date):
             loser_today = grouped_aggs['tickermap'][loser_yesterday["T"]]
 
             total_losers.append({
-                "day": day,
-                "previous_day": previous_day,
-                "loser_yesterday": loser_yesterday,
-                "loser_today": loser_today,
+                "day_of_loss": previous_day,
+                "day_after": day,
+                "loser_day_of_loss": loser_yesterday,
+                "loser_day_after": loser_today,
+                "spy_day_of_loss": previous_day_grouped_aggs["tickermap"].get("SPY"),
+                "spy_day_after": grouped_aggs["tickermap"].get("SPY"),
             })
 
         #
@@ -146,32 +148,35 @@ def fetch_biggest_losers(day, end_date):
     return total_losers
 
 
-def prepare_biggest_losers_csv():
+biggest_losers_csv_headers = [
+    "day_of_loss",
+    "day_after",
+    "ticker",
+    "open_day_of_loss",
+    "high_day_of_loss",
+    "low_day_of_loss",
+    "close_day_of_loss",
+    "volume_day_of_loss",
+    "close_to_close_percent_change_day_of_loss",
+    "rank_day_of_loss",
+    "open_day_after",
+    "high_day_after",
+    "low_day_after",
+    "close_day_after",
+    "volume_day_after",
+]
+
+
+def prepare_biggest_losers_csv(path):
     try:
-        os.remove(f"{HOME}/biggest_losers.csv")
+        os.remove(path)
     except:
         pass
 
     def write_to_csv(line):
-        with open(f"{HOME}/biggest_losers.csv", "a") as f:
+        with open(path, "a") as f:
             f.write(line + "\n")
-    write_to_csv(",".join([
-        "day_after",
-        "loser_day",
-        "ticker",
-        "loser_day_open",
-        "loser_day_high",
-        "loser_day_low",
-        "loser_day_close",
-        "loser_day_volume",
-        "loser_day_close_to_close_percent_change",
-        "loser_day_rank",
-        "day_after_open",
-        "day_after_high",
-        "day_after_low",
-        "day_after_close",
-        "day_after_volume",
-    ]))
+    write_to_csv(",".join(biggest_losers_csv_headers))
 
     start_date = date(2021, 1, 1)
     end_date = date.today()
@@ -179,146 +184,37 @@ def prepare_biggest_losers_csv():
     biggest_losers = fetch_biggest_losers(start_date, end_date)
 
     for biggest_loser in biggest_losers:
-        day = biggest_loser["day"]
-        previous_day = biggest_loser["previous_day"]
-        loser_yesterday = biggest_loser["loser_yesterday"]
-        loser_today = biggest_loser["loser_today"]
+        day_of_loss = biggest_loser["day_of_loss"]
+        day_after = biggest_loser["day_after"]
+        loser_day_of_loss = biggest_loser["loser_day_of_loss"]
+        loser_day_after = biggest_loser["loser_day_after"]
 
         write_to_csv(",".join(list(map(str, [
-            day.strftime("%Y-%m-%d"),
-            previous_day.strftime("%Y-%m-%d"),
-            loser_yesterday['T'],
-            # yesterday stats
-            loser_yesterday['o'],
-            loser_yesterday['h'],
-            loser_yesterday['l'],
-            loser_yesterday['c'],
-            loser_yesterday['v'],
-            loser_yesterday["percent_change"],
-            loser_yesterday.get("rank", -1),
-            # today stats
-            loser_today['o'],
-            loser_today['h'],
-            loser_today['l'],
-            loser_today['c'],
-            loser_today['v'],
+            day_of_loss.strftime("%Y-%m-%d"),
+            day_after.strftime("%Y-%m-%d"),
+            loser_day_of_loss['T'],
+            # day_of_loss stats
+            loser_day_of_loss['o'],
+            loser_day_of_loss['h'],
+            loser_day_of_loss['l'],
+            loser_day_of_loss['c'],
+            loser_day_of_loss['v'],
+            loser_day_of_loss["percent_change"],
+            loser_day_of_loss.get("rank", -1),
+            # day_after stats
+            loser_day_after['o'],
+            loser_day_after['h'],
+            loser_day_after['l'],
+            loser_day_after['c'],
+            loser_day_after['v'],
         ]))))
 
 
-def analyze_biggest_losers_csv():
-    lines = []
-    with open("/tmp/biggest_losers.csv", "r") as f:
-        lines.extend(f.readlines())
-
-    headers = lines[0].strip().split(",")
-    # remove newlines and header row
-    lines = [l.strip() for l in lines[1:]]
-
-    # convert to dicts
-    lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
-
-    lines = [{
-        "day_after": datetime.strptime(l["day_after"], "%Y-%m-%d").date(),
-        "loser_day": datetime.strptime(l["loser_day"], "%Y-%m-%d").date(),
-        "ticker": l["ticker"],
-        "loser_day_open": float(l["loser_day_open"]),
-        "loser_day_close": float(l["loser_day_close"]),
-        "loser_day_high": float(l["loser_day_high"]),
-        "loser_day_low": float(l["loser_day_low"]),
-        "loser_day_volume": float(l["loser_day_volume"]),
-        "loser_day_close_to_close_percent_change": float(l["loser_day_close_to_close_percent_change"]),
-        "loser_day_rank": int(l["loser_day_rank"]),
-        "day_after_open": float(l["day_after_open"]),
-        "day_after_close": float(l["day_after_close"]),
-        "day_after_high": float(l["day_after_high"]),
-        "day_after_low": float(l["day_after_low"]),
-        "day_after_volume": float(l["day_after_volume"]),
-    } for l in lines]
-
-    for l in lines:
-        l["close_to_open_roi"] = (
-            l["day_after_open"] - l["loser_day_close"]) / l["loser_day_close"]
-
-    print("baseline", evaluate_results(lines))
-
-    for volume_criteria_name, volume_criteria in {
-        '100k shares': lambda v: v > 100000,
-        # '200k shares': lambda v: v > 200000,
-    }.items():
-        for price_criteria_name, price_criteria in {
-            "p < 1": lambda p: p < 1,
-            "p < 5": lambda p: p < 5,
-            # "p < 10": lambda p: p < 10,
-            # "p < 20": lambda p: p < 20,
-            # "p > 5": lambda p: p > 5,
-            # "p > 10": lambda p: p > 10,
-            # "p > 20": lambda p: p > 20,
-            "all": lambda _: True,
-        }.items():
-            for weekday_criteria_name, weekday_criteria in {
-                # "no f": lambda w: w != 4,  # not friday
-                # "no m": lambda w: w != 0,  # not monday
-                "no m/f": lambda w: w != 4 and w != 0,  # not monday or friday
-                "all": lambda _: True,
-            }.items():
-
-                for rank_criteria_name, rank_criteria in {
-                    "top 3": lambda r: r >= 3,
-                    "top 5": lambda r: r >= 5,
-                    # "top 7": lambda r: r >= 7,
-                    "top 10": lambda r: r >= 10,
-                    "top 20": lambda _: True,
-                }.items():
-                    filtered_lines = list(filter(
-                        lambda l: volume_criteria(l["loser_day_volume"]) and price_criteria(
-                            l["loser_day_close"]) and weekday_criteria(l["loser_day"].weekday()) and rank_criteria(l["loser_day_rank"]),
-                        lines))
-
-                    results = evaluate_results(filtered_lines)
-                    if not results:
-                        continue
-
-                    if results["roi"] < 5:
-                        continue
-
-                    if results["average_roi"] < .02:
-                        continue
-
-                    # if results["win_rate"] < .55:
-                    #     continue
-
-                    # if results["plays"] < 300:
-                    #     continue
-
-                    print(f"{volume_criteria_name}\t{price_criteria_name}\t{weekday_criteria_name}\t{rank_criteria_name}\t\t",
-                          "average_roi={average_roi:1.2f}% win_rate={win_rate:2.1f} plays={plays} roi={roi:.1f} ".format(
-                              average_roi=results["average_roi"] * 100,
-                              win_rate=results["win_rate"] * 100,
-                              plays=results["plays"],
-                              roi=results["roi"],))
-
-
-def evaluate_results(lines):
-    if not lines:
-        return None
-
-    plays = len(lines)
-
-    if plays < 10:
-        return None
-
-    total_roi = sum(list(map(lambda l: l["close_to_open_roi"], lines)))
-
-    average_roi = total_roi / plays
-    win_rate = sum(
-        list(map(lambda l: 1 if l["close_to_open_roi"] > 0 else 0, lines))) / plays
-
-    return {"roi": total_roi, "plays": plays, "average_roi": average_roi, "win_rate": win_rate}
-
-
 def main():
-    prepare_biggest_losers_csv()
-    # analyze_biggest_losers_csv()
+    path = f"{HOME}/biggest_losers.csv"
+    # prepare_biggest_losers_csv(path)
+    from analyze import analyze_biggest_losers_csv
+    analyze_biggest_losers_csv(path)
 
 
 if __name__ == "__main__":
