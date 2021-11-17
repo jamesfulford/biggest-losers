@@ -155,6 +155,7 @@ def fetch_biggest_losers(day, end_date):
 biggest_losers_csv_headers = [
     "day_of_loss",
     "day_of_loss_weekday",
+    "day_of_loss_month",
     "day_after",
     "ticker",
     #
@@ -217,6 +218,7 @@ def prepare_biggest_losers_csv(path):
         write_to_csv(",".join(list(map(str, [
             day_of_loss.strftime("%Y-%m-%d"),
             day_of_loss.weekday(),
+            day_of_loss.month,
             day_after.strftime("%Y-%m-%d"),
             loser_day_of_loss['T'],
             # day_of_loss stats
