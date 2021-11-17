@@ -241,7 +241,7 @@ def prepare_biggest_losers_csv(path):
             spy_day_of_loss_intraday_percent_change,
             # results
             overnight_strategy_roi,
-            overnight_strategy_roi > 0,
+            1 if overnight_strategy_roi > 0 else 0,
         ]))))
 
 
