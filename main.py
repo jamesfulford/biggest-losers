@@ -4,6 +4,7 @@ import json
 import os
 import time
 import requests
+from requests.models import HTTPError
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
@@ -63,6 +64,7 @@ def fetch_grouped_aggs(day):
             print("Rate limit exceeded, waiting...")
             time.sleep(10)
             continue
+
         response.raise_for_status()
 
         data = response.json()
@@ -92,7 +94,14 @@ def fetch_biggest_losers(day, end_date):
         previous_day = day
         day = next_trading_day(day)
 
-        raw_grouped_aggs = fetch_grouped_aggs_with_cache(day)
+        try:
+            raw_grouped_aggs = fetch_grouped_aggs_with_cache(day)
+        except HTTPError as e:
+            if e.response.status_code == 403:
+                print(e, e.response.json())
+                continue
+            raise e
+
         # skip days where API returns no data (like trading holiday)
         if 'results' not in raw_grouped_aggs:
             print(f'no results for {day}, might have been a trading holiday')
@@ -194,7 +203,7 @@ def prepare_biggest_losers_csv(path):
             f.write(line + "\n")
     write_to_csv(",".join(biggest_losers_csv_headers))
 
-    start_date = date(2021, 1, 1)
+    start_date = date(2019, 11, 18)
     end_date = date.today()
 
     biggest_losers = fetch_biggest_losers(start_date, end_date)
