@@ -62,7 +62,7 @@ def analyze_biggest_losers_csv(path):
     baseline_start_date = date.today() - timedelta(weeks=52)
 
     def baseline_criteria(t):
-        return t["volume_day_of_loss"] > 100000 and t["day_of_loss"] > baseline_start_date
+        return t["volume_day_of_loss"] > 100000 and t["day_of_loss"] > baseline_start_date and t["close_day_of_loss"] < 1
 
     #
     # calculate results of always following baseline
@@ -85,6 +85,15 @@ def analyze_biggest_losers_csv(path):
     #
 
     criteria_results = []
+
+    spy_direction_criterion = {
+        "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
+        ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
+        "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+        "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
+        ".5 down": lambda t: t["spy_day_of_loss_percent_change"] < 0.005,
+        "1% down": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+    }
 
     volume_criterion = {
         '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
@@ -134,16 +143,18 @@ def analyze_biggest_losers_csv(path):
             "results": results,
         })
 
-    for volume_criteria_name, volume_criteria in volume_criterion.items():
-        for price_criteria_name, price_criteria in price_criterion.items():
-            for weekday_criteria_name, weekday_criteria in weekday_criterion.items():
-                for rank_criteria_name, rank_criteria in rank_criterion.items():
-                    try_criterion({
-                        volume_criteria_name: volume_criteria,
-                        price_criteria_name: price_criteria,
-                        weekday_criteria_name: weekday_criteria,
-                        rank_criteria_name: rank_criteria,
-                    })
+    for spy_direction_criteria_name, spy_direction_criteria in spy_direction_criterion.items():
+        for volume_criteria_name, volume_criteria in volume_criterion.items():
+            for price_criteria_name, price_criteria in price_criterion.items():
+                for weekday_criteria_name, weekday_criteria in weekday_criterion.items():
+                    for rank_criteria_name, rank_criteria in rank_criterion.items():
+                        try_criterion({
+                            spy_direction_criteria_name: spy_direction_criteria,
+                            volume_criteria_name: volume_criteria,
+                            price_criteria_name: price_criteria,
+                            weekday_criteria_name: weekday_criteria,
+                            rank_criteria_name: rank_criteria,
+                        })
 
     for key_criteria in baseline_results.keys():
         if key_criteria == "plays":
@@ -152,6 +163,11 @@ def analyze_biggest_losers_csv(path):
 
         passing_criterion_sets = list(filter(
             lambda r: r["results"][key_criteria] > baseline_results[key_criteria], criteria_results))
+
+        # filter out shallow/small results
+        minimum_percent_plays = .05
+        passing_criterion_sets = list(filter(
+            lambda r: r["results"]["plays"] > minimum_percent_plays * baseline_results["plays"], passing_criterion_sets))
 
         show_top = 3
         print(f"subsets which outperform baseline on {key_criteria}:", len(
