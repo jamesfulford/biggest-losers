@@ -189,6 +189,7 @@ biggest_losers_csv_headers = [
     #
     "overnight_strategy_roi",
     "overnight_strategy_is_win",
+    "overnight_strategy_is_win_bool",
 ]
 
 
@@ -251,6 +252,7 @@ def prepare_biggest_losers_csv(path):
             # results
             overnight_strategy_roi,
             1 if overnight_strategy_roi > 0 else 0,
+            overnight_strategy_roi > 0,
         ]))))
 
 
