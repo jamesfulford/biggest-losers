@@ -86,47 +86,49 @@ def analyze_biggest_losers_csv(path):
         "top 20": lambda _: True,
     }
 
+    def try_criterion(criterion):
+        filtered_lines = lines
+        for criteria in criterion:
+            filtered_lines = list(
+                filter(criteria, filtered_lines))
+
+        results = evaluate_results(filtered_lines)
+        if not results:
+            return
+
+        if results["roi"] < 20:
+            return
+
+        # if results["average_roi"] < .02:
+        #     return
+
+        # if results["win_rate"] < .55:
+        #     return
+
+        # if results["plays"] < 300:
+        #     return
+
+        passing_criterion_sets.append({
+            "volume": volume_criteria_name,
+            "price": price_criteria_name,
+            "weekday": weekday_criteria_name,
+            "rank": rank_criteria_name,
+            "time_horizon": time_horizon_name,
+            "results": results,
+        })
+
     for volume_criteria_name, volume_criteria in volume_criterion.items():
         for price_criteria_name, price_criteria in price_criterion.items():
             for weekday_criteria_name, weekday_criteria in weekday_criterion.items():
                 for rank_criteria_name, rank_criteria in rank_criterion.items():
                     for time_horizon_name, time_horizon_criteria in time_horizon_criterion.items():
-                        criterion = [
+                        try_criterion([
                             volume_criteria,
                             price_criteria,
                             weekday_criteria,
                             rank_criteria,
                             time_horizon_criteria,
-                        ]
-                        filtered_lines = lines
-                        for criteria in criterion:
-                            filtered_lines = list(
-                                filter(criteria, filtered_lines))
-
-                        results = evaluate_results(filtered_lines)
-                        if not results:
-                            continue
-
-                        if results["roi"] < 20:
-                            continue
-
-                        # if results["average_roi"] < .02:
-                        #     continue
-
-                        # if results["win_rate"] < .55:
-                        #     continue
-
-                        # if results["plays"] < 300:
-                        #     continue
-
-                        passing_criterion_sets.append({
-                            "volume": volume_criteria_name,
-                            "price": price_criteria_name,
-                            "weekday": weekday_criteria_name,
-                            "rank": rank_criteria_name,
-                            "time_horizon": time_horizon_name,
-                            "results": results,
-                        })
+                        ])
 
     for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"]["win_rate"], reverse=True):
         print(f"{criteria_set['volume']}\t{criteria_set['price']}\t{criteria_set['weekday']}\t{criteria_set['rank']}\t{criteria_set['time_horizon']}\t",
