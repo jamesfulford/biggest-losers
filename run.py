@@ -184,13 +184,19 @@ def get_positions():
 if __name__ == '__main__':
 
     now = datetime.now()
+    import sys
+    datestr = ""
     try:
-        import sys
         datestr = sys.argv[1]
-        now = datetime.strptime(datestr, '%Y-%m-%d %H:%M:%S')
-    except Exception as e:
-        print(
-            "error occurred while parsing datetime, will continue with {now}", e)
+    except:
+        pass
+
+    if datestr:
+        try:
+            now = datetime.strptime(datestr, '%Y-%m-%d %H:%M:%S')
+        except Exception as e:
+            print(
+                f"error occurred while parsing datetime, will continue with {now}", e)
 
     today = now.date()
     hour = now.hour
