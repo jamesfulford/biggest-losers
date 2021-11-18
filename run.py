@@ -217,9 +217,9 @@ if __name__ == '__main__':
     if hour >= 15 and hour < 16:
         print("3-4pm, buying biggest losers")
         # TODO: check purchasing power in case need to reduce quantity
-        nominal = 5
+        nominal = 1000
         buy_biggest_losers_at_close(today, nominal)
-    elif hour >= 20 or hour < 15:
+    elif hour >= 19 or hour < 15:
         print("closing positions")
         print(liquidate())
     else:

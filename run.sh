@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # in crontab:
-# */10 * * * 1-5 cd /Users/jamesfulford/scanners && ./run.sh >> /tmp/run.log 2>&1
+# To Buy:
+# 45 15 * * * cd /Users/jamesfulford/scanners && ./run.sh >> /tmp/run.log 2>&1
+# To Sell:
+# 0 20 * * * cd /Users/jamesfulford/scanners && ./run.sh >> /tmp/run.log 2>&1
 
 echo
 echo "###"
