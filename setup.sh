@@ -2,7 +2,7 @@
 
 function fail_script() {
     echo "ERROR $1"
-    echo exit 1
+    exit 1
 }
 
 which python3 || fail_script "could not find 'python3'"
