@@ -85,6 +85,9 @@ def analyze_biggest_losers_csv(path):
 
     criteria_results = []
 
+    #
+    # market up/down
+    #
     spy_direction_criterion = {
         # "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
         # ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
@@ -95,23 +98,32 @@ def analyze_biggest_losers_csv(path):
         "all spy": lambda _: True,
     }
 
+    #
+    # volume
+    #
     volume_criterion = {
         # '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
-        '200k shares': lambda t: t["volume_day_of_loss"] > 200000,
+        # '200k shares': lambda t: t["volume_day_of_loss"] > 200000,
         'all volume ': lambda _: True,
     }
 
+    #
+    # closing price
+    #
     price_criterion = {
         "p < 1 ": lambda t: t["close_day_of_loss"] < 1,
-        "p < 5 ": lambda t: t["close_day_of_loss"] < 5,
-        "p < 10": lambda t: t["close_day_of_loss"] < 10,
-        "p < 20": lambda t: t["close_day_of_loss"] < 20,
-        "p > 5 ": lambda t: t["close_day_of_loss"] > 5,
-        "p > 10": lambda t: t["close_day_of_loss"] > 10,
-        "p > 20": lambda t: t["close_day_of_loss"] > 20,
-        "all $ ": lambda _: True,
+        # "p < 5 ": lambda t: t["close_day_of_loss"] < 5,
+        # "p < 10": lambda t: t["close_day_of_loss"] < 10,
+        # "p < 20": lambda t: t["close_day_of_loss"] < 20,
+        # "p > 5 ": lambda t: t["close_day_of_loss"] > 5,
+        # "p > 10": lambda t: t["close_day_of_loss"] > 10,
+        # "p > 20": lambda t: t["close_day_of_loss"] > 20,
+        # "all $ ": lambda _: True,
     }
 
+    #
+    # day of week
+    #
     weekday_criterion = {
         "no f  ": lambda t: t["day_of_loss"].weekday() != 4,  # not friday
         "no m  ": lambda t: t["day_of_loss"].weekday() != 0,  # not monday
@@ -120,15 +132,38 @@ def analyze_biggest_losers_csv(path):
         "all d ": lambda _: True,
     }
 
+    #
+    # overall biggest loser rank
+    #
     def build_rank_criterion(rank):
         def rank_criterion(t):
             return t["rank_day_of_loss"] <= rank
         return rank_criterion
-
     rank_criterion = {}
-
-    for i in [11]:
+    for i in [11, 20]:
         rank_criterion[f"top {i}"] = build_rank_criterion(i)
+
+    #
+    # intraday % change
+    #
+    intraday_loss_criterion = {
+        "intraday loss": lambda t: t["intraday_percent_change_day_of_loss"] < 0,
+        # "intraday gain": lambda t: t["intraday_percent_change_day_of_loss"] > 0,
+        # "up 5% intr": lambda t: t["intraday_percent_change_day_of_loss"] > .05,
+        "any intraday%": lambda _: True,
+    }
+
+    def build_intraday_loss_criterion(percent):
+        def intraday_loss_criterion(t):
+            return t["intraday_percent_change_day_of_loss"] < percent
+        return intraday_loss_criterion
+    for i in [-5]:
+        percent = i / 100
+        intraday_loss_criterion[f"intr < {percent}"] = build_intraday_loss_criterion(
+            percent)
+
+    # TODO: test based off of total loss
+    # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
 
     def try_criterion(criterion):
         filtered_lines = lines
@@ -150,13 +185,15 @@ def analyze_biggest_losers_csv(path):
             for price_criteria_name, price_criteria in price_criterion.items():
                 for weekday_criteria_name, weekday_criteria in weekday_criterion.items():
                     for rank_criteria_name, rank_criteria in rank_criterion.items():
-                        try_criterion({
-                            spy_direction_criteria_name: spy_direction_criteria,
-                            volume_criteria_name: volume_criteria,
-                            price_criteria_name: price_criteria,
-                            weekday_criteria_name: weekday_criteria,
-                            rank_criteria_name: rank_criteria,
-                        })
+                        for intraday_loss_criteria_name, intraday_loss_criteria in intraday_loss_criterion.items():
+                            try_criterion({
+                                spy_direction_criteria_name: spy_direction_criteria,
+                                volume_criteria_name: volume_criteria,
+                                price_criteria_name: price_criteria,
+                                weekday_criteria_name: weekday_criteria,
+                                rank_criteria_name: rank_criteria,
+                                intraday_loss_criteria_name: intraday_loss_criteria,
+                            })
 
     criteria_to_evaluate = baseline_results.keys()
     criteria_to_evaluate = ["roi"]
