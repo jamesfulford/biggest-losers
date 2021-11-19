@@ -61,7 +61,7 @@ def analyze_biggest_losers_csv(path):
     baseline_start_date = date.today() - timedelta(weeks=52)
 
     def baseline_criteria(t):
-        return t["volume_day_of_loss"] > 100000 and t["day_of_loss"] > baseline_start_date and t["close_day_of_loss"] < 1
+        return t["volume_day_of_loss"] > 100000 and t["day_of_loss"] > baseline_start_date
 
     #
     # calculate results of always following baseline
@@ -86,17 +86,19 @@ def analyze_biggest_losers_csv(path):
     criteria_results = []
 
     spy_direction_criterion = {
-        "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
-        ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
-        "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
-        "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
+        # "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
+        # ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
+        # "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+        # "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
         ".5 down": lambda t: t["spy_day_of_loss_percent_change"] < 0.005,
         "1% down": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+        "all spy": lambda _: True,
     }
 
     volume_criterion = {
-        '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
+        # '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
         '200k shares': lambda t: t["volume_day_of_loss"] > 200000,
+        'all volume ': lambda _: True,
     }
 
     price_criterion = {
@@ -118,20 +120,21 @@ def analyze_biggest_losers_csv(path):
         "all d ": lambda _: True,
     }
 
-    rank_criterion = {
-        "top 3 ": lambda t: t["rank_day_of_loss"] >= 3,
-        "top 5 ": lambda t: t["rank_day_of_loss"] >= 5,
-        # "top 7 ": lambda t: t["rank_day_of_loss"] >= 7,
-        "top 10": lambda t: t["rank_day_of_loss"] >= 10,
-        "top 20": lambda _: True,
-    }
+    def build_rank_criterion(rank):
+        def rank_criterion(t):
+            return t["rank_day_of_loss"] <= rank
+        return rank_criterion
+
+    rank_criterion = {}
+
+    for i in [11]:
+        rank_criterion[f"top {i}"] = build_rank_criterion(i)
 
     def try_criterion(criterion):
-
         filtered_lines = lines
-        for criteria in criterion.values():
-            filtered_lines = list(
-                filter(criteria, filtered_lines))
+        for _criteria_name, criteria in criterion.items():
+            new_lines = list(filter(criteria, filtered_lines))
+            filtered_lines = new_lines
 
         results = evaluate_results(filtered_lines)
         if not results:
@@ -155,8 +158,10 @@ def analyze_biggest_losers_csv(path):
                             rank_criteria_name: rank_criteria,
                         })
 
-    for key_criteria in baseline_results.keys():
-        if key_criteria == "plays":
+    criteria_to_evaluate = baseline_results.keys()
+    criteria_to_evaluate = ["roi"]
+    for key_criteria in criteria_to_evaluate:
+        if key_criteria == "plays" or key_criteria == "trading_days":
             # of course no subsets have a bigger cardinality, don't bother printing
             continue
 
@@ -164,21 +169,21 @@ def analyze_biggest_losers_csv(path):
             lambda r: r["results"][key_criteria] > baseline_results[key_criteria], criteria_results))
 
         # filter out shallow/small results
-        minimum_percent_plays = .05
+        minimum_percent_plays = 0
         passing_criterion_sets = list(filter(
             lambda r: r["results"]["plays"] > minimum_percent_plays * baseline_results["plays"], passing_criterion_sets))
 
-        show_top = 3
+        minimum_trading_days_percent = 0
+        passing_criterion_sets = list(filter(
+            lambda r: r["results"]["trading_days"] > minimum_trading_days_percent * baseline_results["trading_days"], passing_criterion_sets))
+
+        show_top = 20
         print(f"subsets which outperform baseline on {key_criteria}:", len(
             passing_criterion_sets))
-        for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]:
+        for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"]["roi"], reverse=True)[:show_top]:
 
-            print("\t", "\t".join(criteria_set["names"]), "\t\t"
-                  "avg={average_roi:1.2f}% win={win_rate:2.1f} plays={plays} roi={roi:.1f} ".format(
-                average_roi=criteria_set['results']["average_roi"] * 100,
-                win_rate=criteria_set['results']["win_rate"] * 100,
-                plays=criteria_set['results']["plays"],
-                roi=criteria_set['results']["roi"],))
+            print("\t", "\t".join(
+                criteria_set["names"]), "\t\t", " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
 
 
 def evaluate_results(lines):
@@ -191,14 +196,40 @@ def evaluate_results(lines):
         return None
 
     total_roi = sum(list(map(lambda l: l["close_to_open_roi"], lines)))
-
     average_roi = total_roi / plays
+
     win_rate = sum(
         list(map(lambda l: 1 if l["close_to_open_roi"] > 0 else 0, lines))) / plays
 
+    trades_by_day = {}
+    for line in lines:
+        key = line["day_of_loss"].strftime("%Y-%m-%d")
+        trades_by_day[key] = trades_by_day.get(key, []) + [line]
+
+    def get_weight(trade, trades):
+        # give each trade a weight of 1/len(trades)
+        # (equal weighting of trades each day)
+        return 1/len(trades)
+
+    trading_days = 0
+    weighted_roi = 0
+    for _day, trades in trades_by_day.items():
+        trading_days += 1
+
+        today_roi = 0
+        for trade in trades:
+            today_roi += get_weight(trade, trades) * trade["close_to_open_roi"]
+        weighted_roi += today_roi
+
     # TODO: calculate drawdown and other stats
 
-    return {"roi": total_roi, "plays": plays, "average_roi": average_roi, "win_rate": win_rate}
+    return {
+        "roi": weighted_roi,
+        "plays": plays,
+        "average_roi": average_roi,
+        "win_rate": win_rate,
+        "trading_days": trading_days,
+    }
 
 
 if __name__ == "__main__":
