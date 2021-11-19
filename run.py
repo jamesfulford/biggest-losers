@@ -27,7 +27,7 @@ def buy_symbol_at_close(symbol, quantity):
         'side': 'buy',
         'type': 'market',
         # buy at close
-        'time_in_force': 'day'
+        'time_in_force': 'cls'
     }, headers=APCA_HEADERS)
     response.raise_for_status()
     return response.json()
@@ -151,7 +151,7 @@ def buy_biggest_losers_at_close(today, nominal):
 
     losers = get_biggest_losers(today)
 
-    losers = list(filter(lambda l: l["c"] < 5, losers))
+    losers = list(filter(lambda l: l["v"] > 100000, losers))
 
     positions = get_positions()
     print(positions)
