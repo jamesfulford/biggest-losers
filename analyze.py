@@ -93,9 +93,9 @@ def analyze_biggest_losers_csv(path):
         # ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
         # "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
         # "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
-        ".5 down": lambda t: t["spy_day_of_loss_percent_change"] < 0.005,
-        "1% down": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
-        "all spy": lambda _: True,
+        "-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.005,
+        "-1%spy ": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+        "*spy   ": lambda _: True,
     }
 
     #
@@ -104,7 +104,7 @@ def analyze_biggest_losers_csv(path):
     volume_criterion = {
         # '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
         # '200k shares': lambda t: t["volume_day_of_loss"] > 200000,
-        'all volume ': lambda _: True,
+        '*vol': lambda _: True,
     }
 
     #
@@ -147,17 +147,18 @@ def analyze_biggest_losers_csv(path):
     # intraday % change
     #
     intraday_loss_criterion = {
-        "intraday loss": lambda t: t["intraday_percent_change_day_of_loss"] < 0,
+        "down intr": lambda t: t["intraday_percent_change_day_of_loss"] < 0,
+        "-5% intr ": lambda t: t["intraday_percent_change_day_of_loss"] < -.05,
+        "any intr ": lambda _: True,
         # "intraday gain": lambda t: t["intraday_percent_change_day_of_loss"] > 0,
         # "up 5% intr": lambda t: t["intraday_percent_change_day_of_loss"] > .05,
-        "any intraday%": lambda _: True,
     }
 
     def build_intraday_loss_criterion(percent):
         def intraday_loss_criterion(t):
             return t["intraday_percent_change_day_of_loss"] < percent
         return intraday_loss_criterion
-    for i in [-5]:
+    for i in []:
         percent = i / 100
         intraday_loss_criterion[f"intr < {percent}"] = build_intraday_loss_criterion(
             percent)
@@ -196,9 +197,9 @@ def analyze_biggest_losers_csv(path):
                             })
 
     criteria_to_evaluate = baseline_results.keys()
-    criteria_to_evaluate = ["roi"]
+    criteria_to_evaluate = ["roi", "g_roi"]
     for key_criteria in criteria_to_evaluate:
-        if key_criteria == "plays" or key_criteria == "trading_days":
+        if key_criteria == "plays" or key_criteria == "days":
             # of course no subsets have a bigger cardinality, don't bother printing
             continue
 
@@ -212,15 +213,15 @@ def analyze_biggest_losers_csv(path):
 
         minimum_trading_days_percent = 0
         passing_criterion_sets = list(filter(
-            lambda r: r["results"]["trading_days"] > minimum_trading_days_percent * baseline_results["trading_days"], passing_criterion_sets))
+            lambda r: r["results"]["days"] > minimum_trading_days_percent * baseline_results["days"], passing_criterion_sets))
 
-        show_top = 20
+        show_top = 10
         print(f"subsets which outperform baseline on {key_criteria}:", len(
             passing_criterion_sets))
         for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"]["roi"], reverse=True)[:show_top]:
 
-            print("\t", "\t".join(
-                criteria_set["names"]), "\t\t", " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
+            print("  ", "\t".join(
+                criteria_set["names"]), "|" + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
 
 
 def evaluate_results(lines):
@@ -249,23 +250,32 @@ def evaluate_results(lines):
         return 1/len(trades)
 
     trading_days = 0
-    weighted_roi = 0
+    arithmetic_roi = 0
+    geometric_current_balance = 1
     for _day, trades in trades_by_day.items():
         trading_days += 1
 
         today_roi = 0
         for trade in trades:
             today_roi += get_weight(trade, trades) * trade["close_to_open_roi"]
-        weighted_roi += today_roi
+
+        # just take returns, do not reinvest, only withdraw to replenish original capital
+        arithmetic_roi += today_roi
+
+        # reinvest returns, every day invest 1/3 of balance (cash account)
+        geometric_current_balance = (
+            1/3) * geometric_current_balance * (1 + today_roi) + (2/3) * geometric_current_balance
 
     # TODO: calculate drawdown and other stats
 
     return {
-        "roi": weighted_roi,
+        "roi": arithmetic_roi,
+        "a_roi": arithmetic_roi,
+        "g_roi": geometric_current_balance,
         "plays": plays,
-        "average_roi": average_roi,
-        "win_rate": win_rate,
-        "trading_days": trading_days,
+        "avg_roi": average_roi,
+        "win%": win_rate,
+        "days": trading_days,
     }
 
 
