@@ -148,6 +148,9 @@ def get_biggest_losers(today):
 
 
 def buy_biggest_losers_at_close(today, nominal):
+    # TODO: implement this strategy with arithmetic investment
+    # (because APCA does not support buying warrants and arithmetic roi is better than geometric)
+    #    -1%spy       *vol    p < 1   all d   top 19  intr<-14        !w |roi=4.005 a_roi=4.005 g_roi=3.192 plays=70 avg_roi=0.06 win%=0.571 days=61
 
     losers = get_biggest_losers(today)
 
@@ -182,7 +185,6 @@ def get_positions():
 
 
 if __name__ == '__main__':
-
     now = datetime.now()
     import sys
     datestr = ""
