@@ -1,6 +1,5 @@
 from datetime import date, datetime, timedelta
 import os
-from itertools import product
 
 HOME = os.environ['HOME']
 

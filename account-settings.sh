@@ -9,7 +9,7 @@ fi
 
 echo "suspend_trade: $suspend_trade"
 
-curl --silent -X PATCH \
+curl --silent --fail -X PATCH \
     -H "APCA-API-KEY-ID: $APCA_API_KEY_ID" \
     -H "APCA-API-SECRET-KEY: $APCA_API_SECRET_KEY" \
     ${ALPACA_URL}/v2/account/configurations \
