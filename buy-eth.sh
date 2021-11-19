@@ -10,4 +10,4 @@ curl --silent -X POST \
             \"side\": \"buy\",
             \"type\": \"market\",
             \"time_in_force\": \"gtc\"
-        }" | python -m json.tool
+        }" | python3 -m json.tool

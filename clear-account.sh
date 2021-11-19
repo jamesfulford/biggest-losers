@@ -11,7 +11,7 @@ function alpaca () {
         -H "APCA-API-KEY-ID: $APCA_API_KEY_ID" \
         -H "APCA-API-SECRET-KEY: $APCA_API_SECRET_KEY" \
         ${ALPACA_URL}${url_path} \
-        "$@" | python -m json.tool
+        "$@" | python3 -m json.tool
     echo
 }
 

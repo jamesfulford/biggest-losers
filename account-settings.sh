@@ -20,4 +20,4 @@ curl --silent --fail -X PATCH \
         \"no_shorting\": true,
         \"suspend_trade\": $suspend_trade,
         \"trade_confirm_email\": \"all\"
-    }" | python -m json.tool
+    }" | python3 -m json.tool
