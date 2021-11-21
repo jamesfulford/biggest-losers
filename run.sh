@@ -16,7 +16,7 @@ echo
 
 mkdir -p $HOME/data
 
-. paper.env ; /usr/local/bin/python3 run.py "$1"
+. paper.env ; python3 run.py "$1"
 echo "(return code was $?)"
 
 H=$(date +%H)
