@@ -147,14 +147,37 @@ def get_biggest_losers(today):
     return biggest_losers
 
 
+def get_spy_change(today):
+    spy_candle = enrich_grouped_aggs(fetch_grouped_aggs_with_cache(today))[
+        "tickermap"]["SPY"]
+    day = today - timedelta(days=1)
+    spy_candle_yesterday = None
+    while True:
+        try:
+            spy_candle_yesterday = enrich_grouped_aggs(
+                fetch_grouped_aggs_with_cache(day))["tickermap"]["SPY"]
+            break
+        except Exception:
+            pass
+        day = day - timedelta(days=1)
+
+    return (spy_candle["c"] - spy_candle_yesterday["c"]) / spy_candle_yesterday["c"]
+
+
 def buy_biggest_losers_at_close(today, nominal):
-    # TODO: implement this strategy with arithmetic investment
-    # (because APCA does not support buying warrants and arithmetic roi is better than geometric)
-    #    -1%spy       *vol    p < 1   all d   top 19  intr<-14        !w |roi=4.005 a_roi=4.005 g_roi=3.192 plays=70 avg_roi=0.06 win%=0.571 days=61
+    spy_change = get_spy_change(today)
+    spy_change_upper_threshold = -.01
+    if spy_change > spy_change_upper_threshold:
+        print(
+            f"SPY change is {round(100*spy_change, 1)}%, must be under {round(100*spy_change_upper_threshold, 1)}%, not buying")
+        return
 
     losers = get_biggest_losers(today)
 
     losers = list(filter(lambda l: l["v"] > 100000, losers))
+    losers = list(filter(lambda l: l["c"] < 1, losers))
+    losers = list(filter(lambda l: ((l["c"] - l["o"]) / l["o"]) < -14, losers))
+    losers = losers[:19]
 
     positions = get_positions()
     print(positions)
@@ -206,8 +229,11 @@ if __name__ == '__main__':
     print(
         f"running on date {today} at hour {hour} in local timezone (should be America/New_York)")
 
+    # (because APCA does not support buying warrants and arithmetic roi is better than geometric)
+    #    -1%spy       *vol    p < 1   all d   top 19  intr<-14        !w |roi=4.005 a_roi=4.005 g_roi=3.192 plays=70 avg_roi=0.06 win%=0.571 days=61
+
     weekday = today.weekday()  # 0 is Monday, 4 is Friday
-    if weekday not in [1, 2, 3]:
+    if weekday not in [0, 1, 2, 3, 4]:
         print(f"today is not a good day for trading, exiting.")
         exit(0)
 
@@ -216,10 +242,11 @@ if __name__ == '__main__':
     #  - check for open orders (so no double buying)
     #  - buy biggest losers
 
+    nominal = 1000
+
     if hour >= 15 and hour < 16:
         print("3-4pm, buying biggest losers")
         # TODO: check purchasing power in case need to reduce quantity
-        nominal = 1000
         buy_biggest_losers_at_close(today, nominal)
     elif hour >= 19 or hour < 15:
         print("closing positions")
