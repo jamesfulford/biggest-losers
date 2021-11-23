@@ -165,6 +165,8 @@ def get_spy_change(today):
 
 
 def buy_biggest_losers_at_close(today, nominal):
+    #   -1%spy       *vol    p < 5   all d   top 8   intr<-8 !w |roi=7.548 a_roi=7.548 g_roi=7.142 plays=227 avg_roi=0.04 win%=0.507 days=148
+
     spy_change = get_spy_change(today)
     spy_change_upper_threshold = -.01
     if spy_change > spy_change_upper_threshold:
@@ -175,9 +177,9 @@ def buy_biggest_losers_at_close(today, nominal):
     losers = get_biggest_losers(today)
 
     losers = list(filter(lambda l: l["v"] > 100000, losers))
-    losers = list(filter(lambda l: l["c"] < 1, losers))
-    losers = list(filter(lambda l: ((l["c"] - l["o"]) / l["o"]) < -14, losers))
-    losers = losers[:19]
+    losers = list(filter(lambda l: l["c"] < 5, losers))
+    losers = list(filter(lambda l: ((l["c"] - l["o"]) / l["o"]) < -8, losers))
+    losers = list(filter(lambda l: l["rank"] <= 8, losers))
 
     positions = get_positions()
     print(positions)
@@ -230,7 +232,7 @@ if __name__ == '__main__':
         f"running on date {today} at hour {hour} in local timezone (should be America/New_York)")
 
     # (because APCA does not support buying warrants and arithmetic roi is better than geometric)
-    #    -1%spy       *vol    p < 1   all d   top 19  intr<-14        !w |roi=4.005 a_roi=4.005 g_roi=3.192 plays=70 avg_roi=0.06 win%=0.571 days=61
+    #   -1%spy       *vol    p < 5   all d   top 8   intr<-8 !w |roi=7.548 a_roi=7.548 g_roi=7.142 plays=227 avg_roi=0.04 win%=0.507 days=148
 
     weekday = today.weekday()  # 0 is Monday, 4 is Friday
     if weekday not in [0, 1, 2, 3, 4]:
