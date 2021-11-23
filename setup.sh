@@ -10,9 +10,8 @@ which pip3 || fail_script "could not find 'pip3'"
 
 pip3 install -r requirements.txt || fail_script "failed to install requirements.txt"
 
-# TODO: account for timezones in crontab entries
-crontab -l | grep -q "45 15 \* \* \* cd ~/biggest-losers && \./run\.sh >> /tmp/run\.log 2>&1" || fail_script "could not find buy cron job"
-crontab -l | grep -q "0 20 \* \* \* cd ~/biggest-losers && \./run\.sh >> /tmp/run\.log 2>&1" || fail_script "could not find sell cron job"
+# TODO: account for time and timezones in crontab entries
+crontab -l | grep -q "cd ~/biggest-losers && \./run\.sh >> /tmp/run\.log 2>&1" || fail_script "could not find cron jobs"
 test -f ~/biggest-losers/run.sh || fail_script "could not find run.sh referenced by crontab"
 
 # paper
