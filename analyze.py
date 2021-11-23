@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 import os
+import itertools
 
 HOME = os.environ['HOME']
 
@@ -8,7 +9,7 @@ def is_warrant(t):
     return (t["ticker"].upper().endswith("W") or t["ticker"].upper().endswith(".WS"))
 
 
-def analyze_biggest_losers_csv(path):
+def get_lines_from_biggest_losers_csv(path):
     lines = []
     with open(path, "r") as f:
         lines.extend(f.readlines())
@@ -19,8 +20,6 @@ def analyze_biggest_losers_csv(path):
 
     # convert to dicts
     lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
-
-    # print(lines[0])
 
     lines = [{
         "day_of_loss": datetime.strptime(l["day_of_loss"], "%Y-%m-%d").date(),
@@ -59,52 +58,41 @@ def analyze_biggest_losers_csv(path):
         print("WARNING update code to include these fields:",
               unmapped_fields_in_csv)
 
-    #
-    # ignore rows before this date
-    #
+    return lines
+
+
+def analyze_biggest_losers_csv(path):
+    lines = get_lines_from_biggest_losers_csv(path)
+
     baseline_start_date = date.today() - timedelta(weeks=52)
 
     def baseline_criteria(t):
         return t["volume_day_of_loss"] > 100000 and t["day_of_loss"] > baseline_start_date
 
-    #
-    # calculate results of always following baseline
-    #
     lines = list(filter(baseline_criteria, lines))
 
+    # enhance
     for l in lines:
         l["close_to_open_roi"] = (
             l["open_day_after"] - l["close_day_of_loss"]) / l["close_day_of_loss"]
-
-    # reference what you can build subsets off of
     # print(lines[0])
 
     baseline_results = evaluate_results(lines)
     print("baseline", baseline_results)
     print()
 
-    #
-    # explore what stricter results might do for you
-    #
-
-    criteria_results = []
-
-    #
     # market up/down
-    #
     spy_direction_criterion = {
-        "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
-        ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
-        "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
-        "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
-        "-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.005,
+        # "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
+        # ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
+        # "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+        # "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
+        # "-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.005,
         "-1%spy ": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
         "*spy   ": lambda _: True,
     }
 
-    #
     # volume
-    #
     volume_criterion = {
         # '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
         # '200k shares': lambda t: t["volume_day_of_loss"] > 200000,
@@ -117,10 +105,10 @@ def analyze_biggest_losers_csv(path):
     price_criterion = {
         "p < 1 ": lambda t: t["close_day_of_loss"] < 1,
         "p < 5 ": lambda t: t["close_day_of_loss"] < 5,
-        "p < 10": lambda t: t["close_day_of_loss"] < 10,
-        "p < 20": lambda t: t["close_day_of_loss"] < 20,
-        "p > 5 ": lambda t: t["close_day_of_loss"] > 5,
-        "p > 10": lambda t: t["close_day_of_loss"] > 10,
+        # "p < 10": lambda t: t["close_day_of_loss"] < 10,
+        # "p < 20": lambda t: t["close_day_of_loss"] < 20,
+        # "p > 5 ": lambda t: t["close_day_of_loss"] > 5,
+        # "p > 10": lambda t: t["close_day_of_loss"] > 10,
         "p > 20": lambda t: t["close_day_of_loss"] > 20,
         "all $ ": lambda _: True,
     }
@@ -144,7 +132,7 @@ def analyze_biggest_losers_csv(path):
             return t["rank_day_of_loss"] <= rank
         return rank_criterion
     rank_criterion = {}
-    for i in range(1, 21):
+    for i in range(1, 21, 4):
         rank_criterion[f"top {i}"] = build_rank_criterion(i)
 
     #
@@ -172,44 +160,42 @@ def analyze_biggest_losers_csv(path):
     #
     warrant_criterion = {
         "!w": lambda t: not is_warrant(t),
-        "+w": lambda t: is_warrant(t),
-        "*w": lambda _: True,
+        # "+w": lambda t: is_warrant(t),
+        # "*w": lambda _: True,
     }
 
     # TODO: test based off of total loss
     # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
 
-    def try_criterion(criterion):
+    print('going through criteria')
+    criteria_results = []
+    for criteria_tuple_tuple in itertools.product(
+        spy_direction_criterion.items(),
+        volume_criterion.items(),
+        price_criterion.items(),
+        weekday_criterion.items(),
+        rank_criterion.items(),
+        intraday_loss_criterion.items(),
+        warrant_criterion.items(),
+    ):
+        criteria_set = dict(list(criteria_tuple_tuple))
         filtered_lines = lines
-        for _criteria_name, criteria in criterion.items():
+        for _criteria_name, criteria in criteria_set.items():
             new_lines = list(filter(criteria, filtered_lines))
             filtered_lines = new_lines
 
         results = evaluate_results(filtered_lines)
         if not results:
-            return
+            continue
+
+        print(criteria_set.keys())
 
         criteria_results.append({
-            "names": criterion.keys(),
+            "names": criteria_set.keys(),
             "results": results,
         })
-
-    for spy_direction_criteria_name, spy_direction_criteria in spy_direction_criterion.items():
-        for volume_criteria_name, volume_criteria in volume_criterion.items():
-            for price_criteria_name, price_criteria in price_criterion.items():
-                for weekday_criteria_name, weekday_criteria in weekday_criterion.items():
-                    for rank_criteria_name, rank_criteria in rank_criterion.items():
-                        for intraday_loss_criteria_name, intraday_loss_criteria in intraday_loss_criterion.items():
-                            for warrant_criterion_name, warrant_criteria in warrant_criterion.items():
-                                try_criterion({
-                                    spy_direction_criteria_name: spy_direction_criteria,
-                                    volume_criteria_name: volume_criteria,
-                                    price_criteria_name: price_criteria,
-                                    weekday_criteria_name: weekday_criteria,
-                                    rank_criteria_name: rank_criteria,
-                                    intraday_loss_criteria_name: intraday_loss_criteria,
-                                    warrant_criterion_name: warrant_criteria,
-                                })
+    print('done going through criteria')
+    print(len(criteria_results))
 
     criteria_to_evaluate = baseline_results.keys()
     criteria_to_evaluate = ["roi", "g_roi"]
