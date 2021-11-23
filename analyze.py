@@ -93,10 +93,10 @@ def analyze_biggest_losers_csv(path):
     # market up/down
     #
     spy_direction_criterion = {
-        # "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
-        # ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
-        # "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
-        # "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
+        "1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
+        ".5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
+        "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+        "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
         "-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.005,
         "-1%spy ": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
         "*spy   ": lambda _: True,
@@ -116,13 +116,13 @@ def analyze_biggest_losers_csv(path):
     #
     price_criterion = {
         "p < 1 ": lambda t: t["close_day_of_loss"] < 1,
-        # "p < 5 ": lambda t: t["close_day_of_loss"] < 5,
-        # "p < 10": lambda t: t["close_day_of_loss"] < 10,
-        # "p < 20": lambda t: t["close_day_of_loss"] < 20,
-        # "p > 5 ": lambda t: t["close_day_of_loss"] > 5,
-        # "p > 10": lambda t: t["close_day_of_loss"] > 10,
-        # "p > 20": lambda t: t["close_day_of_loss"] > 20,
-        # "all $ ": lambda _: True,
+        "p < 5 ": lambda t: t["close_day_of_loss"] < 5,
+        "p < 10": lambda t: t["close_day_of_loss"] < 10,
+        "p < 20": lambda t: t["close_day_of_loss"] < 20,
+        "p > 5 ": lambda t: t["close_day_of_loss"] > 5,
+        "p > 10": lambda t: t["close_day_of_loss"] > 10,
+        "p > 20": lambda t: t["close_day_of_loss"] > 20,
+        "all $ ": lambda _: True,
     }
 
     #
@@ -151,9 +151,9 @@ def analyze_biggest_losers_csv(path):
     # intraday % change
     #
     intraday_loss_criterion = {
-        "intr - ": lambda t: t["intraday_percent_change_day_of_loss"] < 0,
-        "intr-5%": lambda t: t["intraday_percent_change_day_of_loss"] < -.05,
-        "intr * ": lambda _: True,
+        # "intr - ": lambda t: t["intraday_percent_change_day_of_loss"] < 0,
+        # "intr-5%": lambda t: t["intraday_percent_change_day_of_loss"] < -.05,
+        # "intr * ": lambda _: True,
         # "intraday gain": lambda t: t["intraday_percent_change_day_of_loss"] > 0,
         # "up 5% intr": lambda t: t["intraday_percent_change_day_of_loss"] > .05,
     }
@@ -162,7 +162,7 @@ def analyze_biggest_losers_csv(path):
         def intraday_loss_criterion(t):
             return t["intraday_percent_change_day_of_loss"] < percent
         return intraday_loss_criterion
-    for i in range(-20, 20, 2):
+    for i in range(-30, 0, 2):
         percent = i / 100
         intraday_loss_criterion[f"intr<{i}"] = build_intraday_loss_criterion(
             percent)
