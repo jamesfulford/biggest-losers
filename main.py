@@ -1,81 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from datetime import date
-import json
 import os
-import time
-import requests
 from requests.models import HTTPError
+
+from grouped_aggs import enrich_grouped_aggs, fetch_grouped_aggs_with_cache
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
-
-
-def read_json_cache(key):
-    path = f"{HOME}/data/{key}"
-    try:
-        with open(path, 'r') as f:
-            return json.load(f)
-    except Exception:
-        return None
-
-
-def write_json_cache(key, value):
-    path = f"{HOME}/data/{key}"
-    with open(path, 'w') as f:
-        json.dump(value, f)
-
-
-def delete_json_cache(key):
-    path = f"{HOME}/data/{key}"
-    try:
-        os.remove(path)
-    except Exception:
-        pass
-
-
-def fetch_grouped_aggs_with_cache(day):
-
-    strftime = day.strftime("%Y-%m-%d")
-
-    # cache intraday values separately
-    key = f"grouped_aggs_{strftime}"
-    if day == date.today() and datetime.now().hour < 16:
-        key = f"grouped_aggs_{strftime}.intraday"
-
-    cached = read_json_cache(key)
-    if cached:
-        # print(f'cache hit of grouped aggs for {strftime}')
-        return cached
-
-    data = fetch_grouped_aggs(day)
-
-    write_json_cache(key, data)
-    return data
-
-
-def fetch_grouped_aggs(day):
-    strftime = day.strftime("%Y-%m-%d")
-    print(f'fetching grouped aggs for {strftime}')
-
-    while True:
-        response = requests.get(
-            f'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{strftime}?adjusted=true&apiKey={API_KEY}')
-        if response.status_code == 429:
-            print("Rate limit exceeded, waiting...")
-            time.sleep(10)
-            continue
-
-        response.raise_for_status()
-
-        data = response.json()
-        return data
-
-
-def enrich_grouped_aggs(grouped_aggs):
-    grouped_aggs['tickermap'] = {}
-    for ticker in grouped_aggs['results']:
-        grouped_aggs['tickermap'][ticker['T']] = ticker
-    return grouped_aggs
 
 
 def next_trading_day(day):
@@ -259,8 +190,6 @@ def prepare_biggest_losers_csv(path):
 def main():
     path = f"{HOME}/biggest_losers.csv"
     prepare_biggest_losers_csv(path)
-    # from analyze import analyze_biggest_losers_csv
-    # analyze_biggest_losers_csv(path)
 
 
 if __name__ == "__main__":
