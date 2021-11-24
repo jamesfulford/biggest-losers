@@ -197,30 +197,65 @@ def build_criteria_set():
         "spy_day_of_loss_percent_change": {
             # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,  # very red day
             # not big happy day
-            "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+            # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
             "* spy": lambda _: True,
         }, "dollar_volume_day_of_loss": {
-            '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
-            '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
+            # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
             '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
-            # '* $vol': lambda _: True,  # NOTE: this has GREAT results, but it would be hard to enter/exit
+            # NOTE: this has GREAT results, but it would be hard to enter/exit
+            # '* $vol': lambda _: True,
         }, "close_day_of_loss": {
             "p < 1": lambda t: t["close_day_of_loss"] < 1,
             "p < 3": lambda t: t["close_day_of_loss"] < 3,
             "p < 5": lambda t: t["close_day_of_loss"] < 5,
-            "p < 10": lambda t: t["close_day_of_loss"] < 10,
-            "p < 20": lambda t: t["close_day_of_loss"] < 20,
+            # "p < 10": lambda t: t["close_day_of_loss"] < 10,
+            # "p < 20": lambda t: t["close_day_of_loss"] < 20,
             # tried a few >, but it was too restrictive
             "all $": lambda _: True,
-        }, "day_of_loss_weekday": {
-            "no f": lambda t: t["day_of_loss"].weekday() != 4,  # not friday
-            # "no m": lambda t: t["day_of_loss"].weekday() != 0,  # not monday
-            # "no m/f": lambda t: t["day_of_loss"].weekday() != 4 and t["day_of_loss"].weekday() != 0,
-            "all d": lambda _: True,
-        }, "ticker_is_warrant": {
+        },
+        # "doulikefriday": {
+        #     "! friday": lambda t: t["day_of_loss"].weekday() != 4,
+        #     "* friday": lambda _: True,
+        # },
+        # "doulikethursday": {
+        #     "! thursday": lambda t: t["day_of_loss"].weekday() != 3,
+        #     "* thursday": lambda _: True,
+        # },
+        # "doulikewednesday": {
+        #     "! wednesday": lambda t: t["day_of_loss"].weekday() != 2,
+        #     "* wednesday": lambda _: True,
+        # },
+        # "douliketuesday": {
+        #     "! tuesday": lambda t: t["day_of_loss"].weekday() != 1,
+        #     "* tuesday": lambda _: True,
+        # },
+        # "doulikemonday": {
+        #     "! monday": lambda t: t["day_of_loss"].weekday() != 0,
+        #     "* monday": lambda _: True,
+        # },
+
+        "doulikeq1": {
+            "!q1": lambda t: (t["day_of_loss"].month - 1) // 4 != 0,
+            "*q1": lambda _: True,
+        },
+        "doulikeq2": {
+            "!q2": lambda t: (t["day_of_loss"].month - 1) // 4 != 1,
+            "*q2": lambda _: True,
+        },
+        "doulikeq3": {
+            "!q3": lambda t: (t["day_of_loss"].month - 1) // 4 != 2,
+            "*q3": lambda _: True,
+        },
+        "doulikeq4": {
+            "!q4": lambda t: (t["day_of_loss"].month - 1) // 4 != 3,
+            "*q4": lambda _: True,
+        },
+
+        "ticker_is_warrant": {
             # "no w": lambda t: not is_warrant(t),
             "only w": lambda t: is_warrant(t),
-            "*w": lambda _: True,
+            # "*w": lambda _: True,
         },
     }
 
