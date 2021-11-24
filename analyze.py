@@ -154,7 +154,7 @@ def evaluate_results(lines):
 
     return {
         "a_roi": arithmetic_roi,
-        "g_roi": geometric_current_balance,
+        "g_roi": geometric_current_balance - 1,
         "plays": plays,
         "avg_roi": average_roi,
         "win%": win_rate,
