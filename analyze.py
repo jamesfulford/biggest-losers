@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 import os
 import itertools
 
-from cache import write_json_cache
+from cache import read_json_cache, write_json_cache
 
 HOME = os.environ['HOME']
 
@@ -63,78 +63,6 @@ def get_lines_from_biggest_losers_csv(path):
     return lines
 
 
-def build_criteria_set():
-
-    # rank_day_of_loss
-    rank_day_of_loss = {
-        "all rank": lambda _: True,
-    }
-
-    def build_rank_criterion(rank):
-        def rank_criterion(t):
-            return t["rank_day_of_loss"] <= rank
-        return rank_criterion
-
-    for i in range(5, 21, 5):
-        rank_day_of_loss[f"top {i}"] = build_rank_criterion(i)
-
-    # intraday_percent_change_day_of_loss
-    intraday_percent_change_day_of_loss = {
-        "intr * ": lambda _: True,
-    }
-
-    def build_intraday_percent_change_day_of_loss(percent):
-        def intraday_percent_change_day_of_loss(t):
-            return t["intraday_percent_change_day_of_loss"] < percent
-        return intraday_percent_change_day_of_loss
-
-    for i in range(-30, 10, 5):
-        percent = i / 100
-        intraday_percent_change_day_of_loss[f"intr<{i}"] = build_intraday_percent_change_day_of_loss(
-            percent)
-
-    return {
-        "spy_day_of_loss_percent_change": {
-            ">1% up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.01,
-            ">.5 up  ": lambda t: t["spy_day_of_loss_percent_change"] > 0.005,
-            "up     ": lambda t: t["spy_day_of_loss_percent_change"] > 0,
-            "down   ": lambda t: t["spy_day_of_loss_percent_change"] < 0,
-            "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
-            "<-1%spy ": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
-            "* spy   ": lambda _: True,
-        },
-        "volume_day_of_loss": {
-            '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
-            '200k shares': lambda t: t["volume_day_of_loss"] > 200000,
-            '*vol': lambda _: True,
-        },
-        "close_day_of_loss": {
-            "p < 1 ": lambda t: t["close_day_of_loss"] < 1,
-            "p < 5 ": lambda t: t["close_day_of_loss"] < 5,
-            "p < 10": lambda t: t["close_day_of_loss"] < 10,
-            "p < 20": lambda t: t["close_day_of_loss"] < 20,
-            "p > 5 ": lambda t: t["close_day_of_loss"] > 5,
-            "p > 10": lambda t: t["close_day_of_loss"] > 10,
-            "p > 20": lambda t: t["close_day_of_loss"] > 20,
-            "all $ ": lambda _: True,
-        },
-        "day_of_loss_weekday": {
-            "no f  ": lambda t: t["day_of_loss"].weekday() != 4,  # not friday
-            "no m  ": lambda t: t["day_of_loss"].weekday() != 0,  # not monday
-            # not monday or friday
-            "no m/f": lambda t: t["day_of_loss"].weekday() != 4 and t["day_of_loss"].weekday() != 0,
-            "all d ": lambda _: True,
-        },
-        "rank_day_of_loss": rank_day_of_loss,
-        "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
-        "ticker_is_warrant": {
-            "!w": lambda t: not is_warrant(t),
-            "+w": lambda t: is_warrant(t),
-            "*w": lambda _: True,
-        },
-    }
-
-
 def analyze_biggest_losers_csv(path):
     lines = get_lines_from_biggest_losers_csv(path)
 
@@ -144,10 +72,6 @@ def analyze_biggest_losers_csv(path):
         return t["day_of_loss"] > baseline_start_date
 
     lines = list(filter(baseline_criteria, lines))
-
-    baseline_results = evaluate_results(lines)
-    print("baseline", baseline_results)
-    print()
 
     # TODO: test based off of total loss
     # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
@@ -181,28 +105,6 @@ def analyze_biggest_losers_csv(path):
     print('done going through criteria')
 
     write_json_cache("modelv0", criteria_results)
-
-    for key_criteria in ["a_roi", "g_roi"]:
-
-        passing_criterion_sets = list(filter(
-            lambda r: r["results"][key_criteria] > baseline_results[key_criteria], criteria_results))
-
-        # filter out shallow/small results
-        minimum_percent_plays = 0.02  # 1 year -> 4829
-        passing_criterion_sets = list(filter(
-            lambda r: r["results"]["plays"] > minimum_percent_plays * baseline_results["plays"], passing_criterion_sets))
-
-        minimum_trading_days_percent = 0.7
-        passing_criterion_sets = list(filter(
-            lambda r: r["results"]["days"] > minimum_trading_days_percent * baseline_results["days"], passing_criterion_sets))
-
-        show_top = 10
-        print(f"subsets which outperform baseline on {key_criteria}:", len(
-            passing_criterion_sets))
-        for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]:
-
-            print("  ", "\t".join(
-                criteria_set["names"].values()), "|" + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
 
 
 def evaluate_results(lines):
@@ -260,6 +162,119 @@ def evaluate_results(lines):
     }
 
 
+def build_criteria_set():
+
+    # rank_day_of_loss
+    rank_day_of_loss = {
+        "all rank": lambda _: True,
+    }
+
+    def build_rank_criterion(rank):
+        def rank_criterion(t):
+            return t["rank_day_of_loss"] <= rank
+        return rank_criterion
+
+    for i in range(5, 21, 5):
+        rank_day_of_loss[f"top {i}"] = build_rank_criterion(i)
+
+    # intraday_percent_change_day_of_loss
+    intraday_percent_change_day_of_loss = {
+        "intr * ": lambda _: True,
+    }
+
+    def build_intraday_percent_change_day_of_loss(percent):
+        def intraday_percent_change_day_of_loss(t):
+            return t["intraday_percent_change_day_of_loss"] < percent
+        return intraday_percent_change_day_of_loss
+
+    for i in range(-30, 10, 5):
+        percent = i / 100
+        intraday_percent_change_day_of_loss[f"intr<{i}"] = build_intraday_percent_change_day_of_loss(
+            percent)
+
+    return {
+        "spy_day_of_loss_percent_change": {
+            # very red day
+            # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
+
+            # not big happy day
+            "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+            "* spy": lambda _: True,
+        },
+        "volume_day_of_loss": {
+            '100k shares': lambda t: t["volume_day_of_loss"] > 100000,
+            # NOTE: this has GREAT results, but it would be hard to enter/exit
+            # '* vol': lambda _: True,
+        },
+        "dollar_volume_day_of_loss": {
+            '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
+            '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
+            # NOTE: this has GREAT results, but it would be hard to enter/exit
+            # '* $vol': lambda _: True,
+        },
+        "close_day_of_loss": {
+            "p < 1": lambda t: t["close_day_of_loss"] < 1,
+            "p < 5": lambda t: t["close_day_of_loss"] < 5,
+            "p < 10": lambda t: t["close_day_of_loss"] < 10,
+            "p < 20": lambda t: t["close_day_of_loss"] < 20,
+            # tried a few >, but it was too restrictive
+            "all $": lambda _: True,
+        },
+        "day_of_loss_weekday": {
+            "no f": lambda t: t["day_of_loss"].weekday() != 4,  # not friday
+            "no m": lambda t: t["day_of_loss"].weekday() != 0,  # not monday
+            # not monday or friday
+            "no m/f": lambda t: t["day_of_loss"].weekday() != 4 and t["day_of_loss"].weekday() != 0,
+            "all d": lambda _: True,
+        },
+        "rank_day_of_loss": rank_day_of_loss,
+        "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
+        "ticker_is_warrant": {
+            # "no w": lambda t: not is_warrant(t),
+            "only w": lambda t: is_warrant(t),
+            "*w": lambda _: True,
+        },
+    }
+
+
+def print_out_interesting_results():
+    criteria_results = read_json_cache("modelv0")
+
+    widest_criteria = criteria_results[0]
+    for criteria_result in criteria_results:
+        widest_criteria = criteria_result if criteria_result["results"][
+            "plays"] > widest_criteria["results"]["plays"] else widest_criteria
+
+    baseline_results = widest_criteria["results"]
+    print("baseline", baseline_results)
+    print()
+
+    for key_criteria in ["a_roi", "g_roi"]:
+
+        passing_criterion_sets = list(filter(
+            lambda r: r["results"][key_criteria] > baseline_results[key_criteria], criteria_results))
+
+        # filter out shallow/small results
+
+        # 1 year -> 4829
+        minimum_percent_plays = 0
+        passing_criterion_sets = list(filter(
+            lambda r: r["results"]["plays"] > minimum_percent_plays * baseline_results["plays"], passing_criterion_sets))
+
+        minimum_trading_days_percent = 0
+        passing_criterion_sets = list(filter(
+            lambda r: r["results"]["days"] > minimum_trading_days_percent * baseline_results["days"], passing_criterion_sets))
+
+        show_top = 3
+        print(f"subsets which outperform baseline on {key_criteria}:", len(
+            passing_criterion_sets))
+        for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]:
+            print("  ", "  ".join(
+                criteria_set["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
+
+
 if __name__ == "__main__":
     path = f"{HOME}/biggest_losers.csv"
-    analyze_biggest_losers_csv(path)
+    # analyze_biggest_losers_csv(path)
+    print_out_interesting_results()
