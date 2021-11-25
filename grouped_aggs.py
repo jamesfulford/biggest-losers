@@ -67,7 +67,7 @@ def get_last_trading_day_grouped_aggs(today):
     return enrich_grouped_aggs(yesterday_raw_grouped_aggs)
 
 
-@lru_cache(maxsize=30)
+@lru_cache(maxsize=130)
 def get_today_grouped_aggs(today):
     today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(today)
 

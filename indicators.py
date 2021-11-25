@@ -1,0 +1,62 @@
+
+def calculate_true_range(candle, prior_candle):
+    """
+    Calculates the true range.
+    """
+    return max(candle["h"], prior_candle["c"]) - min(candle["l"], prior_candle["c"])
+
+
+def ema_of(values):
+    """
+    Returns emas of a list of values (reads values left to right)
+    """
+    n = len(values)
+
+    ema = []
+    ema.append(sum(values) / n)
+
+    for v in values[1:]:
+        ema.append((v + ((n - 1) * ema[-1])) / n)
+
+    return ema
+
+
+def get_atr(candles):
+    """
+    Returns a list of average true range values.
+    """
+    true_ranges = []
+    for i in range(1, len(candles)):
+        true_ranges.append(calculate_true_range(candles[i], candles[i - 1]))
+
+    return ema_of(true_ranges)
+
+
+if __name__ == "__main__":
+    print(get_atr([
+        {
+            "h": 10,
+            "l": 5,
+            "c": 7,
+        },
+        {
+            "h": 10,
+            "l": 5,
+            "c": 6,
+        },
+        {
+            "h": 7,
+            "l": 3,
+            "c": 3,
+        },
+        {
+            "h": 7,
+            "l": 5,
+            "c": 7,
+        },
+        {
+            "h": 3,
+            "l": 1,
+            "c": 2,
+        },
+    ]))
