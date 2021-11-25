@@ -21,12 +21,14 @@ def get_lines_from_biggest_losers_csv(path):
     lines = [l.strip() for l in lines[1:]]
 
     # convert to dicts
-    lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
+    raw_dict_lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
 
     lines = [{
         "day_of_loss": datetime.strptime(l["day_of_loss"], "%Y-%m-%d").date(),
         "day_of_loss_weekday": int(l["day_of_loss_weekday"]),
         "day_of_loss_month": int(l["day_of_loss_month"]),
+        "days_overnight": int(l["days_overnight"]),
+        "overnight_has_holiday_bool": l["overnight_has_holiday_bool"] == "True",
 
         "day_after": datetime.strptime(l["day_after"], "%Y-%m-%d").date(),
 
@@ -42,6 +44,10 @@ def get_lines_from_biggest_losers_csv(path):
         "intraday_percent_change_day_of_loss": float(l["intraday_percent_change_day_of_loss"]),
         "rank_day_of_loss": int(l["rank_day_of_loss"]),
 
+        "14atr": float(l["14atr"]) if l["14atr"] else None,
+        "50ema": float(l["50ema"]) if l["50ema"] else None,
+        "100ema": float(l["100ema"]) if l["100ema"] else None,
+
         "spy_day_of_loss_percent_change": float(l["spy_day_of_loss_percent_change"]),
         "spy_day_of_loss_intraday_percent_change": float(l["spy_day_of_loss_intraday_percent_change"]),
 
@@ -53,12 +59,14 @@ def get_lines_from_biggest_losers_csv(path):
 
         "overnight_strategy_roi": float(l["overnight_strategy_roi"]),
         "overnight_strategy_is_win": int(l["overnight_strategy_is_win"]),
-    } for l in lines]
+    } for l in raw_dict_lines]
 
     unmapped_fields_in_csv = set(headers) - set(lines[0].keys())
     if unmapped_fields_in_csv:
         print("WARNING update code to include these fields:",
               unmapped_fields_in_csv)
+        for unmapped_field in unmapped_fields_in_csv:
+            print("\t", unmapped_field, raw_dict_lines[0][unmapped_field])
 
     return lines
 
