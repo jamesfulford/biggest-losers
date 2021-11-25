@@ -3,18 +3,12 @@ from datetime import date
 import os
 from requests.models import HTTPError
 
-from grouped_aggs import enrich_grouped_aggs, fetch_grouped_aggs_with_cache
+from grouped_aggs import enrich_grouped_aggs, fetch_grouped_aggs_with_cache, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
 from losers import get_biggest_losers
+from trading_day import next_trading_day
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
-
-
-def next_trading_day(day):
-    while True:
-        day = day + timedelta(days=1)
-        if day.weekday() < 5:
-            return day
 
 
 def fetch_biggest_losers(day, end_date):
@@ -27,22 +21,27 @@ def fetch_biggest_losers(day, end_date):
         day = next_trading_day(day)
 
         try:
-            raw_grouped_aggs = fetch_grouped_aggs_with_cache(day)
+            previous_day_grouped_aggs = get_last_trading_day_grouped_aggs(day)
         except HTTPError as e:
             if e.response.status_code == 403:
                 print(e, e.response.json())
                 continue
             raise e
 
-        # skip days where API returns no data (like trading holiday)
-        if 'results' not in raw_grouped_aggs:
+        grouped_aggs = get_today_grouped_aggs(day)
+        if not grouped_aggs:
             print(f'no results for {day}, might have been a trading holiday')
             continue
-        grouped_aggs = enrich_grouped_aggs(raw_grouped_aggs)
 
-        if not previous_day_grouped_aggs:
-            previous_day_grouped_aggs = grouped_aggs
-            continue
+        # # skip days where API returns no data (like trading holiday)
+        # if 'results' not in raw_grouped_aggs:
+        #     print(f'no results for {day}, might have been a trading holiday')
+        #     continue
+        # grouped_aggs = enrich_grouped_aggs(raw_grouped_aggs)
+
+        # if not previous_day_grouped_aggs:
+        #     previous_day_grouped_aggs = grouped_aggs
+        #     continue
 
         #
         # sell biggest losers

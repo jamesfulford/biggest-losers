@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 import time
 import requests
 from cache import read_json_cache, write_json_cache
+from trading_day import previous_trading_day
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
@@ -58,7 +59,7 @@ def get_last_trading_day_grouped_aggs(today):
     while 'results' not in yesterday_raw_grouped_aggs:
         print(
             f"no results for {yesterday}, might have been a trading holiday, trying earlier")
-        yesterday = yesterday - timedelta(days=1)
+        yesterday = previous_trading_day(yesterday)
         yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
 
     return enrich_grouped_aggs(yesterday_raw_grouped_aggs)
