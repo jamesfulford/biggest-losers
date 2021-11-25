@@ -8,7 +8,7 @@ HOME = os.environ['HOME']
 
 
 def is_warrant(t):
-    return (t["ticker"].upper().endswith("W") or t["ticker"].upper().endswith(".WS"))
+    return (t["ticker"].upper().endswith("W") or ".WS" in t["ticker"].upper())
 
 
 def get_lines_from_biggest_losers_csv(path):
