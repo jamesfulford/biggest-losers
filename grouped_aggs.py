@@ -79,11 +79,22 @@ def get_today_grouped_aggs(today):
     return today_grouped_aggs
 
 
+def get_last_n_candles(today, ticker, n=14):
+    candles = []
+    while len(candles) < n:
+        grouped_aggs = get_today_grouped_aggs(today)
+        if not grouped_aggs:
+            today = previous_trading_day(today)
+            continue
+        candle = grouped_aggs["tickermap"][ticker]
+        candles.append(candle)
+        today = previous_trading_day(today)
+    return list(candles)
+
+
 def get_last_2_candles(today, ticker):
-    candle = get_today_grouped_aggs(today)[
-        "tickermap"][ticker]
-    candle_yesterday = get_last_trading_day_grouped_aggs(today)[
-        "tickermap"][ticker]
+    candle, candle_yesterday = tuple(
+        get_last_n_candles(today, ticker, n=2))
 
     return candle, candle_yesterday
 
