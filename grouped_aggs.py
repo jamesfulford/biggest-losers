@@ -57,8 +57,6 @@ def get_last_trading_day_grouped_aggs(today):
     yesterday = today - timedelta(days=1)
     yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
     while 'results' not in yesterday_raw_grouped_aggs:
-        print(
-            f"no results for {yesterday}, might have been a trading holiday, trying earlier")
         yesterday = previous_trading_day(yesterday)
         yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
 
@@ -76,10 +74,15 @@ def get_today_grouped_aggs(today):
     return today_grouped_aggs
 
 
-def get_spy_change(today):
-    spy_candle = enrich_grouped_aggs(fetch_grouped_aggs_with_cache(today))[
-        "tickermap"]["SPY"]
-    spy_candle_yesterday = get_last_trading_day_grouped_aggs(today)[
-        "tickermap"]["SPY"]
+def get_last_2_candles(today, ticker):
+    candle = enrich_grouped_aggs(fetch_grouped_aggs_with_cache(today))[
+        "tickermap"][ticker]
+    candle_yesterday = get_last_trading_day_grouped_aggs(today)[
+        "tickermap"][ticker]
 
+    return candle, candle_yesterday
+
+
+def get_spy_change(today):
+    spy_candle, spy_candle_yesterday = get_last_2_candles(today, 'SPY')
     return (spy_candle["c"] - spy_candle_yesterday["c"]) / spy_candle_yesterday["c"]

@@ -3,15 +3,15 @@ from datetime import date
 import os
 from requests.models import HTTPError
 
-from grouped_aggs import enrich_grouped_aggs, fetch_grouped_aggs_with_cache, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
+from grouped_aggs import enrich_grouped_aggs, fetch_grouped_aggs_with_cache, get_last_2_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
 from losers import get_biggest_losers
-from trading_day import next_trading_day
+from trading_day import next_trading_day, previous_trading_day
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
 
 
-def fetch_biggest_losers(day, end_date):
+def get_all_biggest_losers_with_day_after(day, end_date):
     previous_day_grouped_aggs = None
     previous_day_biggest_losers = []
     total_losers = []
@@ -33,48 +33,38 @@ def fetch_biggest_losers(day, end_date):
             print(f'no results for {day}, might have been a trading holiday')
             continue
 
-        # # skip days where API returns no data (like trading holiday)
-        # if 'results' not in raw_grouped_aggs:
-        #     print(f'no results for {day}, might have been a trading holiday')
-        #     continue
-        # grouped_aggs = enrich_grouped_aggs(raw_grouped_aggs)
-
-        # if not previous_day_grouped_aggs:
-        #     previous_day_grouped_aggs = grouped_aggs
-        #     continue
-
         #
-        # sell biggest losers
+        # evaluate biggest losers for tomorrow
         #
 
         # for each of yesterday's biggest losers (if they are trading today)
         for loser_yesterday in filter(lambda t: t["T"] in grouped_aggs['tickermap'], previous_day_biggest_losers):
             loser_today = grouped_aggs['tickermap'][loser_yesterday["T"]]
 
-            spy_day_before = previous_day_grouped_aggs["tickermap"]["SPY"]
-            spy_day_of_loss = grouped_aggs["tickermap"]["SPY"]
-
             total_losers.append({
                 "day_of_loss": previous_day,
                 "day_after": day,
                 "loser_day_of_loss": loser_yesterday,
                 "loser_day_after": loser_today,
-                "spy_day_of_loss_percent_change": (spy_day_of_loss['c'] - spy_day_before['c']) / spy_day_before['c'],
-                "spy_day_of_loss_intraday_percent_change": (spy_day_of_loss['c'] - spy_day_of_loss['o']) / spy_day_of_loss['o'],
             })
 
-        #
-        # go find biggest losers for the next day
-        #
-
+        # go find today's biggest losers
         previous_day_biggest_losers = get_biggest_losers(day, top_n=20)
 
-        #
-        # advance to next day
-        #
-        previous_day_grouped_aggs = grouped_aggs
-
     return total_losers
+
+
+def enrich_biggest_loser(loser):
+    day_of_loss = loser["day_of_loss"]
+
+    spy_day_of_loss, spy_day_before = get_last_2_candles(day_of_loss, "SPY")
+
+    loser["spy_day_of_loss_percent_change"] = (
+        spy_day_of_loss['c'] - spy_day_before['c']) / spy_day_before['c']
+    loser["spy_day_of_loss_intraday_percent_change"] = (
+        spy_day_of_loss['c'] - spy_day_of_loss['o']) / spy_day_of_loss['o']
+
+    return loser
 
 
 # keep in sync with usage of write_csv
@@ -125,7 +115,10 @@ def prepare_biggest_losers_csv(path):
     start_date = date(2021, 11, 18)
     end_date = date.today()
 
-    biggest_losers = fetch_biggest_losers(start_date, end_date)
+    biggest_losers = get_all_biggest_losers_with_day_after(
+        start_date, end_date)
+    for loser in biggest_losers:
+        enrich_biggest_loser(loser)
 
     for biggest_loser in biggest_losers:
         day_of_loss = biggest_loser["day_of_loss"]
