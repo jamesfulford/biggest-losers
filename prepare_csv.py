@@ -5,7 +5,7 @@ from requests.models import HTTPError
 from grouped_aggs import get_last_2_candles, get_last_n_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
 from indicators import ema_of
 from losers import get_biggest_losers
-from trading_day import next_trading_day
+from trading_day import next_trading_day, previous_trading_day
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
@@ -127,6 +127,8 @@ biggest_losers_csv_headers = [
     "day_of_loss_weekday",
     "day_of_loss_month",
     "day_after",
+    "days_overnight",
+    "overnight_has_holiday_bool",
     "ticker",
     #
     "open_day_of_loss",
@@ -153,7 +155,6 @@ biggest_losers_csv_headers = [
     #
     "overnight_strategy_roi",
     "overnight_strategy_is_win",
-    "overnight_strategy_is_win_bool",
 ]
 
 
@@ -193,6 +194,8 @@ def prepare_biggest_losers_csv(path, start_date, end_date):
                 day_of_loss.weekday(),
                 day_of_loss.month,
                 day_after.strftime("%Y-%m-%d"),
+                (day_after - day_of_loss).days,
+                previous_trading_day(day_after) != day_of_loss,
                 loser_day_of_loss['T'],
                 # day_of_loss stats
                 loser_day_of_loss['o'],
@@ -218,7 +221,6 @@ def prepare_biggest_losers_csv(path, start_date, end_date):
                 # results
                 overnight_strategy_roi,
                 1 if overnight_strategy_roi > 0 else 0,
-                overnight_strategy_roi > 0,
             ]))))
 
 
