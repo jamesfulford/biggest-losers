@@ -4,6 +4,7 @@ import os
 from requests.models import HTTPError
 
 from grouped_aggs import enrich_grouped_aggs, fetch_grouped_aggs_with_cache
+from losers import get_biggest_losers
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
@@ -67,21 +68,7 @@ def fetch_biggest_losers(day, end_date):
         # go find biggest losers for the next day
         #
 
-        # skip if wasn't present yesterday
-        tickers_also_present_yesterday = list(filter(
-            lambda t: t['T'] in previous_day_grouped_aggs['tickermap'], grouped_aggs['results']))
-
-        for ticker in tickers_also_present_yesterday:
-            previous_day_ticker = previous_day_grouped_aggs['tickermap'][ticker['T']]
-
-            ticker['percent_change'] = (
-                ticker['c'] - previous_day_ticker['c']) / previous_day_ticker['c']
-
-        previous_day_biggest_losers = sorted(tickers_also_present_yesterday,
-                                             key=lambda t: t['percent_change'])[:20]
-
-        for loser in previous_day_biggest_losers:
-            loser['rank'] = previous_day_biggest_losers.index(loser) + 1
+        previous_day_biggest_losers = get_biggest_losers(day, top_n=20)
 
         #
         # advance to next day
