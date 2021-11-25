@@ -1,5 +1,5 @@
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import time
 import requests
 from cache import read_json_cache, write_json_cache
@@ -50,3 +50,35 @@ def enrich_grouped_aggs(grouped_aggs):
     for ticker in grouped_aggs['results']:
         grouped_aggs['tickermap'][ticker['T']] = ticker
     return grouped_aggs
+
+
+def get_last_trading_day_grouped_aggs(today):
+    yesterday = today - timedelta(days=1)
+    yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
+    while 'results' not in yesterday_raw_grouped_aggs:
+        print(
+            f"no results for {yesterday}, might have been a trading holiday, trying earlier")
+        yesterday = yesterday - timedelta(days=1)
+        yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
+
+    return enrich_grouped_aggs(yesterday_raw_grouped_aggs)
+
+
+def get_today_grouped_aggs(today):
+    today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(today)
+
+    # skip days where API returns no data (like trading holiday)
+    if 'results' not in today_raw_grouped_aggs:
+        return None
+
+    today_grouped_aggs = enrich_grouped_aggs(today_raw_grouped_aggs)
+    return today_grouped_aggs
+
+
+def get_spy_change(today):
+    spy_candle = enrich_grouped_aggs(fetch_grouped_aggs_with_cache(today))[
+        "tickermap"]["SPY"]
+    spy_candle_yesterday = get_last_trading_day_grouped_aggs(today)[
+        "tickermap"]["SPY"]
+
+    return (spy_candle["c"] - spy_candle_yesterday["c"]) / spy_candle_yesterday["c"]
