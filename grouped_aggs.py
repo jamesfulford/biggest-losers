@@ -80,12 +80,18 @@ def get_today_grouped_aggs(today):
 
 
 def get_last_n_candles(today, ticker, n=14):
+    """
+    returns last n candles for a given ticker, with entry [0] being the most recent.
+    if returned None, indicates that the ticker was not trading one of those days.
+    """
     candles = []
     while len(candles) < n:
         grouped_aggs = get_today_grouped_aggs(today)
         if not grouped_aggs:
             today = previous_trading_day(today)
             continue
+        if ticker not in grouped_aggs['tickermap']:
+            return None
         candle = grouped_aggs["tickermap"][ticker]
         candles.append(candle)
         today = previous_trading_day(today)

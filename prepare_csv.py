@@ -2,7 +2,7 @@ from datetime import date
 import os
 from requests.models import HTTPError
 
-from grouped_aggs import get_last_2_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
+from grouped_aggs import get_last_2_candles, get_last_n_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
 from losers import get_biggest_losers
 from trading_day import next_trading_day
 
@@ -62,7 +62,7 @@ def get_all_biggest_losers_with_day_after(start_date, end_date):
                 "loser_day_of_loss": loser_yesterday,
                 "loser_day_after": loser_today,
             }
-            loser = enrich_biggest_loser(loser)
+            loser = enrich_loser(loser)
             total_losers.append(loser)
 
         # go find today's biggest losers
@@ -71,9 +71,13 @@ def get_all_biggest_losers_with_day_after(start_date, end_date):
     return total_losers
 
 
-def enrich_biggest_loser(loser):
+def enrich_loser(loser):
+    ticker = loser["loser_day_of_loss"]["T"]
     day_of_loss = loser["day_of_loss"]
 
+    #
+    # spy action
+    #
     spy_day_of_loss, spy_day_before = get_last_2_candles(day_of_loss, "SPY")
 
     loser["spy_day_of_loss_percent_change"] = (
@@ -81,7 +85,25 @@ def enrich_biggest_loser(loser):
     loser["spy_day_of_loss_intraday_percent_change"] = (
         spy_day_of_loss['c'] - spy_day_of_loss['o']) / spy_day_of_loss['o']
 
+    #
+    # ADX
+    #
+    enrich_loser_with_adx(loser)
+
+    #
+    # SPO
+    #
+
     return loser
+
+
+def enrich_loser_with_adx(loser):
+    ticker = loser["loser_day_of_loss"]["T"]
+    day_of_loss = loser["day_of_loss"]
+
+    last_14_candles = get_last_n_candles(day_of_loss, ticker, n=14)
+    if not last_14_candles:
+        return
 
 
 # keep in sync with usage of write_csv
@@ -117,10 +139,7 @@ biggest_losers_csv_headers = [
 ]
 
 
-def prepare_biggest_losers_csv(path):
-    start_date = date(2019, 11, 18)
-    end_date = date.today()
-
+def prepare_biggest_losers_csv(path, start_date, end_date):
     biggest_losers = get_all_biggest_losers_with_day_after(
         start_date, end_date)
 
@@ -184,7 +203,12 @@ def prepare_biggest_losers_csv(path):
 
 def main():
     path = f"{HOME}/biggest_losers.csv"
-    prepare_biggest_losers_csv(path)
+    # earliest date I have data for on my machine
+    # start_date = date(2019, 11, 18)
+
+    start_date = date(2021, 1, 1)
+    end_date = date.today()
+    prepare_biggest_losers_csv(path, start_date=start_date, end_date=end_date)
 
 
 if __name__ == "__main__":
