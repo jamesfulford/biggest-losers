@@ -1,52 +1,69 @@
-from datetime import timedelta
 from datetime import date
 import os
 from requests.models import HTTPError
 
-from grouped_aggs import enrich_grouped_aggs, fetch_grouped_aggs_with_cache, get_last_2_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
+from grouped_aggs import get_last_2_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
 from losers import get_biggest_losers
-from trading_day import next_trading_day, previous_trading_day
+from trading_day import next_trading_day
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
 
 
-def get_all_biggest_losers_with_day_after(day, end_date):
-    previous_day_grouped_aggs = None
-    previous_day_biggest_losers = []
-    total_losers = []
-
-    while day < end_date:
-        previous_day = day
-        day = next_trading_day(day)
-
+def overnights(start_date, end_date):
+    day = start_date
+    # scroll until we can query last trading day
+    while True:
         try:
-            previous_day_grouped_aggs = get_last_trading_day_grouped_aggs(day)
+            get_last_trading_day_grouped_aggs(day)
+            break
         except HTTPError as e:
             if e.response.status_code == 403:
                 print(e, e.response.json())
+                day = next_trading_day(day)
                 continue
             raise e
 
+    # TODO: I might be losing a day in here
+
+    previous_day = day
+    day = next_trading_day(day)
+
+    while day <= end_date:
         grouped_aggs = get_today_grouped_aggs(day)
         if not grouped_aggs:
             print(f'no results for {day}, might have been a trading holiday')
+
+            # don't progress previous_day
+            day = next_trading_day(day)
             continue
 
-        #
-        # evaluate biggest losers for tomorrow
-        #
+        yield previous_day, day
 
+        previous_day = day
+        day = next_trading_day(day)
+
+
+def get_all_biggest_losers_with_day_after(start_date, end_date):
+    previous_day_biggest_losers = []
+    total_losers = []
+
+    for previous_day, day in overnights(start_date, end_date):
+        grouped_aggs = get_today_grouped_aggs(day)
+
+        # evaluate biggest losers from 4pm previous_day (compared to close of day before that)
         # for each of yesterday's biggest losers (if they are trading today)
         for loser_yesterday in filter(lambda t: t["T"] in grouped_aggs['tickermap'], previous_day_biggest_losers):
             loser_today = grouped_aggs['tickermap'][loser_yesterday["T"]]
 
-            total_losers.append({
+            loser = {
                 "day_of_loss": previous_day,
                 "day_after": day,
                 "loser_day_of_loss": loser_yesterday,
                 "loser_day_after": loser_today,
-            })
+            }
+            loser = enrich_biggest_loser(loser)
+            total_losers.append(loser)
 
         # go find today's biggest losers
         previous_day_biggest_losers = get_biggest_losers(day, top_n=20)
@@ -112,7 +129,6 @@ def prepare_biggest_losers_csv(path):
     write_to_csv(",".join(biggest_losers_csv_headers))
 
     start_date = date(2019, 11, 18)
-    start_date = date(2021, 11, 18)
     end_date = date.today()
 
     biggest_losers = get_all_biggest_losers_with_day_after(

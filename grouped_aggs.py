@@ -1,14 +1,18 @@
 import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 import time
 import requests
+from functools import lru_cache
+
 from cache import read_json_cache, write_json_cache
 from trading_day import previous_trading_day
+
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']
 
 
+@lru_cache(maxsize=30)
 def fetch_grouped_aggs_with_cache(day):
 
     strftime = day.strftime("%Y-%m-%d")
@@ -20,7 +24,6 @@ def fetch_grouped_aggs_with_cache(day):
 
     cached = read_json_cache(key)
     if cached:
-        # print(f'cache hit of grouped aggs for {strftime}')
         return cached
 
     data = fetch_grouped_aggs(day)
@@ -53,8 +56,9 @@ def enrich_grouped_aggs(grouped_aggs):
     return grouped_aggs
 
 
+@lru_cache(maxsize=30)
 def get_last_trading_day_grouped_aggs(today):
-    yesterday = today - timedelta(days=1)
+    yesterday = previous_trading_day(today)
     yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
     while 'results' not in yesterday_raw_grouped_aggs:
         yesterday = previous_trading_day(yesterday)
@@ -63,6 +67,7 @@ def get_last_trading_day_grouped_aggs(today):
     return enrich_grouped_aggs(yesterday_raw_grouped_aggs)
 
 
+@lru_cache(maxsize=30)
 def get_today_grouped_aggs(today):
     today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(today)
 
@@ -75,7 +80,7 @@ def get_today_grouped_aggs(today):
 
 
 def get_last_2_candles(today, ticker):
-    candle = enrich_grouped_aggs(fetch_grouped_aggs_with_cache(today))[
+    candle = get_today_grouped_aggs(today)[
         "tickermap"][ticker]
     candle_yesterday = get_last_trading_day_grouped_aggs(today)[
         "tickermap"][ticker]
