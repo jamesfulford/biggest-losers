@@ -36,6 +36,7 @@ def buy_biggest_losers_at_close(today):
     # equal weighting
 
     nominal = 1000
+    # TODO: check purchasing power in case need to reduce quantity
 
     for loser in losers:
 
@@ -72,7 +73,6 @@ if __name__ == '__main__':
 
     if hour >= 15 and hour < 16:
         print("3-4pm, buying biggest losers")
-        # TODO: check purchasing power in case need to reduce quantity
         buy_biggest_losers_at_close(today)
     elif hour >= 19 or hour < 15:
         print("closing positions")

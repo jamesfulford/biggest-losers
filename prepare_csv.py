@@ -136,6 +136,7 @@ def prepare_biggest_losers_csv(path):
     write_to_csv(",".join(biggest_losers_csv_headers))
 
     start_date = date(2019, 11, 18)
+    start_date = date(2021, 11, 18)
     end_date = date.today()
 
     biggest_losers = fetch_biggest_losers(start_date, end_date)
