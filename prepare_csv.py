@@ -3,7 +3,7 @@ import os
 from requests.models import HTTPError
 
 from grouped_aggs import get_last_2_candles, get_last_n_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
-from indicators import ema_of
+from indicators import ema_of, get_atr
 from losers import get_biggest_losers
 from trading_day import next_trading_day, previous_trading_day
 
@@ -86,9 +86,13 @@ def enrich_loser(loser):
     loser["spy_day_of_loss_intraday_percent_change"] = (
         spy_day_of_loss['c'] - spy_day_of_loss['o']) / spy_day_of_loss['o']
 
-    # 100ema
+    # moving averages
     enrich_with_ema(loser, n=100)
     enrich_with_ema(loser, n=50)
+
+    # atr
+    enrich_with_atr(loser, n=14)
+
     #
     # ADX
     #
@@ -110,6 +114,17 @@ def enrich_with_ema(loser, n, field='c'):
     emas = ema_of(list(map(lambda c: c[field], reversed(candles))))
 
     loser[f"{n}ema"] = emas[0]
+
+
+def enrich_with_atr(loser, n):
+    ticker = loser["loser_day_of_loss"]["T"]
+    day_of_loss = loser["day_of_loss"]
+    candles = get_last_n_candles(day_of_loss, ticker, n=n)
+    if not candles:
+        return
+    atrs = get_atr(list(reversed(candles)))
+
+    loser[f"{n}atr"] = atrs[0]
 
 
 def enrich_loser_with_adx(loser):
@@ -143,6 +158,7 @@ biggest_losers_csv_headers = [
     #
     "50ema",
     "100ema",
+    "14atr",
     #
     "open_day_after",
     "high_day_after",
@@ -209,6 +225,7 @@ def prepare_biggest_losers_csv(path, start_date, end_date):
                 # day of loss indicators
                 biggest_loser.get("50ema", ""),
                 biggest_loser.get("100ema", ""),
+                biggest_loser.get("14atr", ""),
                 # day_after stats
                 loser_day_after['o'],
                 loser_day_after['h'],

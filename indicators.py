@@ -23,7 +23,7 @@ def ema_of(values):
 
 def get_atr(candles):
     """
-    Returns a list of average true range values.
+    Returns a list of average true range values. Last should be most recent.
     """
     true_ranges = []
     for i in range(1, len(candles)):
