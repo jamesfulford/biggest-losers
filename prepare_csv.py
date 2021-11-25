@@ -118,69 +118,68 @@ biggest_losers_csv_headers = [
 
 
 def prepare_biggest_losers_csv(path):
-    try:
-        os.remove(path)
-    except:
-        pass
-
-    def write_to_csv(line):
-        with open(path, "a") as f:
-            f.write(line + "\n")
-    write_to_csv(",".join(biggest_losers_csv_headers))
-
     start_date = date(2019, 11, 18)
     end_date = date.today()
 
     biggest_losers = get_all_biggest_losers_with_day_after(
         start_date, end_date)
-    for loser in biggest_losers:
-        enrich_biggest_loser(loser)
 
-    for biggest_loser in biggest_losers:
-        day_of_loss = biggest_loser["day_of_loss"]
-        day_after = biggest_loser["day_after"]
-        loser_day_of_loss = biggest_loser["loser_day_of_loss"]
-        loser_day_after = biggest_loser["loser_day_after"]
-        spy_day_of_loss_percent_change = biggest_loser["spy_day_of_loss_percent_change"]
-        spy_day_of_loss_intraday_percent_change = biggest_loser[
-            "spy_day_of_loss_intraday_percent_change"]
+    try:
+        os.remove(path)
+    except:
+        pass
 
-        intraday_percent_change = (loser_day_of_loss['c'] -
-                                   loser_day_of_loss['o']) / loser_day_of_loss['o']
+    with open(path, "a") as f:
+        def write_to_csv(line):
+            f.write(line + "\n")
 
-        overnight_strategy_roi = (
-            loser_day_after['o'] - loser_day_of_loss['c']) / loser_day_of_loss['c']
+        write_to_csv(",".join(biggest_losers_csv_headers))
 
-        # keep in sync with headers
-        write_to_csv(",".join(list(map(str, [
-            day_of_loss.strftime("%Y-%m-%d"),
-            day_of_loss.weekday(),
-            day_of_loss.month,
-            day_after.strftime("%Y-%m-%d"),
-            loser_day_of_loss['T'],
-            # day_of_loss stats
-            loser_day_of_loss['o'],
-            loser_day_of_loss['h'],
-            loser_day_of_loss['l'],
-            loser_day_of_loss['c'],
-            loser_day_of_loss['v'],
-            loser_day_of_loss["percent_change"],
-            intraday_percent_change,
-            loser_day_of_loss.get("rank", -1),
-            # day_after stats
-            loser_day_after['o'],
-            loser_day_after['h'],
-            loser_day_after['l'],
-            loser_day_after['c'],
-            loser_day_after['v'],
-            # spy
-            spy_day_of_loss_percent_change,
-            spy_day_of_loss_intraday_percent_change,
-            # results
-            overnight_strategy_roi,
-            1 if overnight_strategy_roi > 0 else 0,
-            overnight_strategy_roi > 0,
-        ]))))
+        for biggest_loser in biggest_losers:
+            day_of_loss = biggest_loser["day_of_loss"]
+            day_after = biggest_loser["day_after"]
+            loser_day_of_loss = biggest_loser["loser_day_of_loss"]
+            loser_day_after = biggest_loser["loser_day_after"]
+            spy_day_of_loss_percent_change = biggest_loser["spy_day_of_loss_percent_change"]
+            spy_day_of_loss_intraday_percent_change = biggest_loser[
+                "spy_day_of_loss_intraday_percent_change"]
+
+            intraday_percent_change = (loser_day_of_loss['c'] -
+                                       loser_day_of_loss['o']) / loser_day_of_loss['o']
+
+            overnight_strategy_roi = (
+                loser_day_after['o'] - loser_day_of_loss['c']) / loser_day_of_loss['c']
+
+            # keep in sync with headers
+            write_to_csv(",".join(list(map(str, [
+                day_of_loss.strftime("%Y-%m-%d"),
+                day_of_loss.weekday(),
+                day_of_loss.month,
+                day_after.strftime("%Y-%m-%d"),
+                loser_day_of_loss['T'],
+                # day_of_loss stats
+                loser_day_of_loss['o'],
+                loser_day_of_loss['h'],
+                loser_day_of_loss['l'],
+                loser_day_of_loss['c'],
+                loser_day_of_loss['v'],
+                loser_day_of_loss["percent_change"],
+                intraday_percent_change,
+                loser_day_of_loss.get("rank", -1),
+                # day_after stats
+                loser_day_after['o'],
+                loser_day_after['h'],
+                loser_day_after['l'],
+                loser_day_after['c'],
+                loser_day_after['v'],
+                # spy
+                spy_day_of_loss_percent_change,
+                spy_day_of_loss_intraday_percent_change,
+                # results
+                overnight_strategy_roi,
+                1 if overnight_strategy_roi > 0 else 0,
+                overnight_strategy_roi > 0,
+            ]))))
 
 
 def main():
