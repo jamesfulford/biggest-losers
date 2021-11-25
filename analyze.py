@@ -243,28 +243,34 @@ def build_criteria_set():
         #     "* monday": lambda _: True,
         # },
 
-        "doulikeq1": {
-            "!q1": lambda t: (t["day_of_loss"].month - 1) // 4 != 0,
-            "*q1": lambda _: True,
-        },
-        "doulikeq2": {
-            "!q2": lambda t: (t["day_of_loss"].month - 1) // 4 != 1,
-            "*q2": lambda _: True,
-        },
-        "doulikeq3": {
-            "!q3": lambda t: (t["day_of_loss"].month - 1) // 4 != 2,
-            "*q3": lambda _: True,
-        },
-        "doulikeq4": {
-            "!q4": lambda t: (t["day_of_loss"].month - 1) // 4 != 3,
-            "*q4": lambda _: True,
-        },
+        # "doulikeq1": {
+        #     "!q1": lambda t: (t["day_of_loss"].month - 1) // 4 != 0,
+        #     "*q1": lambda _: True,
+        # },
+        # "doulikeq2": {
+        #     "!q2": lambda t: (t["day_of_loss"].month - 1) // 4 != 1,
+        #     "*q2": lambda _: True,
+        # },
+        # "doulikeq3": {
+        #     "!q3": lambda t: (t["day_of_loss"].month - 1) // 4 != 2,
+        #     "*q3": lambda _: True,
+        # },
+        # "doulikeq4": {
+        #     "!q4": lambda t: (t["day_of_loss"].month - 1) // 4 != 3,
+        #     "*q4": lambda _: True,
+        # },
 
         "ticker_is_warrant": {
             # "no w": lambda t: not is_warrant(t),
             "only w": lambda t: is_warrant(t),
-            # "*w": lambda _: True,
+            "*w": lambda _: True,
         },
+
+        "is_holiday": {
+            # "! holiday": lambda l: not l["overnight_has_holiday_bool"],
+            ":) holiday": lambda l: l["overnight_has_holiday_bool"],
+            # "* holiday": lambda _: True,
+        }
     }
 
 
