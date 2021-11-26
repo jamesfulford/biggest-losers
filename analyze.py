@@ -3,12 +3,9 @@ import os
 import itertools
 
 from cache import read_json_cache, write_json_cache
+from criteria import is_warrant
 
 HOME = os.environ['HOME']
-
-
-def is_warrant(t):
-    return (t["ticker"].upper().endswith("W") or ".WS" in t["ticker"].upper())
 
 
 def get_lines_from_biggest_losers_csv(path):
@@ -208,8 +205,8 @@ def build_criteria_set():
             # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
             "* spy": lambda _: True,
         }, "dollar_volume_day_of_loss": {
-            # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
-            # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
+            '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
             '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
             # NOTE: this has GREAT results, but it would be hard to enter/exit
             # '* $vol': lambda _: True,
@@ -217,8 +214,8 @@ def build_criteria_set():
             "p < 1": lambda t: t["close_day_of_loss"] < 1,
             "p < 3": lambda t: t["close_day_of_loss"] < 3,
             "p < 5": lambda t: t["close_day_of_loss"] < 5,
-            # "p < 10": lambda t: t["close_day_of_loss"] < 10,
-            # "p < 20": lambda t: t["close_day_of_loss"] < 20,
+            "p < 10": lambda t: t["close_day_of_loss"] < 10,
+            "p < 20": lambda t: t["close_day_of_loss"] < 20,
             # tried a few >, but it was too restrictive
             "all $": lambda _: True,
         },
@@ -261,9 +258,9 @@ def build_criteria_set():
         # },
 
         "ticker_is_warrant": {
-            # "no w": lambda t: not is_warrant(t),
-            "only w": lambda t: is_warrant(t),
-            "*w": lambda _: True,
+            "no w": lambda t: not is_warrant(t["ticker"]),
+            # "only w": lambda t: is_warrant(t["ticker"]),
+            # "*w": lambda _: True,
         },
 
         # "is_holiday": {
