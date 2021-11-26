@@ -197,16 +197,33 @@ def build_criteria_set():
         intraday_percent_change_day_of_loss[f"intr<{i}"] = build_intraday_percent_change_day_of_loss(
             percent)
 
+    # close_to_close_percent_change_day_of_loss
+    close_to_close_percent_change_day_of_loss = {
+        "change% *": lambda _: True,
+    }
+
+    def build_close_to_close_percent_change_day_of_loss(percent):
+        def close_to_close_percent_change_day_of_loss(t):
+            return t["close_to_close_percent_change_day_of_loss"] < percent
+        return close_to_close_percent_change_day_of_loss
+
+    for i in range(-50, -10, 5):
+        percent = i / 100
+        close_to_close_percent_change_day_of_loss[f"change%<{i}"] = build_close_to_close_percent_change_day_of_loss(
+            percent)
+
     return {
-        "rank_day_of_loss": rank_day_of_loss, "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
+        "rank_day_of_loss": rank_day_of_loss,
+        "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
+        "close_to_close_percent_change_day_of_loss": close_to_close_percent_change_day_of_loss,
         "spy_day_of_loss_percent_change": {
             # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,  # very red day
             # not big happy day
             # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
             "* spy": lambda _: True,
         }, "dollar_volume_day_of_loss": {
-            '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
-            '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
+            # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
             '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
             # NOTE: this has GREAT results, but it would be hard to enter/exit
             # '* $vol': lambda _: True,
@@ -214,11 +231,20 @@ def build_criteria_set():
             "p < 1": lambda t: t["close_day_of_loss"] < 1,
             "p < 3": lambda t: t["close_day_of_loss"] < 3,
             "p < 5": lambda t: t["close_day_of_loss"] < 5,
-            "p < 10": lambda t: t["close_day_of_loss"] < 10,
-            "p < 20": lambda t: t["close_day_of_loss"] < 20,
+            # "p < 10": lambda t: t["close_day_of_loss"] < 10,
+            # "p < 20": lambda t: t["close_day_of_loss"] < 20,
             # tried a few >, but it was too restrictive
             "all $": lambda _: True,
+        }, "ticker_is_warrant": {
+            # "no w": lambda t: not is_warrant(t["ticker"]),
+            "only w": lambda t: is_warrant(t["ticker"]),
+            # "*w": lambda _: True,
         },
+
+        #
+        # Days of the week
+        #
+
         # "doulikefriday": {
         #     "! friday": lambda t: t["day_of_loss"].weekday() != 4,
         #     "* friday": lambda _: True,
@@ -240,6 +266,10 @@ def build_criteria_set():
         #     "* monday": lambda _: True,
         # },
 
+        #
+        # Quarters of the year
+        #
+
         # "doulikeq1": {
         #     "!q1": lambda t: (t["day_of_loss"].month - 1) // 4 != 0,
         #     "*q1": lambda _: True,
@@ -257,17 +287,34 @@ def build_criteria_set():
         #     "*q4": lambda _: True,
         # },
 
-        "ticker_is_warrant": {
-            "no w": lambda t: not is_warrant(t["ticker"]),
-            # "only w": lambda t: is_warrant(t["ticker"]),
-            # "*w": lambda _: True,
-        },
+        #
+        # Holidays
+        #
 
         # "is_holiday": {
         #     "! holiday": lambda l: not l["overnight_has_holiday_bool"],
         #     ":) holiday": lambda l: l["overnight_has_holiday_bool"],
         #     "* holiday": lambda _: True,
         # }
+
+        #
+        # EMAs
+        #
+
+        # "100ema": {
+        #     ">100ema": lambda t: t["100ema"] and t["100ema"] > t["close_day_of_loss"],
+        #     "<100ema": lambda t: t["100ema"] and t["100ema"] < t["close_day_of_loss"],
+        #     "has 100ema": lambda t: t["100ema"] is not None,
+        #     # "*100ema": lambda _: True,
+        # },
+
+        # "50ema": {
+        #     ">50ema": lambda t: t["50ema"] and t["50ema"] > t["close_day_of_loss"],
+        #     "<50ema": lambda t: t["50ema"] and t["50ema"] < t["close_day_of_loss"],
+        #     "has 50ema": lambda t: t["50ema"] is not None,
+        #     # "*50ema": lambda _: True,
+        # },
+
     }
 
 
