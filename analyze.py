@@ -266,11 +266,11 @@ def build_criteria_set():
             "*w": lambda _: True,
         },
 
-        "is_holiday": {
-            # "! holiday": lambda l: not l["overnight_has_holiday_bool"],
-            ":) holiday": lambda l: l["overnight_has_holiday_bool"],
-            # "* holiday": lambda _: True,
-        }
+        # "is_holiday": {
+        #     "! holiday": lambda l: not l["overnight_has_holiday_bool"],
+        #     ":) holiday": lambda l: l["overnight_has_holiday_bool"],
+        #     "* holiday": lambda _: True,
+        # }
     }
 
 
