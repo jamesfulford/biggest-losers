@@ -361,7 +361,7 @@ def print_out_interesting_results():
                 criteria_set["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
 
 
-def try_hybrid_model(path, baseline_start_date, is_quality_pocket):
+def get_widest_criteria_with_results():
     criteria_results = read_json_cache("modelv0")
 
     widest_criteria = criteria_results[0]
@@ -369,9 +369,11 @@ def try_hybrid_model(path, baseline_start_date, is_quality_pocket):
         widest_criteria = criteria_result if criteria_result["results"][
             "plays"] > widest_criteria["results"]["plays"] else widest_criteria
 
-    baseline_results = widest_criteria["results"]
-    print("baseline", baseline_results)
-    print()
+    return widest_criteria
+
+
+def try_hybrid_model(path, baseline_start_date, is_quality_pocket):
+    criteria_results = read_json_cache("modelv0")
 
     quality_pockets = list(filter(is_quality_pocket, criteria_results))
 
@@ -398,8 +400,47 @@ def try_hybrid_model(path, baseline_start_date, is_quality_pocket):
                 hybrid_model_trades.append(line)
                 break
 
-    print(f"hybrid with {len(quality_pockets)} pockets",
-          evaluate_results(hybrid_model_trades))
+    results = evaluate_results(hybrid_model_trades)
+    if not results:
+        return None
+
+    results["hybrid"] = {
+        "pockets": len(quality_pockets),
+    }
+
+    return results, quality_pockets
+
+
+def build_pocket_quality_criteria(min_plays=None, min_avg_roi=None, min_win_percent=None, min_g_roi=None, min_a_roi=None):
+    criterion = []
+
+    if min_plays:
+        criterion.append(
+            lambda pocket: pocket["results"]["plays"] >= min_plays)
+
+    if min_avg_roi:
+        criterion.append(
+            lambda pocket: pocket["results"]["avg_roi"] >= min_avg_roi)
+
+    if min_win_percent:
+        criterion.append(
+            lambda pocket: pocket["results"]["win%"] >= min_win_percent)
+
+    if min_g_roi:
+        criterion.append(
+            lambda pocket: pocket["results"]["g_roi"] >= min_g_roi)
+
+    if min_a_roi:
+        criterion.append(
+            lambda pocket: pocket["results"]["a_roi"] >= min_a_roi)
+
+    def is_quality_pocket(pocket):
+        return all((
+            criteria(pocket)
+            for criteria in criterion
+        ))
+
+    return is_quality_pocket
 
 
 if __name__ == "__main__":
@@ -408,10 +449,25 @@ if __name__ == "__main__":
     # TODO: test based off of total loss / drawdown
     # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
 
-    analyze_biggest_losers_csv(path, baseline_start_date)
+    # analyze_biggest_losers_csv(path, baseline_start_date)
+    print_out_interesting_results()
 
-    def is_quality_pocket(pocket):
-        return pocket["results"]["plays"] > 50 and pocket["results"]["avg_roi"] > .05 and pocket["results"]["win%"] > .5
+    criteria_results = read_json_cache("modelv0")
+    baseline_results = get_widest_criteria_with_results()["results"]
+    print(f"baseline with {len(criteria_results)} pockets", baseline_results)
+    print()
 
-    try_hybrid_model(path, baseline_start_date, is_quality_pocket)
-    # print_out_interesting_results()
+    is_quality_pocket = build_pocket_quality_criteria(
+        min_g_roi=30.0, min_win_percent=.6, min_avg_roi=.02)
+
+    # TODO: try a hybrid model if pockets are non-overlapping and then use quality + min pocket criteria
+
+    results, pockets = try_hybrid_model(
+        path, baseline_start_date, is_quality_pocket)
+
+    for pocket in pockets:
+        print("  ", "  ".join(
+            pocket["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", pocket["results"].items()))))
+
+    print()
+    print("hybrid", results)
