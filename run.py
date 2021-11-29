@@ -21,7 +21,8 @@ def buy_biggest_losers_at_close(today):
 
     losers = get_biggest_losers(today) or []
 
-    print(losers[0])
+    for loser in losers:
+        print(loser)
 
     weekday = today.weekday()  # 0 is Monday, 4 is Friday
     if weekday not in acceptable_days:
