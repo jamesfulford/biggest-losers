@@ -124,7 +124,7 @@ def analyze_biggest_losers_csv(path, baseline_start_date):
     end_time = datetime.now()
     print('actual time:', end_time-start_time)
 
-    write_json_cache("modelv0", criteria_results)
+    return criteria_results
 
 
 def evaluate_results(lines):
@@ -185,15 +185,17 @@ def evaluate_results(lines):
 def build_criteria_set():
 
     # rank_day_of_loss
-    rank_day_of_loss = {
-        "all rank": lambda _: True,
-    }
+    rank_day_of_loss = {}
 
     def build_rank_criterion(rank):
         def rank_criterion(t):
             return t["rank_day_of_loss"] <= rank
         return rank_criterion
 
+    # top 5
+    # top 10
+    # top 15
+    # top 20 (all)
     for i in range(5, 21, 5):
         rank_day_of_loss[f"top {i}"] = build_rank_criterion(i)
 
@@ -207,6 +209,13 @@ def build_criteria_set():
             return t["intraday_percent_change_day_of_loss"] < percent
         return intraday_percent_change_day_of_loss
 
+    # intraday loss over -20%
+    # intraday loss over -15%
+    # intraday loss over -10%
+    # intraday loss over -5%
+    # intraday loss
+    # intraday gain under 5%
+    # intraday gain under 10%
     for i in range(-20, 10, 5):
         percent = i / 100
         intraday_percent_change_day_of_loss[f"intr<{i}"] = build_intraday_percent_change_day_of_loss(
@@ -222,6 +231,15 @@ def build_criteria_set():
             return t["close_to_close_percent_change_day_of_loss"] < percent
         return close_to_close_percent_change_day_of_loss
 
+    # loss over 50%
+    # loss over 45%
+    # loss over 40%
+    # loss over 35%
+    # loss over 30%
+    # loss over 25%
+    # loss over 20%
+    # loss over 15%
+    # loss over 10%
     for i in range(-50, -10, 5):
         percent = i / 100
         close_to_close_percent_change_day_of_loss[f"change%<{i}"] = build_close_to_close_percent_change_day_of_loss(
@@ -337,11 +355,9 @@ def build_criteria_set():
     }
 
 
-def print_out_interesting_results():
-    criteria_results = read_json_cache("modelv0")
-
-    widest_criteria = criteria_results[0]
-    for criteria_result in criteria_results:
+def print_out_interesting_results(pockets):
+    widest_criteria = pockets[0]
+    for criteria_result in pockets:
         widest_criteria = criteria_result if criteria_result["results"][
             "plays"] > widest_criteria["results"]["plays"] else widest_criteria
 
@@ -351,7 +367,7 @@ def print_out_interesting_results():
 
     for key_criteria in ["a_roi", "g_roi"]:
         passing_criterion_sets = list(filter(
-            lambda r: r["results"][key_criteria] > baseline_results[key_criteria], criteria_results))
+            lambda r: r["results"][key_criteria] > baseline_results[key_criteria], pockets))
 
         show_top = 3
         print(f"subsets which outperform baseline on {key_criteria}:", len(
@@ -361,21 +377,17 @@ def print_out_interesting_results():
                 criteria_set["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
 
 
-def get_widest_criteria_with_results():
-    criteria_results = read_json_cache("modelv0")
-
-    widest_criteria = criteria_results[0]
-    for criteria_result in criteria_results:
+def get_widest_criteria_with_results(pockets):
+    widest_criteria = pockets[0]
+    for criteria_result in pockets:
         widest_criteria = criteria_result if criteria_result["results"][
             "plays"] > widest_criteria["results"]["plays"] else widest_criteria
 
     return widest_criteria
 
 
-def try_hybrid_model(path, baseline_start_date, is_quality_pocket):
-    criteria_results = read_json_cache("modelv0")
-
-    quality_pockets = list(filter(is_quality_pocket, criteria_results))
+def try_hybrid_model(pockets, path, baseline_start_date, is_quality_pocket):
+    quality_pockets = list(filter(is_quality_pocket, pockets))
 
     lines = get_lines_from_biggest_losers_csv(path, baseline_start_date)
 
@@ -449,12 +461,19 @@ if __name__ == "__main__":
     # TODO: test based off of total loss / drawdown
     # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
 
-    # analyze_biggest_losers_csv(path, baseline_start_date)
-    print_out_interesting_results()
+    write_new_model = False
+    model_cache_entry = "modelv0"
 
-    criteria_results = read_json_cache("modelv0")
-    baseline_results = get_widest_criteria_with_results()["results"]
-    print(f"baseline with {len(criteria_results)} pockets", baseline_results)
+    if write_new_model:
+        pockets = analyze_biggest_losers_csv(
+            path, baseline_start_date)
+        write_json_cache(model_cache_entry, pockets)
+    else:
+        pockets = read_json_cache(model_cache_entry)
+
+    print_out_interesting_results(pockets)
+    baseline_results = get_widest_criteria_with_results(pockets)["results"]
+    print(f"baseline with {len(pockets)} pockets", baseline_results)
     print()
 
     is_quality_pocket = build_pocket_quality_criteria(
@@ -462,8 +481,12 @@ if __name__ == "__main__":
 
     # TODO: try a hybrid model if pockets are non-overlapping and then use quality + min pocket criteria
 
-    results, pockets = try_hybrid_model(
-        path, baseline_start_date, is_quality_pocket)
+    hybrid_results_pockets = try_hybrid_model(
+        pockets, path, baseline_start_date, is_quality_pocket)
+    if not hybrid_results_pockets:
+        print("no hybrid model")
+        exit(1)
+    results, pockets = hybrid_results_pockets
 
     for pocket in pockets:
         print("  ", "  ".join(
