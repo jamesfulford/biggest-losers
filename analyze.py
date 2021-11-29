@@ -259,9 +259,9 @@ def build_criteria_set():
             "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
             "* spy": lambda _: True,
         }, "dollar_volume_day_of_loss": {
-            # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
             # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
-            '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
+            # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
             # NOTE: this has GREAT results, but it would be hard to enter/exit
             # '* $vol': lambda _: True,
         }, "close_day_of_loss": {
@@ -274,8 +274,8 @@ def build_criteria_set():
             "all $": lambda _: True,
         }, "ticker_is_warrant": {
             "no w": lambda t: not is_warrant(t["ticker"]),
-            "only w": lambda t: is_warrant(t["ticker"]),
-            "*w": lambda _: True,
+            # "only w": lambda t: is_warrant(t["ticker"]),
+            # "*w": lambda _: True,
         },
 
         #
@@ -461,8 +461,8 @@ if __name__ == "__main__":
     # TODO: test based off of total loss / drawdown
     # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
 
-    write_new_model = False
-    model_cache_entry = "modelv0"
+    write_new_model = True
+    model_cache_entry = "modelv1"
 
     if write_new_model:
         pockets = analyze_biggest_losers_csv(
