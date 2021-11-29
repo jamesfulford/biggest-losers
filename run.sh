@@ -2,9 +2,9 @@
 
 # in crontab:
 # To Buy:
-# 45 15 * * * cd /Users/jamesfulford/scanners && ./run.sh >> /tmp/run.log 2>&1
+# 45 15 * * * cd /Users/jamesfulford/scanners && ./run.sh buy >> /tmp/run.log 2>&1
 # To Sell:
-# 0 20 * * * cd /Users/jamesfulford/scanners && ./run.sh >> /tmp/run.log 2>&1
+# 0 20 * * * cd /Users/jamesfulford/scanners && ./run.sh sell >> /tmp/run.log 2>&1
 
 echo
 echo "###"
@@ -16,7 +16,7 @@ echo
 
 mkdir -p $HOME/data
 
-. paper.env ; python3 run.py "$1"
+. paper.env ; python3 run.py "$1" "$2"
 echo "(return code was $?)"
 
 H=$(date +%H)

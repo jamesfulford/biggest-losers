@@ -68,32 +68,34 @@ def buy_biggest_losers_at_close(today):
 
 
 if __name__ == '__main__':
-    now = datetime.now()
+    today = datetime.today()
+
     import sys
+
+    # buy or sell logic
+    action = sys.argv[1]
+    valid_actions = ['buy', 'sell']
+    if action not in valid_actions:
+        print(f"invalid action, must be one of {valid_actions}")
+        exit(1)
+
+    # allow reading `today` from CLI $2
     datestr = ""
     try:
-        datestr = sys.argv[1]
+        datestr = sys.argv[2]
     except:
         pass
 
     if datestr:
         try:
-            now = datetime.strptime(datestr, '%Y-%m-%d %H:%M:%S')
+            today = datetime.strptime(datestr, '%Y-%m-%d').date()
         except Exception as e:
             print(
-                f"error occurred while parsing datetime, will continue with {now}", e)
+                f"error occurred while parsing datetime, will continue with {today}", e)
 
-    today = now.date()
-    hour = now.hour
+    print(f"running on date {today} with action {action}")
 
-    print(
-        f"running on date {today} at hour {hour} in local timezone (should be America/New_York)")
-
-    if hour >= 15 and hour < 16:
-        print("3-4pm, buying biggest losers")
+    if action == 'buy':
         buy_biggest_losers_at_close(today)
-    elif hour >= 19 or hour < 15:
-        print("closing positions")
+    elif action == 'sell':
         print(liquidate())
-    else:
-        print("not time to do anything yet")
