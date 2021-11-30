@@ -1,8 +1,8 @@
 from grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_aggs
 
 
-def get_biggest_losers(today, top_n=20):
-    today_grouped_aggs = get_today_grouped_aggs(today)
+def get_biggest_losers(today, top_n=20, bust_cache=False):
+    today_grouped_aggs = get_today_grouped_aggs(today, bust_cache=bust_cache)
     if not today_grouped_aggs:
         print(f'no data for {today}, cannot fetch biggest losers')
         return None

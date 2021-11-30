@@ -4,7 +4,7 @@ import time
 import requests
 from functools import lru_cache
 
-from cache import read_json_cache, write_json_cache
+from cache import delete_json_cache, read_json_cache, write_json_cache
 from trading_day import previous_trading_day
 
 
@@ -13,7 +13,7 @@ HOME = os.environ['HOME']
 
 
 @lru_cache(maxsize=30)
-def fetch_grouped_aggs_with_cache(day):
+def fetch_grouped_aggs_with_cache(day, bust_cache=False):
 
     strftime = day.strftime("%Y-%m-%d")
 
@@ -21,6 +21,9 @@ def fetch_grouped_aggs_with_cache(day):
     key = f"grouped_aggs_{strftime}"
     if day == date.today() and datetime.now().hour < 16:
         key = f"grouped_aggs_{strftime}.intraday"
+
+    if bust_cache:
+        delete_json_cache(key)
 
     cached = read_json_cache(key)
     if cached:
@@ -68,8 +71,9 @@ def get_last_trading_day_grouped_aggs(today):
 
 
 @lru_cache(maxsize=130)
-def get_today_grouped_aggs(today):
-    today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(today)
+def get_today_grouped_aggs(today, bust_cache=False):
+    today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(
+        today, bust_cache=bust_cache)
 
     # skip days where API returns no data (like trading holiday)
     if 'results' not in today_raw_grouped_aggs:

@@ -19,7 +19,7 @@ def buy_biggest_losers_at_close(today):
 
     use_geometric = False
 
-    losers = get_biggest_losers(today) or []
+    losers = get_biggest_losers(today, bust_cache=True) or []
 
     for loser in losers:
         print(loser)
