@@ -7,15 +7,14 @@ from losers import get_biggest_losers
 
 
 def buy_biggest_losers_at_close(today):
-    #   all rank  intr<-10  * spy  $50k vol  p < 5  no w                 | a_roi=4.326 g_roi=2.879 plays=481 avg_roi=0.016 win%=0.549 days=191
-
     acceptable_days = [0, 1, 2, 3, 4]
-    dollar_volume_min = 50000
-    closing_price_max = 5.00
-    intraday_change_max = -0.10  # loss of 10% or greater loss (lesser number)
-    rank_max = 20  # basically any rank
+    dollar_volume_min = 0
+    closing_price_max = 3.00
+    intraday_change_max = 1e10  # basically any intraday change
+    rank_max = 10  # top 10
     spy_change_upper_threshold = 1.00  # basically no limit
-    def warrant_criteria(c): return not is_warrant(c["T"])  # no warrants
+    # def warrant_criteria(c): return not is_warrant(c["T"])  # no warrants
+    def warrant_criteria(c): return True  # no warrants
 
     use_geometric = False
 
