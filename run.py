@@ -20,6 +20,14 @@ def buy_biggest_losers_at_close(today):
 
     losers = get_biggest_losers(today, bust_cache=True) or []
 
+    cols = losers[0].keys()
+    print(",".join(cols))
+    for loser in losers:
+        s = ""
+        for col in cols:
+            s += "{},".format(loser[col])
+        print(s)
+
     for loser in losers:
         print(loser)
 
