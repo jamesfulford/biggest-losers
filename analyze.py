@@ -266,11 +266,11 @@ def build_criteria_set():
             "* spy": lambda _: True,
         }, "dollar_volume_day_of_loss": {
             # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
-            '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
+            # '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
             # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
             # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
             # NOTE: this has GREAT results, but it would be hard to enter/exit
-            # '* $vol': lambda _: True,
+            '* $vol': lambda _: True,
         }, "close_day_of_loss": {
             # "p < 1": lambda t: t["close_day_of_loss"] < 1,
             "p < 3": lambda t: t["close_day_of_loss"] < 3,
