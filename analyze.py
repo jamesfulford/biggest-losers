@@ -154,7 +154,9 @@ def evaluate_results(lines):
 
     trading_days = 0
     arithmetic_roi = 0
+    geometric_current_balance_thirds = 1
     geometric_current_balance = 1
+    geometric_current_balance_leveraged_4x = 1
     for _day, trades in trades_by_day.items():
         trading_days += 1
 
@@ -167,14 +169,18 @@ def evaluate_results(lines):
         arithmetic_roi += today_roi
 
         # reinvest returns, every day invest 1/3 of balance (cash account)
-        geometric_current_balance = (
-            1/3) * geometric_current_balance * (1 + today_roi) + (2/3) * geometric_current_balance
+        geometric_current_balance_thirds = (
+            1/3) * geometric_current_balance_thirds * (1 + today_roi) + (2/3) * geometric_current_balance_thirds
+        geometric_current_balance *= 1 + today_roi
+        geometric_current_balance_leveraged_4x *= 1 + (today_roi * 4)
 
     # TODO: calculate drawdown and other stats
 
     return {
         "a_roi": arithmetic_roi,
         "g_roi": geometric_current_balance - 1,
+        "g_roi3": geometric_current_balance_thirds - 1,
+        "g_roix4": geometric_current_balance_leveraged_4x - 1,
         "plays": plays,
         "avg_roi": average_roi,
         "win%": win_rate,
@@ -196,7 +202,7 @@ def build_criteria_set():
     # top 10
     # top 15
     # top 20 (all)
-    for i in range(5, 21, 5):
+    for i in [10]:
         rank_day_of_loss[f"top {i}"] = build_rank_criterion(i)
 
     # intraday_percent_change_day_of_loss
@@ -247,35 +253,36 @@ def build_criteria_set():
 
     return {
         "rank_day_of_loss": rank_day_of_loss,
-        "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
-        "close_to_close_percent_change_day_of_loss": close_to_close_percent_change_day_of_loss,
+        # "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
+        # "close_to_close_percent_change_day_of_loss": close_to_close_percent_change_day_of_loss,
         "spy_day_of_loss_percent_change": {
             # very red day
-            "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
-            "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
+            # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
+            # "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
             "spy down": lambda t: t["spy_day_of_loss_percent_change"] < 0,
-            "spy up": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+            # "spy up": lambda t: t["spy_day_of_loss_percent_change"] > 0,
             # not big happy day
-            "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+            # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
             "* spy": lambda _: True,
         }, "dollar_volume_day_of_loss": {
-            '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
             # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
             # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
             # NOTE: this has GREAT results, but it would be hard to enter/exit
             # '* $vol': lambda _: True,
         }, "close_day_of_loss": {
-            "p < 1": lambda t: t["close_day_of_loss"] < 1,
+            # "p < 1": lambda t: t["close_day_of_loss"] < 1,
             "p < 3": lambda t: t["close_day_of_loss"] < 3,
-            "p < 5": lambda t: t["close_day_of_loss"] < 5,
-            "p < 10": lambda t: t["close_day_of_loss"] < 10,
-            "p < 20": lambda t: t["close_day_of_loss"] < 20,
+            # "p < 5": lambda t: t["close_day_of_loss"] < 5,
+            # "p < 10": lambda t: t["close_day_of_loss"] < 10,
+            # "p < 20": lambda t: t["close_day_of_loss"] < 20,
             # tried a few >, but it was too restrictive
             "all $": lambda _: True,
         }, "ticker_is_warrant": {
-            "no w": lambda t: not is_warrant(t["ticker"]),
+            # "no w": lambda t: not is_warrant(t["ticker"]),
             # "only w": lambda t: is_warrant(t["ticker"]),
-            # "*w": lambda _: True,
+            "*w": lambda _: True,
         },
 
         #
@@ -328,20 +335,41 @@ def build_criteria_set():
         # Holidays
         #
 
-        "is_holiday": {
-            # "! holiday": lambda l: not l["overnight_has_holiday_bool"],
-            ":) holiday": lambda l: l["overnight_has_holiday_bool"],
-            "* holiday": lambda _: True,
-        },
+        # "is_holiday": {
+        #     "! holiday": lambda l: not l["overnight_has_holiday_bool"],
+        # ":) holiday": lambda l: l["overnight_has_holiday_bool"],
+        # "* holiday": lambda _: True,
+        # },
+
+
+        # TODO:
+        # - "red day"
+        # - "penny stock" (under $3)
+        # - "ADX"
+        # - "Detrended Price Oscillator" (DPO)
+        # - "Low float"
+        # - No transactions on shabbat or holy days
+        #   (can read list of days to skip, script can generate from hebcal or something)
+        # - "leveraged" (we think it can mean an account, not necessarily warrant or option)
+        # - "ema" (showed 100ema, might mean 200ema)
+
+        # "a very tight float, trading well above the 100-day moving average, 90Million in cash, and a pull-back buy opportunity that makes this stock our #1 pick for December. Happy Trading! Reply STOP to end"
+        #  - "a very tight float" TODO
+        #  - "trading well above the 100-day moving average" TODO what does "well above" mean?
+        #  - "90Million in cash" TODO what does this mean? Is it balance sheet, or is it dollar volume?
+        #  - "a pull-back buy opportunity" we think buying overnight droppers applies to this
+
 
         #
         # EMAs
         #
 
+
         "100ema": {
             ">100ema": lambda t: t["100ema"] and t["100ema"] > t["close_day_of_loss"],
-            "<100ema": lambda t: t["100ema"] and t["100ema"] < t["close_day_of_loss"],
-            "has 100ema": lambda t: t["100ema"] is not None,
+            # TODO well over 100ema?
+            # "<100ema": lambda t: t["100ema"] and t["100ema"] < t["close_day_of_loss"],
+            # "has 100ema": lambda t: t["100ema"] is not None,
             "*100ema": lambda _: True,
         },
 
@@ -365,11 +393,11 @@ def print_out_interesting_results(pockets):
     print("baseline", baseline_results)
     print()
 
-    for key_criteria in ["a_roi", "g_roi"]:
+    for key_criteria in ["g_roix4"]:
         passing_criterion_sets = list(filter(
             lambda r: r["results"][key_criteria] > baseline_results[key_criteria], pockets))
 
-        show_top = 3
+        show_top = 10
         print(f"subsets which outperform baseline on {key_criteria}:", len(
             passing_criterion_sets))
         for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]:
@@ -462,7 +490,7 @@ if __name__ == "__main__":
     # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
 
     write_new_model = True
-    model_cache_entry = "modelv1"
+    model_cache_entry = "modelv2"
 
     if write_new_model:
         pockets = analyze_biggest_losers_csv(
@@ -472,12 +500,14 @@ if __name__ == "__main__":
         pockets = read_json_cache(model_cache_entry)
 
     print_out_interesting_results(pockets)
+    print()
+    print("-" * 80)
     baseline_results = get_widest_criteria_with_results(pockets)["results"]
     print(f"baseline with {len(pockets)} pockets", baseline_results)
     print()
 
     is_quality_pocket = build_pocket_quality_criteria(
-        min_g_roi=30.0, min_win_percent=.6, min_avg_roi=.02)
+        min_win_percent=.5, min_avg_roi=.05, min_plays=30)
 
     # TODO: try a hybrid model if pockets are non-overlapping and then use quality + min pocket criteria
 
