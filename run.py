@@ -1,26 +1,11 @@
 from datetime import datetime
-from analyze import is_warrant
 
 from broker import buy_symbol_at_close, get_positions, liquidate
-from grouped_aggs import get_spy_change
 from losers import get_biggest_losers
 
 
-def buy_biggest_losers_at_close(today):
-    acceptable_days = [0, 1, 2, 3, 4]
-    dollar_volume_min = 0
-    closing_price_max = 3.00
-    intraday_change_max = 1e10  # basically any intraday change
-    rank_max = 10  # top 10
-    spy_change_upper_threshold = 1.00  # basically no limit
-    # def warrant_criteria(c): return not is_warrant(c["T"])  # no warrants
-    def warrant_criteria(c): return True  # no warrants
-
-    use_geometric = False
-
-    losers = get_biggest_losers(today, bust_cache=True) or []
-
-    cols = losers[0].keys()
+def print_losers_csv(losers):
+    cols = sorted(losers[0].keys())
     print(",".join(cols))
     for loser in losers:
         s = ""
@@ -28,30 +13,40 @@ def buy_biggest_losers_at_close(today):
             s += "{},".format(loser[col])
         print(s)
 
-    for loser in losers:
-        print(loser)
+    print()
 
-    weekday = today.weekday()  # 0 is Monday, 4 is Friday
-    if weekday not in acceptable_days:
-        print(f"today is not a good day for trading, clearing ticker list.")
-        losers = []
 
-    spy_change = get_spy_change(today)
-    if spy_change > spy_change_upper_threshold:
-        print(
-            f"SPY change is {round(100*spy_change, 1)}%, must be under {round(100*spy_change_upper_threshold, 1)}%, clearing ticker list.")
-        losers = []
+def print_current_positions():
+    positions = get_positions()
+    print('DEBUG: current positions', positions)
 
-    losers = list(filter(lambda l: l["v"] *
-                  l["c"] > dollar_volume_min, losers))
-    losers = list(filter(lambda l: l["c"] < closing_price_max, losers))
-    losers = list(
-        filter(lambda l: ((l["c"] - l["o"]) / l["o"]) < intraday_change_max, losers))
+
+def buy_biggest_losers_at_close(today):
+    closing_price_min = 3.00
+    rank_max = 10  # top 10
+    def warrant_criteria(c): return True  # can be warrants
+    use_geometric = False
+
+    #
+    # Filter losers
+    #
+
+    losers = get_biggest_losers(today, bust_cache=True) or []
+
+    print_losers_csv(losers)
+
+    losers = list(filter(lambda l: l["c"] > closing_price_min, losers))
     losers = list(filter(lambda l: l["rank"] <= rank_max, losers))
     losers = list(filter(warrant_criteria, losers))
 
-    positions = get_positions()
-    print('DEBUG: current positions', positions)
+    print("after applying criteria")
+    print_losers_csv(losers)
+
+    print_current_positions()
+
+    #
+    # Buy losers
+    #
 
     if use_geometric:
         print("have not implemented geometric, exiting")
@@ -60,11 +55,10 @@ def buy_biggest_losers_at_close(today):
     # arithmetic - buy nominal amount of each loser
     # equal weighting
 
-    nominal = 1000
+    nominal = 10000
     # TODO: check purchasing power in case need to reduce quantity
 
     for loser in losers:
-
         quantity = round((nominal / loser['c']) - 0.5)
         print(
             f"Submitting buy order of {loser['T']} {quantity} (current price {loser['c']}, target amount {quantity * loser['c']}) at close")
