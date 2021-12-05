@@ -67,7 +67,7 @@ def get_all_biggest_losers_with_day_after(start_date, end_date):
             total_losers.append(loser)
 
         # go find today's biggest losers
-        previous_day_biggest_losers = get_biggest_losers(day, top_n=20)
+        previous_day_biggest_losers = get_biggest_losers(day, top_n=1000)
 
     return total_losers
 

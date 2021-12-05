@@ -22,8 +22,13 @@ def get_biggest_losers(today, top_n=20, bust_cache=False):
         ticker['percent_change'] = (
             ticker['c'] - previous_day_ticker['c']) / previous_day_ticker['c']
 
-    biggest_losers = sorted(tickers_also_present_yesterday,
-                            key=lambda t: t['percent_change'])[:top_n]
+    biggest_losers = list(
+        filter(lambda t: t['percent_change'] < -.08, tickers_also_present_yesterday))
+    biggest_losers = sorted(biggest_losers,
+                            key=lambda t: t['percent_change'])
+    print(str(today) + "," + str(len(biggest_losers)))
+
+    biggest_losers = biggest_losers[:top_n]
 
     for loser in biggest_losers:
         loser['rank'] = biggest_losers.index(loser) + 1

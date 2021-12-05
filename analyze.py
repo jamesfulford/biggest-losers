@@ -73,6 +73,61 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
     return lines
 
 
+def try_top_10_with_price_over_3(path, baseline_start_date):
+    lines = get_lines_from_biggest_losers_csv(path, baseline_start_date)
+    print(lines[0].keys())
+    lines = list(
+        filter(lambda l: l["close_to_close_percent_change_day_of_loss"] < -.1, lines))
+    lines = list(
+        filter(lambda l: l["close_day_of_loss"] > 3, lines))
+    lines = list(
+        filter(lambda l: l["volume_day_of_loss"] > 1000000, lines))
+
+    lines.sort(key=lambda t: (t["day_of_loss"],
+               t["close_to_close_percent_change_day_of_loss"]))
+
+    def each_day(lines):
+        current_day = lines[0]["day_of_loss"]
+        lines_for_current_day = []
+        for line in lines:
+            day = line["day_of_loss"]
+            if day != current_day:
+                # day has ended
+                yield lines_for_current_day
+                lines_for_current_day = []
+                current_day = day
+
+            lines_for_current_day.append(line)
+
+    for top_n in range(1, 21):
+        trades = []
+        days_with_insufficient_trades = 0
+        for top_losers_of_day in each_day(lines):
+            losers_to_trade = top_losers_of_day[:top_n]
+
+            # print(losers_to_trade[0]["day_of_loss"])
+            # for loser in losers_to_trade:
+            #     print(loser["ticker"], loser["close_to_close_percent_change_day_of_loss"],
+            #           loser["rank_day_of_loss"])
+            # print()
+
+            if len(losers_to_trade) < top_n:
+                days_with_insufficient_trades += 1
+                # print(
+                #     f"WARNING: not enough losers to trade on, continuing with {len(losers_to_trade)} {top_losers_of_day[0]['day_of_loss']}")
+
+            trades.extend(losers_to_trade)
+
+        # default weighting is equally over all trades in a day
+        results = evaluate_results(trades)
+        if top_n == 10:
+            print()
+        print(
+            f"top {top_n} ({days_with_insufficient_trades} days not enough)", results)
+        if top_n == 10:
+            print()
+
+
 def analyze_biggest_losers_csv(path, baseline_start_date):
     lines = get_lines_from_biggest_losers_csv(path, baseline_start_date)
 
@@ -471,9 +526,13 @@ def build_pocket_quality_criteria(min_plays=None, min_avg_roi=None, min_win_perc
 
 
 if __name__ == "__main__":
+    # TODO: test based off of total loss / drawdown
+
     path = f"{HOME}/biggest_losers.csv"
     baseline_start_date = date(2021, 1, 1)
-    # TODO: test based off of total loss / drawdown
+
+    try_top_10_with_price_over_3(path, baseline_start_date)
+    exit(0)
 
     write_new_model = True
     model_cache_entry = "modelv2"
