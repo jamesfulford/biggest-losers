@@ -15,7 +15,7 @@ curl --silent --fail -X PATCH \
     ${ALPACA_URL}/v2/account/configurations \
     -d "{
         \"dtbp_check\": \"both\",
-        \"max_margin_multiplier\": 1,
+        \"max_margin_multiplier\": 4,
         \"fractional_trading\": true,
         \"no_shorting\": true,
         \"suspend_trade\": $suspend_trade,
