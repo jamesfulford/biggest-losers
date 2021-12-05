@@ -5,7 +5,8 @@ from losers import get_biggest_losers
 
 
 def print_losers_csv(losers):
-    cols = sorted(losers[0].keys())
+    # omitting n,t,vw
+    cols = ["T", "rank", "percent_change", "c", "v", "h", "l", "o"]
     print(",".join(cols))
     for loser in losers:
         s = ""
