@@ -346,26 +346,6 @@ def build_criteria_set():
         # "* holiday": lambda _: True,
         # },
 
-
-        # TODO:
-        # - "red day"
-        # - "penny stock" (under $3)
-        # - "ADX"
-        # - "Detrended Price Oscillator" (DPO)
-        # - "Low float"
-        # - No transactions on shabbat or holy days
-        #   (can read list of days to skip, script can generate from hebcal or something)
-        # - "leveraged" (we think it can mean an account, not necessarily warrant or option)
-        # - "ema" (showed 100ema, might mean 200ema)
-        # - IS OTC?
-
-        # "a very tight float, trading well above the 100-day moving average, 90Million in cash, and a pull-back buy opportunity that makes this stock our #1 pick for December. Happy Trading! Reply STOP to end"
-        #  - "a very tight float" TODO
-        #  - "trading well above the 100-day moving average" TODO what does "well above" mean?
-        #  - "90Million in cash" TODO what does this mean? Is it balance sheet, or is it dollar volume?
-        #  - "a pull-back buy opportunity" we think buying overnight droppers applies to this
-
-
         #
         # EMAs
         #
@@ -373,7 +353,6 @@ def build_criteria_set():
 
         # "100ema": {
         #     ">100ema": lambda t: t["100ema"] and t["100ema"] > t["close_day_of_loss"],
-        #     # TODO well over 100ema?
         #     # "<100ema": lambda t: t["100ema"] and t["100ema"] < t["close_day_of_loss"],
         #     # "has 100ema": lambda t: t["100ema"] is not None,
         #     "*100ema": lambda _: True,
@@ -495,7 +474,6 @@ if __name__ == "__main__":
     path = f"{HOME}/biggest_losers.csv"
     baseline_start_date = date(2021, 1, 1)
     # TODO: test based off of total loss / drawdown
-    # TODO: change spreadsheet source to get even more losers, maybe just penny stock with enough volume
 
     write_new_model = True
     model_cache_entry = "modelv2"
