@@ -2,6 +2,7 @@ from grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_ag
 
 
 def get_biggest_losers(today, top_n=20, bust_cache=False):
+    # TODO: remove top_n, just yield
     today_grouped_aggs = get_today_grouped_aggs(today, bust_cache=bust_cache)
     if not today_grouped_aggs:
         print(f'no data for {today}, cannot fetch biggest losers')
@@ -26,7 +27,6 @@ def get_biggest_losers(today, top_n=20, bust_cache=False):
         filter(lambda t: t['percent_change'] < -.08, tickers_also_present_yesterday))
     biggest_losers = sorted(biggest_losers,
                             key=lambda t: t['percent_change'])
-    print(str(today) + "," + str(len(biggest_losers)))
 
     biggest_losers = biggest_losers[:top_n]
 

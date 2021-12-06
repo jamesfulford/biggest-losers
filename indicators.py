@@ -21,6 +21,15 @@ def ema_of(values):
     return ema
 
 
+def current_sma_of(values):
+    """
+    Returns sma of a list of values (order doesn't matter)
+    """
+    n = len(values)
+    s = sum(values)
+    return s / n
+
+
 def get_atr(candles):
     """
     Returns a list of average true range values. Last should be most recent.
