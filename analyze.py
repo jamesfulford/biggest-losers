@@ -82,6 +82,8 @@ def try_top_10_with_price_over_3(path, baseline_start_date):
         filter(lambda l: l["close_day_of_loss"] > 3, lines))
     lines = list(
         filter(lambda l: l["volume_day_of_loss"] > 1000000, lines))
+    lines = list(
+        filter(lambda l: not is_warrant(l["ticker"]), lines))
 
     lines.sort(key=lambda t: (t["day_of_loss"],
                t["close_to_close_percent_change_day_of_loss"]))
