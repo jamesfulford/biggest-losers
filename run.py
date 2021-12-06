@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from broker import buy_symbol_at_close, get_positions, liquidate
+from broker import buy_symbol_at_close, get_account, get_positions, liquidate
 from losers import get_biggest_losers
+from criteria import is_warrant
 
 
 def print_losers_csv(losers):
@@ -23,44 +24,60 @@ def print_current_positions():
 
 
 def buy_biggest_losers_at_close(today):
+    minimum_loss_percent = 0.1  # down at least 10%; aka percent_change < -0.1
+
     closing_price_min = 3.00
-    rank_max = 10  # top 10
-    def warrant_criteria(c): return True  # can be warrants
-    use_geometric = False
+    minimum_volume = 1000000  # at least 1 million
+    def warrant_criteria(c): return not is_warrant(c["T"])
+
+    top_n = 10
+
+    use_geometric = True
+
+    # geometric
+    # to simulate cash settling, do .33. That's using 1/3 of cash every night.
+    # 1.0 is using all cash every night.
+    # higher will start using margin. Overnight margin has special rules, max is probably near 1.5 as far as I can tell
+    cash_percent_to_use = 0.95
+
+    # arithmetic
+    base_nominal = 10000
 
     #
     # Filter losers
     #
 
-    losers = get_biggest_losers(today, bust_cache=True) or []
+    losers = get_biggest_losers(today, bust_cache=True, top_n=1000) or []
+    losers = list(
+        filter(lambda l: l["percent_change"] < -minimum_loss_percent, losers))
 
     print_losers_csv(losers)
 
     losers = list(filter(lambda l: l["c"] > closing_price_min, losers))
-    losers = list(filter(lambda l: l["rank"] <= rank_max, losers))
+    losers = list(filter(lambda l: l["v"] > minimum_volume, losers))
     losers = list(filter(warrant_criteria, losers))
 
-    print("after applying criteria")
-    print_losers_csv(losers)
+    losers = losers[:top_n]
 
-    print_current_positions()
+    print(f"top {len(losers)} after applying criteria")
+    print_losers_csv(losers)
 
     #
     # Buy losers
     #
 
+    nominal = None
     if use_geometric:
-        print("have not implemented geometric, exiting")
-        return
-
-    # arithmetic - buy nominal amount of each loser
-    # equal weighting
-
-    nominal = 10000
-    # TODO: check purchasing power in case need to reduce quantity
+        account = get_account()
+        # TODO: figure out leverage for overnight positions
+        effective_cash = float(account["cash"]) * cash_percent_to_use
+        nominal = effective_cash / len(losers)
+    else:
+        nominal = base_nominal
+        # TODO: check purchasing power in case need to reduce quantity
 
     for loser in losers:
-        quantity = round((nominal / loser['c']) - 0.5)
+        quantity = round((nominal / loser['c']) - 0.5)  # round down
         print(
             f"Submitting buy order of {loser['T']} {quantity} (current price {loser['c']}, target amount {quantity * loser['c']}) at close")
         try:

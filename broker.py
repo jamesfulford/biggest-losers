@@ -40,3 +40,10 @@ def get_positions():
         ALPACA_URL + '/v2/positions', headers=APCA_HEADERS)
     response.raise_for_status()
     return response.json()
+
+
+def get_account():
+    response = requests.get(
+        ALPACA_URL + '/v1/account', headers=APCA_HEADERS)
+    response.raise_for_status()
+    return response.json()
