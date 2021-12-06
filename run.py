@@ -2,7 +2,7 @@ from datetime import datetime
 
 from broker import buy_symbol_at_close, get_account, get_positions, liquidate
 from losers import get_biggest_losers
-from criteria import is_warrant
+from criteria import is_skipped_day, is_warrant
 
 
 def print_losers_csv(losers):
@@ -113,6 +113,10 @@ if __name__ == '__main__':
                 f"error occurred while parsing datetime, will continue with {today}", e)
 
     print(f"running on date {today} with action {action}")
+
+    if is_skipped_day(today):
+        print("skipping day")
+        exit(0)
 
     if action == 'buy':
         buy_biggest_losers_at_close(today)

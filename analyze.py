@@ -3,7 +3,7 @@ import os
 import itertools
 
 from cache import read_json_cache, write_json_cache
-from criteria import is_warrant
+from criteria import is_skipped_day, is_warrant
 
 HOME = os.environ['HOME']
 
@@ -105,6 +105,12 @@ def try_top_10_with_price_over_3(path, baseline_start_date):
         trades = []
         days_with_insufficient_trades = 0
         for top_losers_of_day in each_day(lines):
+            day_of_loss = top_losers_of_day[0]["day_of_loss"]
+            day_after = top_losers_of_day[0]["day_after"]
+
+            if is_skipped_day(day_of_loss) or is_skipped_day(day_after):
+                continue
+
             losers_to_trade = top_losers_of_day[:top_n]
 
             # print(losers_to_trade[0]["day_of_loss"])
