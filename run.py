@@ -38,7 +38,7 @@ def buy_biggest_losers_at_close(today):
     # to simulate cash settling, do .33. That's using 1/3 of cash every night.
     # 1.0 is using all cash every night.
     # higher will start using margin. Overnight margin has special rules, max is probably near 1.5 as far as I can tell
-    cash_percent_to_use = 0.95
+    cash_percent_to_use = 1.0
 
     # arithmetic
     base_nominal = 10000

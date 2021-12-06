@@ -222,7 +222,8 @@ def evaluate_results(lines):
     geometric_coefficients = [
         0.33,  # cash trading
         0.5,  # use half your balance every day
-        0.95,  # use most of your balance every day
+        # use most of your balance every day (good approximation for 1.0 in run.py because of rounding down)
+        .95,
         1.5,  # use overnight margin
     ]
     for _day, trades in trades_by_day.items():
