@@ -211,9 +211,14 @@ def evaluate_results(lines):
 
     trading_days = 0
     arithmetic_roi = 0
-    geometric_current_balance_thirds = 1
-    geometric_current_balance = 1
-    geometric_current_balance_leveraged_4x = 1
+
+    geometric_balances = {}
+    geometric_coefficients = [
+        0.33,  # cash trading
+        0.5,  # use half your balance every day
+        0.95,  # use most of your balance every day
+        1.5,  # use overnight margin
+    ]
     for _day, trades in trades_by_day.items():
         trading_days += 1
 
@@ -225,24 +230,27 @@ def evaluate_results(lines):
         # just take returns, do not reinvest, only withdraw to replenish original capital
         arithmetic_roi += today_roi
 
-        # reinvest returns, every day invest 1/3 of balance (cash account)
-        geometric_current_balance_thirds = (
-            1/3) * geometric_current_balance_thirds * (1 + today_roi) + (2/3) * geometric_current_balance_thirds
-        geometric_current_balance *= 1 + today_roi
-        geometric_current_balance_leveraged_4x *= 1 + (today_roi * 4)
+        for coefficient in geometric_coefficients:
+            balance = geometric_balances.get(coefficient, 1)
+            geometric_balances[coefficient] = balance + \
+                (today_roi * coefficient * balance)
 
     # TODO: calculate drawdown and other stats
 
-    return {
-        "a_roi": arithmetic_roi,
-        "g_roi": geometric_current_balance - 1,
-        "g_roi3": geometric_current_balance_thirds - 1,
-        "g_roix4": geometric_current_balance_leveraged_4x - 1,
+    results = {
+        "a_*": round(arithmetic_roi + 1, 2),
+        "avg_roi": round(average_roi, 3),
+        "win%": round(win_rate, 3),
         "plays": plays,
-        "avg_roi": average_roi,
-        "win%": win_rate,
         "days": trading_days,
     }
+
+    for coefficient in list(geometric_balances.keys()):
+        geometric_balances[coefficient] = round(
+            geometric_balances[coefficient], 2)
+        results[f"g_{int(100*coefficient)}%"] = geometric_balances[coefficient]
+
+    return results
 
 
 def build_criteria_set():
