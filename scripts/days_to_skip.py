@@ -1,5 +1,8 @@
-import requests
 from datetime import date
+import requests
+
+import os
+
 
 # get hebrew holidays using an API
 
@@ -37,7 +40,15 @@ def is_no_work_holiday(holiday):
 
 no_work_holidays = list(filter(is_no_work_holiday, holidays))
 
-with open("days_to_skip.csv", "w") as f:
+#
+# write to csv
+#
+
+dir_of_script = os.path.dirname(os.path.abspath(__file__))
+days_to_skip_csv_path = os.path.abspath(
+    os.path.join(dir_of_script, "..", "days_to_skip.csv"))
+
+with open(days_to_skip_csv_path, "w") as f:
     f.write("date,reason\n")
 
     for holiday in no_work_holidays:

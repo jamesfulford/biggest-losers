@@ -18,4 +18,4 @@ test -f ~/biggest-losers/run.sh || fail_script "could not find run.sh referenced
 # paper
 test -f paper.env || fail_script "could not find paper.env"
 source paper.env || fail_script "paper.env must be sourceable"
-./scripts/account-settings.sh "false" || fail_script "failed to set up settings"
+./scripts/ops/account-settings.sh "false" || fail_script "failed to set up settings"
