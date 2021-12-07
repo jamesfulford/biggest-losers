@@ -11,11 +11,19 @@ APCA_HEADERS = {
     'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
 }
 
+DRY_RUN = 'DRY_RUN' in os.environ
+if DRY_RUN:
+    print('DRY RUN, will not execute any trades')
+
 
 def buy_symbol_at_close(symbol, quantity):
     """
     Buy a symbol
     """
+    if DRY_RUN:
+        print(f'buy_symbol_at_close({symbol}, {quantity})')
+        return
+
     response = requests.post(ALPACA_URL + '/v2/orders', json={
         'symbol': symbol,
         'qty': quantity,
@@ -29,6 +37,10 @@ def buy_symbol_at_close(symbol, quantity):
 
 
 def liquidate():
+    if DRY_RUN:
+        print(f'liquidate()')
+        return
+
     response = requests.delete(
         ALPACA_URL + '/v2/positions', headers=APCA_HEADERS)
     response.raise_for_status()
