@@ -17,7 +17,13 @@ echo
 mkdir -p $HOME/data
 mkdir -p $HOME/intentions
 
-. paper.env ; python3 run.py "$1" "$2"
+python_exec=python3
+py3_version=`$python_exec --version`
+if [[ $py3_version != *"3.9"* ]]; then
+    python_exec=python3.9
+fi
+
+. paper.env ; $python_exec run.py "$1" "$2"
 echo "(return code was $?)"
 
 H=$(date +%H)
