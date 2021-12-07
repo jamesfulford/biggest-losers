@@ -2,8 +2,8 @@ from datetime import date, datetime, timedelta
 import os
 import itertools
 
-from cache import read_json_cache, write_json_cache
-from criteria import is_skipped_day, is_warrant
+from src.cache import read_json_cache, write_json_cache
+from src.criteria import is_skipped_day, is_warrant
 
 HOME = os.environ['HOME']
 

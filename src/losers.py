@@ -1,4 +1,4 @@
-from grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_aggs
+from src.grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_aggs
 
 
 def get_biggest_losers(today, top_n=20, bust_cache=False):

@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from broker import buy_symbol_at_close, get_account, get_positions, liquidate
-from losers import get_biggest_losers
-from criteria import is_skipped_day, is_warrant
+from src.broker import buy_symbol_at_close, get_account, get_positions, liquidate
+from src.losers import get_biggest_losers
+from src.criteria import is_skipped_day, is_warrant
 
 
 def print_losers_csv(losers):

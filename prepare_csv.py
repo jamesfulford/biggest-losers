@@ -2,10 +2,10 @@ from datetime import date
 import os
 from requests.models import HTTPError
 
-from grouped_aggs import get_last_2_candles, get_last_n_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
-from indicators import current_sma_of, ema_of, get_atr
-from losers import get_biggest_losers
-from trading_day import next_trading_day, previous_trading_day
+from src.grouped_aggs import get_last_2_candles, get_last_n_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
+from src.indicators import current_sma_of, ema_of, get_atr
+from src.losers import get_biggest_losers
+from src.trading_day import next_trading_day, previous_trading_day
 
 API_KEY = os.environ['POLYGON_API_KEY']
 HOME = os.environ['HOME']

@@ -1,4 +1,5 @@
-from datetime import date, datetime
+from datetime import datetime
+import os
 
 
 def is_warrant(ticker):
@@ -9,9 +10,15 @@ def is_warrant(ticker):
 # Skipping days
 #
 
+
+dir_of_script = os.path.dirname(os.path.abspath(__file__))
+days_to_skip_csv_path = os.path.abspath(
+    os.path.join(dir_of_script, "..", "days_to_skip.csv"))
+
+
 def get_skipped_days():
     lines = []
-    with open("days_to_skip.csv", "r") as f:
+    with open(days_to_skip_csv_path, "r") as f:
         lines.extend(f.readlines())
 
     headers = lines[0].strip().split(",")
