@@ -68,7 +68,7 @@ def get_open_orders():
     return _get_alpaca('/v1/orders')
 
 
-def get_filled_orders(start: date, end: date):
+def get_filled_orders(start: datetime, end: datetime):
     # inclusive (API is exclusive)
     # sorted from earliest to latest
 
