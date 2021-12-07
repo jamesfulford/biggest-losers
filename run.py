@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import date, datetime
+import os
 
 from src.broker import buy_symbol_at_close, get_account, get_positions, liquidate
 from src.losers import get_biggest_losers
@@ -76,18 +77,35 @@ def buy_biggest_losers_at_close(today):
         nominal = base_nominal
         # TODO: check purchasing power in case need to reduce quantity
 
+    order_intentions = []
     for loser in losers:
         quantity = round((nominal / loser['c']) - 0.5)  # round down
+
+        symbol = loser['T']
+        price = loser['c']
         print(
-            f"Submitting buy order of {loser['T']} {quantity} (current price {loser['c']}, target amount {quantity * loser['c']}) at close")
+            f"Submitting buy order of {symbol} {quantity} (current price {price}, target amount {quantity * price}) at close")
+
+        order_intentions.append({
+            # use current time but same day
+            "datetime": datetime.now().replace(year=today.year, month=today.month, day=today.day),
+            "symbol": symbol,
+            "quantity": quantity,
+            "price": price,
+            "side": "buy"
+        })
         try:
-            buy_symbol_at_close(loser["T"], quantity)
+            buy_symbol_at_close(symbol, quantity)
         except Exception as e:
             print(e.response.status_code, e.response.json())
+    return order_intentions
+
+
+HOME = os.environ['HOME']
 
 
 if __name__ == '__main__':
-    today = datetime.today()
+    today = date.today()
 
     import sys
 
@@ -119,6 +137,21 @@ if __name__ == '__main__':
         exit(0)
 
     if action == 'buy':
-        buy_biggest_losers_at_close(today)
+        order_intentions = buy_biggest_losers_at_close(today)
+
+        # write order intentions to file so we can evaluate slippage later
+
+        with open(f"{HOME}/intentions/{today}.csv", "w") as f:
+            f.write("Date,Time,Symbol,Quantity,Price,Side\n")
+
+            for order_intention in order_intentions:
+                now = order_intention['datetime']
+                ticker = order_intention['symbol']
+                quantity = order_intention['quantity']
+                price = order_intention['price']
+                side = order_intention['side']
+                s = f"{now.strftime('%Y-%m-%d')},{now.strftime('%H:%M:%S')},{ticker},{quantity},{round(price, 4)},{side.upper()}\n"
+                f.write(s)
+
     elif action == 'sell':
         print(liquidate())

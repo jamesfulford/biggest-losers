@@ -15,6 +15,8 @@ APCA_HEADERS = {
 DRY_RUN = 'DRY_RUN' in os.environ
 if DRY_RUN:
     print('DRY RUN, will not execute any trades')
+else:
+    print('LIVE RUN, will execute trades')
 
 
 def _get_alpaca(url):
@@ -28,7 +30,7 @@ def buy_symbol_at_close(symbol, quantity):
     Buy a symbol
     """
     if DRY_RUN:
-        print(f'buy_symbol_at_close({symbol}, {quantity})')
+        print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
         return
 
     response = requests.post(ALPACA_URL + '/v2/orders', json={
@@ -45,7 +47,7 @@ def buy_symbol_at_close(symbol, quantity):
 
 def liquidate():
     if DRY_RUN:
-        print(f'liquidate()')
+        print(f'DRY_RUN: liquidate()')
         return
 
     response = requests.delete(

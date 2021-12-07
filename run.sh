@@ -15,6 +15,7 @@ date
 echo
 
 mkdir -p $HOME/data
+mkdir -p $HOME/intentions
 
 . paper.env ; python3 run.py "$1" "$2"
 echo "(return code was $?)"
