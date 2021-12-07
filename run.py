@@ -2,7 +2,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo
 import os
 
-from src.broker import buy_symbol_at_close, get_account, get_positions, liquidate
+from src.broker import DRY_RUN, buy_symbol_at_close, get_account, get_positions, liquidate
 from src.losers import get_biggest_losers
 from src.criteria import is_skipped_day, is_warrant
 
@@ -108,6 +108,24 @@ def buy_biggest_losers_at_close(today):
 HOME = os.environ['HOME']
 
 
+def record_intentions(today, order_intentions):
+    if DRY_RUN:
+        print("DRY_RUN: not writing order intentions (may overwrite)")
+        return
+
+    with open(f"{HOME}/intentions/{today}.csv", "w") as f:
+        f.write("Date,Time,Symbol,Quantity,Price,Side\n")
+
+        for order_intention in order_intentions:
+            now = order_intention['datetime'].astimezone(MARKET_TZ)
+            ticker = order_intention['symbol']
+            quantity = order_intention['quantity']
+            price = order_intention['price']
+            side = order_intention['side']
+            s = f"{now.strftime('%Y-%m-%d')},{now.strftime('%H:%M:%S')},{ticker},{quantity},{round(price, 4)},{side.upper()}\n"
+            f.write(s)
+
+
 if __name__ == '__main__':
     today = date.today()
 
@@ -142,20 +160,7 @@ if __name__ == '__main__':
 
     if action == 'buy':
         order_intentions = buy_biggest_losers_at_close(today)
-
         # write order intentions to file so we can evaluate slippage later
-
-        with open(f"{HOME}/intentions/{today}.csv", "w") as f:
-            f.write("Date,Time,Symbol,Quantity,Price,Side\n")
-
-            for order_intention in order_intentions:
-                now = order_intention['datetime'].astimezone(MARKET_TZ)
-                ticker = order_intention['symbol']
-                quantity = order_intention['quantity']
-                price = order_intention['price']
-                side = order_intention['side']
-                s = f"{now.strftime('%Y-%m-%d')},{now.strftime('%H:%M:%S')},{ticker},{quantity},{round(price, 4)},{side.upper()}\n"
-                f.write(s)
-
+        record_intentions(today, order_intentions)
     elif action == 'sell':
         print(liquidate())
