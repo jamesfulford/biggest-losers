@@ -1,9 +1,13 @@
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 import os
 
 from src.broker import buy_symbol_at_close, get_account, get_positions, liquidate
 from src.losers import get_biggest_losers
 from src.criteria import is_skipped_day, is_warrant
+
+
+MARKET_TZ = ZoneInfo("America/New_York")
 
 
 def print_losers_csv(losers):
@@ -145,7 +149,7 @@ if __name__ == '__main__':
             f.write("Date,Time,Symbol,Quantity,Price,Side\n")
 
             for order_intention in order_intentions:
-                now = order_intention['datetime']
+                now = order_intention['datetime'].astimezone(MARKET_TZ)
                 ticker = order_intention['symbol']
                 quantity = order_intention['quantity']
                 price = order_intention['price']
