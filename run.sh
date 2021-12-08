@@ -23,7 +23,7 @@ if [[ $py3_version != *"3.9"* ]]; then
     python_exec=python3.9
 fi
 
-. paper.env ; $python_exec run.py "$1" "$2"
+. .env ; $python_exec run.py "$1" "$2"
 echo "(return code was $?)"
 
 H=$(date +%H)
