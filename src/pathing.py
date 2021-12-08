@@ -29,7 +29,7 @@ def get_paths():
     paths['data']["outputs"]["filled_orders_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'filled_orders.csv')
     paths['data']["outputs"]["order_intentions_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'order_intentions_{today}_csv')
+        paths['data']['outputs']['dir'], 'order_intentions_{today}.csv')
 
     paths['data']["logs"] = {'dir': os.path.join(paths['data']['dir'], 'logs')}
 
