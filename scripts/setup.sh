@@ -56,3 +56,6 @@ function assert_crontab_entry_exists() {
 
 assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy >> $DATA_DIR/logs/run.log 2>&1"
 assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell >> $DATA_DIR/logs/run.log 2>&1"
+
+DRY_RUN=1 ./run.sh buy || fail_script "failed to run buy"
+DRY_RUN=1 ./run.sh sell || fail_script "failed to run sell"
