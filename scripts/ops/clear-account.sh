@@ -16,13 +16,13 @@ function alpaca () {
 }
 
 
-alpaca GET /v1/account
-alpaca GET /v1/positions
-alpaca GET /v1/orders
+alpaca GET /v2/account
+alpaca GET /v2/positions
+alpaca GET /v2/orders
 
 alpaca DELETE /v2/orders
 alpaca DELETE /v2/positions
 
-alpaca GET /v1/account
-alpaca GET /v1/positions
-alpaca GET /v1/orders
+alpaca GET /v2/account
+alpaca GET /v2/positions
+alpaca GET /v2/orders

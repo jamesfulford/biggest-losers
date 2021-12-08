@@ -65,7 +65,7 @@ def get_account():
 
 
 def get_open_orders():
-    return _get_alpaca('/v1/orders')
+    return _get_alpaca('/v2/orders')
 
 
 def get_filled_orders(start: datetime, end: datetime):
