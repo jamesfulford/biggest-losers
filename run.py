@@ -105,15 +105,15 @@ def buy_biggest_losers_at_close(today):
     return order_intentions
 
 
-HOME = os.environ['HOME']
-
-
 def record_intentions(today, order_intentions):
     if DRY_RUN:
         print("DRY_RUN: not writing order intentions (may overwrite)")
         return
 
-    with open(f"{HOME}/intentions/{today}.csv", "w") as f:
+    from src.pathing import get_order_intentions_csv_path
+    path = get_order_intentions_csv_path(today)
+
+    with open(path, "w") as f:
         f.write("Date,Time,Symbol,Quantity,Price,Side\n")
 
         for order_intention in order_intentions:

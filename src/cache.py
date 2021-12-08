@@ -1,12 +1,15 @@
 import os
 import json
 
+from src.pathing import get_paths
 
-HOME = os.environ['HOME']
+
+def _get_cache_path(key):
+    return os.path.join(get_paths()["data"]["cache"], key)
 
 
 def read_json_cache(key):
-    path = f"{HOME}/data/{key}"
+    path = _get_cache_path(key)
     try:
         with open(path, 'r') as f:
             return json.load(f)
@@ -15,13 +18,13 @@ def read_json_cache(key):
 
 
 def write_json_cache(key, value):
-    path = f"{HOME}/data/{key}"
+    path = _get_cache_path(key)
     with open(path, 'w') as f:
         json.dump(value, f)
 
 
 def delete_json_cache(key):
-    path = f"{HOME}/data/{key}"
+    path = _get_cache_path(key)
     try:
         os.remove(path)
     except Exception:

@@ -1,11 +1,8 @@
 from datetime import date, datetime, timedelta
-import os
 import itertools
 
 from src.cache import read_json_cache, write_json_cache
 from src.criteria import is_skipped_day, is_warrant
-
-HOME = os.environ['HOME']
 
 
 def get_lines_from_biggest_losers_csv(path, baseline_start_date):
@@ -545,7 +542,9 @@ def build_pocket_quality_criteria(min_plays=None, min_avg_roi=None, min_win_perc
 if __name__ == "__main__":
     # TODO: test based off of total loss / drawdown
 
-    path = f"{HOME}/biggest_losers.csv"
+    from src.pathing import get_paths
+
+    path = get_paths()['data']['outputs']["biggest_losers_csv"]
     baseline_start_date = date(2021, 1, 1)
 
     try_top_10_with_price_over_3(path, baseline_start_date)

@@ -14,8 +14,19 @@ echo
 date
 echo
 
-mkdir -p $HOME/data
-mkdir -p $HOME/intentions
+current_dir=`pwd`
+ENV_NAME=`basename $current_dir`
+PARENT_DIR=`dirname $current_dir`
+
+APP_DIR=$current_dir
+DATA_DIR=$PARENT_DIR/$ENV_NAME-data
+
+echo APP_DIR $APP_DIR
+echo DATA_DIR $DATA_DIR
+
+log_path=$DATA_DIR/logs/run.log
+
+source $DATA_DIR/inputs/.env
 
 python_exec=python3
 py3_version=`$python_exec --version`
@@ -23,16 +34,16 @@ if [[ $py3_version != *"3.9"* ]]; then
     python_exec=python3.9
 fi
 
-. .env ; $python_exec run.py "$1" "$2"
+$python_exec run.py "$1" "$2"
 echo "(return code was $?)"
 
 H=$(date +%H)
 if (( 12 <= 10#$H && 10#$H < 13 )); then 
-    if [[ -f /tmp/run.log.$(date +%Y-%m-%d) ]]; then
+    if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
         echo "# already found today's log file, won't rotate"
         exit 0
     fi
     echo "# rotating logs"
-    cp -f /tmp/run.log /tmp/run.log.$(date +%Y-%m-%d)
+    cp -f $log_path $log_path.$(date +%Y-%m-%d)
     echo "# starting new log"
 fi

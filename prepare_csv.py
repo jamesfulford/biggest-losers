@@ -8,7 +8,6 @@ from src.losers import get_biggest_losers
 from src.trading_day import next_trading_day, previous_trading_day
 
 API_KEY = os.environ['POLYGON_API_KEY']
-HOME = os.environ['HOME']
 
 
 def overnights(start_date, end_date):
@@ -256,7 +255,9 @@ def prepare_biggest_losers_csv(path, start_date, end_date):
 
 
 def main():
-    path = f"{HOME}/biggest_losers.csv"
+    from src.pathing import get_paths
+    path = get_paths()['data']['outputs']["biggest_losers_csv"]
+
     # earliest date I have data for on my machine
     # start_date = date(2019, 11, 18)
 
