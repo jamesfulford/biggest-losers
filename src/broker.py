@@ -61,7 +61,7 @@ def get_positions():
 
 
 def get_account():
-    return _get_alpaca('/v1/account')
+    return _get_alpaca('/v2/account')
 
 
 def get_open_orders():
