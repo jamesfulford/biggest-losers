@@ -5,7 +5,7 @@ from src.pathing import get_paths
 
 
 def _get_cache_path(key):
-    return os.path.join(get_paths()["data"]["cache"], key)
+    return os.path.join(get_paths()["data"]["cache"]['dir'], key)
 
 
 def read_json_cache(key):
