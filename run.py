@@ -32,7 +32,7 @@ def buy_biggest_losers_at_close(today):
     minimum_loss_percent = 0.1  # down at least 10%; aka percent_change < -0.1
 
     closing_price_min = 3.00
-    minimum_volume = 1000000  # at least 1 million
+    minimum_volume = 0  # no volume requirement, let's see how we do.
     def warrant_criteria(c): return not is_warrant(c["T"])
 
     top_n = 10
