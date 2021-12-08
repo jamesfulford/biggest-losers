@@ -1,4 +1,7 @@
 #!/bin/bash
 
-rsync -razv ~/biggest-losers/ solomon:~/biggest-losers/
-ssh solomon "cd ~/biggest-losers && ./scripts/setup.sh"
+environment=${1:-"paper"}
+server="solomon"
+
+rsync -razv ~/biggest-losers/ $server:~/$environment
+ssh $server "cd ~/$environment && ./scripts/setup.sh"
