@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
-import os
 
 from src.broker import DRY_RUN, buy_symbol_at_close, get_account, get_positions, liquidate
 from src.losers import get_biggest_losers

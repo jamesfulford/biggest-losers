@@ -53,8 +53,9 @@ def build_trade(trade_orders):
 
 
 def get_closed_trades(start, end, build_trade=build_trade):
-    # group orders by symbol, then build trades for each set of orders that bring quantity to 0
+    # TODO: read orders from CSV dump
     filled_orders = get_filled_orders(start, end)
+    # group orders by symbol, then build trades for each set of orders that bring quantity to 0
     for trade_orders in group_orders_by_trade(filled_orders):
         trade = build_trade(trade_orders)
         if not trade:
