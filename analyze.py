@@ -1,8 +1,10 @@
 from datetime import datetime
-from src.trades import get_closed_trades
+from src.pathing import get_paths
+from src.trades import get_closed_trades_from_orders_csv
 
 
-trades = list(get_closed_trades(datetime(2021, 12, 6), datetime.now()))
+path = get_paths()['data']["outputs"]["filled_orders_csv"]
+trades = list(get_closed_trades_from_orders_csv(path))
 
 # by day
 trades_by_closed_day = {}

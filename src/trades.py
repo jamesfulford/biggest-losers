@@ -1,6 +1,5 @@
 from datetime import datetime
-
-from src.broker import get_filled_orders
+from zoneinfo import ZoneInfo
 
 
 def build_trade(trade_orders):
@@ -27,14 +26,14 @@ def build_trade(trade_orders):
             f'WARNING: last order for {symbol} is not a sell, skipping')
         return
 
-    quantity = float(buy_order["filled_qty"])
-    bought_price = float(buy_order["filled_avg_price"])
-    sold_price = float(sell_order["filled_avg_price"])
+    quantity = float(buy_order["quantity"])
+    bought_price = float(buy_order["price"])
+    sold_price = float(sell_order["price"])
 
     return {
         "symbol": symbol,
-        "opened_at": datetime.strptime(buy_order["filled_at"], '%Y-%m-%dT%H:%M:%S.%fZ'),
-        "closed_at": datetime.strptime(sell_order["filled_at"], '%Y-%m-%dT%H:%M:%S.%fZ'),
+        "opened_at": buy_order["datetime"],
+        "closed_at": sell_order["datetime"],
         # "orders": trade_orders,
 
         "quantity": quantity,
@@ -52,9 +51,35 @@ def build_trade(trade_orders):
     }
 
 
-def get_closed_trades(start, end, build_trade=build_trade):
-    # TODO: read orders from CSV dump
-    filled_orders = get_filled_orders(start, end)
+MARKET_TZ = ZoneInfo("America/New_York")
+
+
+def get_filled_orders_from_csv(path):
+    lines = []
+    with open(path, "r") as f:
+        lines.extend(f.readlines())
+
+    headers = lines[0].strip().split(",")
+
+    # remove newlines and header row
+    lines = [l.strip() for l in lines[1:]]
+
+    # convert to dicts
+    raw_dict_lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
+
+    lines = [{
+        "datetime": datetime.strptime(l["Date"] + " " + l["Time"], '%Y-%m-%d %H:%M:%S').astimezone(MARKET_TZ),
+        "symbol": l["Symbol"],
+        "quantity": float(l["Quantity"]),
+        "price": float(l["Price"]),
+        "side": l["Side"].lower(),
+    } for l in raw_dict_lines]
+
+    return lines
+
+
+def get_closed_trades_from_orders_csv(path, build_trade=build_trade):
+    filled_orders = get_filled_orders_from_csv(path)
     # group orders by symbol, then build trades for each set of orders that bring quantity to 0
     for trade_orders in group_orders_by_trade(filled_orders):
         trade = build_trade(trade_orders)
@@ -75,8 +100,8 @@ def group_orders_by_trade(filled_orders):
         for i in range(len(orders)):
             order = orders[i]
 
-            filled_qty = int(order["filled_qty"])
-            qty_diff = filled_qty if order["side"] == 'buy' else -filled_qty
+            quantity = int(order["quantity"])
+            qty_diff = quantity if order["side"] == 'buy' else -quantity
 
             current_qty += qty_diff
             if current_qty == 0:
