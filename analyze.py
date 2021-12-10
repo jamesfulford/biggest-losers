@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
+from backtest import get_lines_from_biggest_losers_csv
 from src.pathing import get_paths
 from src.trades import get_closed_trades_from_orders_csv
 
@@ -9,8 +10,7 @@ def get_trades(environment_name):
     return trades
 
 
-def print_order_summary(trades):
-
+def group_trades_by_closed_day(trades):
     # by day
     trades_by_closed_day = {}
 
@@ -18,6 +18,15 @@ def print_order_summary(trades):
         key = trade["closed_at"].date().isoformat()
         trades_by_closed_day[key] = trades_by_closed_day.get(key, []) + [trade]
 
+    return trades_by_closed_day
+
+
+def get_backtest_theoretical_trades():
+    return get_lines_from_biggest_losers_csv(
+        get_paths()['data']["outputs"]["biggest_losers_csv"], date.today() - timedelta(days=10))
+
+
+def print_order_summary(trades_by_closed_day):
     total_change = 0
     rois = []
     today = datetime.now().date()
@@ -66,7 +75,57 @@ def g_avg(l):
 
 
 if __name__ == "__main__":
-    for environment_name in ["paper", "prod"]:
-        print(f"{environment_name} environment:")
-        print_order_summary(get_trades(environment_name))
-        print()
+
+    paper_trades_by_day = group_trades_by_closed_day(get_trades("paper"))
+    prod_trades_by_day = group_trades_by_closed_day(get_trades("prod"))
+
+    print(f"paper environment:")
+    print_order_summary(paper_trades_by_day)
+    print()
+
+    print("=" * 80)
+
+    print(f"prod environment:")
+    print_order_summary(prod_trades_by_day)
+    print()
+
+    last_day_trading_iso = sorted(
+        prod_trades_by_day.keys())[0]
+
+    print("=" * 80)
+
+    last_day_trades_paper = paper_trades_by_day[last_day_trading_iso]
+    last_day_trades_prod = prod_trades_by_day[last_day_trading_iso]
+
+    backtest_trades = get_backtest_theoretical_trades()
+
+    symbols = set(map(lambda t: t["symbol"], last_day_trades_paper)).union(
+        set(map(lambda t: t["symbol"], last_day_trades_prod)))
+
+    print("t".rjust(6), 'paper'.rjust(6), 'prod'.rjust(6), 'back'.rjust(6))
+    for symbol in sorted(symbols):
+        # for each paper/prod trade, do inner join with paper,prod,backtest trades and print when there are misses
+        paper_trade = next(
+            filter(lambda t: t["symbol"] == symbol, last_day_trades_paper), None)
+        if not paper_trade:
+            print(f"missing paper trade for {symbol}")
+            continue
+
+        prod_trade = next(
+            filter(lambda t: t["symbol"] == symbol, last_day_trades_prod), None)
+        if not prod_trade:
+            print(f"missing prod trade for {symbol}")
+            continue
+
+        backtest_trade = next(
+            filter(lambda t: t["day_after"].isoformat() == last_day_trading_iso and t["ticker"] == symbol, backtest_trades), None)
+        if not backtest_trade:
+            print(f"missing backtest trade for {symbol}")
+            continue
+
+        paper_price = paper_trade["bought_price"]
+        prod_price = prod_trade["bought_price"]
+        backtest_price = backtest_trade["close_day_of_loss"]
+
+        print(symbol.rjust(6), (str(round(paper_price, 1))).rjust(6),
+              (str(round(prod_price, 2))).rjust(6), (str(round(backtest_price, 1))).rjust(6))
