@@ -56,6 +56,26 @@ def liquidate():
     return response.json()
 
 
+def sell_symbol_at_open(symbol, quantity):
+    """
+    Sell a symbol
+    """
+    if DRY_RUN:
+        print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
+        return
+
+    response = requests.post(ALPACA_URL + '/v2/orders', json={
+        'symbol': symbol,
+        'qty': quantity,
+        'side': 'sell',
+        'type': 'market',
+        # sell at open
+        'time_in_force': 'opg'
+    }, headers=APCA_HEADERS)
+    response.raise_for_status()
+    return response.json()
+
+
 def get_positions():
     return _get_alpaca('/v2/positions')
 

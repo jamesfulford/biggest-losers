@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from src.broker import DRY_RUN, buy_symbol_at_close, get_account, get_positions, liquidate
+from src.broker import DRY_RUN, buy_symbol_at_close, get_account, get_positions, liquidate, sell_symbol_at_open
 from src.losers import get_biggest_losers
 from src.criteria import is_skipped_day, is_warrant
 
@@ -162,4 +162,6 @@ if __name__ == '__main__':
         # write order intentions to file so we can evaluate slippage later
         record_intentions(today, order_intentions)
     elif action == 'sell':
-        print(liquidate())
+        for position in get_positions():
+            print(sell_symbol_at_open(
+                position['symbol'], position['qty']))
