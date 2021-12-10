@@ -23,7 +23,7 @@ def group_trades_by_closed_day(trades):
 
 def get_backtest_theoretical_trades():
     return get_lines_from_biggest_losers_csv(
-        get_paths()['data']["outputs"]["biggest_losers_csv"], date.today() - timedelta(days=10))
+        get_paths()['data']["outputs"]["biggest_losers_csv"], date(2020, 1, 1))
 
 
 def print_order_summary(trades_by_closed_day):
@@ -74,58 +74,135 @@ def g_avg(l):
     return m ** (1/len(l))
 
 
+def merge_trades(paper_trades, prod_trades, backtest_trades):
+    paper_trades_by_day = group_trades_by_closed_day(paper_trades)
+    prod_trades_by_day = group_trades_by_closed_day(prod_trades)
+
+    days_iso = set(paper_trades_by_day.keys()).intersection(
+        set(prod_trades_by_day.keys()))
+
+    for day_iso in sorted(days_iso):
+        trades_paper = paper_trades_by_day[day_iso]
+        trades_prod = prod_trades_by_day[day_iso]
+
+        symbols = set(map(lambda t: t["symbol"], trades_paper)).union(
+            set(map(lambda t: t["symbol"], trades_prod)))
+
+        for symbol in sorted(symbols):
+            # for each paper/prod trade, do inner join with paper,prod,backtest trades and print when there are misses
+            paper_trade = next(
+                filter(lambda t: t["symbol"] == symbol, trades_paper), None)
+            if not paper_trade:
+                print(f"missing paper trade for {day_iso} {symbol}")
+                continue
+
+            prod_trade = next(
+                filter(lambda t: t["symbol"] == symbol, trades_prod), None)
+            if not prod_trade:
+                print(f"missing prod trade for {day_iso} {symbol}")
+                continue
+
+            backtest_trade = next(
+                filter(lambda t: t["day_after"].isoformat() == day_iso and t["ticker"] == symbol, backtest_trades), None)
+            if not backtest_trade:
+                print(f"missing backtest trade for {day_iso} {symbol}")
+                continue
+
+            yield {
+                "symbol": symbol,
+                "paper_trade": paper_trade,
+                "prod_trade": prod_trade,
+                "backtest_trade": backtest_trade
+            }
+
+
 if __name__ == "__main__":
+    paper_trades = get_trades("paper")
+    prod_trades = get_trades("prod")
 
-    paper_trades_by_day = group_trades_by_closed_day(get_trades("paper"))
-    prod_trades_by_day = group_trades_by_closed_day(get_trades("prod"))
-
+    # print summaries of each
     print(f"paper environment:")
+    paper_trades_by_day = group_trades_by_closed_day(paper_trades)
     print_order_summary(paper_trades_by_day)
     print()
 
     print("=" * 80)
 
     print(f"prod environment:")
+    prod_trades_by_day = group_trades_by_closed_day(prod_trades)
     print_order_summary(prod_trades_by_day)
     print()
 
-    last_day_trading_iso = sorted(
-        prod_trades_by_day.keys())[0]
-
     print("=" * 80)
 
-    last_day_trades_paper = paper_trades_by_day[last_day_trading_iso]
-    last_day_trades_prod = prod_trades_by_day[last_day_trading_iso]
+    #
+    # merge trades
+    #
 
-    backtest_trades = get_backtest_theoretical_trades()
+    with open(get_paths()["data"]["outputs"]["performance_csv"], 'w') as f:
+        headers = [
+            # identifiers
+            "day_of_loss",
+            "symbol",
+            # bonus
+            "day_after",
+            #
+            # entrance slippage
+            #
+            "paper_trade_enter_price",
+            "prod_trade_enter_price",
+            "backtest_trade_enter_price",
+            # extra fields
+            # TODO: add volume/quantities
+            "backtest_volume_day_of_loss",
+            #
+            # exit slippage
+            #
+            "paper_trade_exit_price",
+            "prod_trade_exit_price",
+            "backtest_trade_exit_price",
+            # extra fields
+            "backtest_high_day_after",
+            "backtest_low_day_after",
+            "backtest_close_day_after",
+            #
+            # computed fields
+            #
 
-    symbols = set(map(lambda t: t["symbol"], last_day_trades_paper)).union(
-        set(map(lambda t: t["symbol"], last_day_trades_prod)))
+            # Initial results seem to show that prod trade enters at the same price as the backtest says.
 
-    print("t".rjust(6), 'paper'.rjust(6), 'prod'.rjust(6), 'back'.rjust(6))
-    for symbol in sorted(symbols):
-        # for each paper/prod trade, do inner join with paper,prod,backtest trades and print when there are misses
-        paper_trade = next(
-            filter(lambda t: t["symbol"] == symbol, last_day_trades_paper), None)
-        if not paper_trade:
-            print(f"missing paper trade for {symbol}")
-            continue
+            # TODO: add slippage %'s enter and exit
+            # - correlate close quantity/volume with slippage?
+            # - correlate close slippage with price?
+            # - correlate close slippage with high-low of day of selling
 
-        prod_trade = next(
-            filter(lambda t: t["symbol"] == symbol, last_day_trades_prod), None)
-        if not prod_trade:
-            print(f"missing prod trade for {symbol}")
-            continue
+            # TODO: add rois, add best possible roi
+        ]
+        f.write(",".join(headers) + "\n")
 
-        backtest_trade = next(
-            filter(lambda t: t["day_after"].isoformat() == last_day_trading_iso and t["ticker"] == symbol, backtest_trades), None)
-        if not backtest_trade:
-            print(f"missing backtest trade for {symbol}")
-            continue
+        # TODO: merge in paper and prod trade intentions
+        for merged_trade in merge_trades(paper_trades, prod_trades, get_backtest_theoretical_trades()):
+            f.write(",".join([
+                merged_trade["backtest_trade"]["day_of_loss"].isoformat(),
+                merged_trade["backtest_trade"]["ticker"],
+                merged_trade["backtest_trade"]["day_after"].isoformat(),
 
-        paper_price = paper_trade["bought_price"]
-        prod_price = prod_trade["bought_price"]
-        backtest_price = backtest_trade["close_day_of_loss"]
+                str(round(merged_trade["paper_trade"]["bought_price"], 4)),
+                str(round(merged_trade["prod_trade"]["bought_price"], 4)),
+                str(round(merged_trade["backtest_trade"]
+                    ["close_day_of_loss"], 4)),
 
-        print(symbol.rjust(6), (str(round(paper_price, 1))).rjust(6),
-              (str(round(prod_price, 2))).rjust(6), (str(round(backtest_price, 1))).rjust(6))
+                str(round(merged_trade["backtest_trade"]
+                    ["volume_day_of_loss"], 0)),
+
+                str(round(merged_trade["paper_trade"]["sold_price"], 4)),
+                str(round(merged_trade["prod_trade"]["sold_price"], 4)),
+                str(round(merged_trade["backtest_trade"]
+                    ["open_day_after"], 4)),
+
+                str(round(merged_trade["backtest_trade"]
+                    ["high_day_after"], 4)),
+                str(round(merged_trade["backtest_trade"]["low_day_after"], 4)),
+                str(round(merged_trade["backtest_trade"]
+                    ["close_day_after"], 4)),
+            ]) + "\n")
