@@ -1,8 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+import sys
 
 from src.broker import get_filled_orders
 from src.pathing import get_paths
+
+
+target_environment_name = sys.argv[1]
 
 
 MARKET_TZ = ZoneInfo("America/New_York")
@@ -12,7 +16,8 @@ end = datetime.now() + timedelta(days=1)
 
 filled_orders = get_filled_orders(start, end)
 
-path = get_paths()['data']["outputs"]["filled_orders_csv"]
+path = get_paths(target_environment_name)[
+    'data']["outputs"]["filled_orders_csv"]
 with open(path, 'w') as f:
     f.write("Date,Time,Symbol,Quantity,Price,Side\n")
     for order in filled_orders:

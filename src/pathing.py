@@ -1,16 +1,21 @@
 import os
 
 
-def get_paths():
+def get_paths(target_environment_name=None):
     app_dir = os.path.abspath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), '..'))
 
-    env_name = os.path.basename(app_dir)
+    current_environment_name = os.path.basename(app_dir)
+    environment_root_dir = os.path.abspath(os.path.join(app_dir, '..'))
+    data_dir = os.path.join(
+        environment_root_dir, current_environment_name + '-data')
 
-    data_dir = os.path.abspath(os.path.join(app_dir, '..', env_name + '-data'))
+    if target_environment_name is not None:
+        data_dir = os.path.join(
+            data_dir, "remote-environments", target_environment_name)
 
     paths = {
-        'name': env_name,
+        'name': target_environment_name or current_environment_name,
         'app': {
             'dir': app_dir,
         },
@@ -44,4 +49,18 @@ def get_order_intentions_csv_path(today):
 
 
 if __name__ == '__main__':
-    print(get_paths())
+    # on James' local machine this code is checked out at ~/biggest-losers
+    default_paths = get_paths()
+    print(default_paths)
+    assert default_paths['name'] == 'biggest-losers'
+    assert default_paths['data']["dir"] == '/Users/jamesfulford/biggest-losers-data'
+
+    paper_paths = get_paths('paper')
+    print(paper_paths)
+    assert paper_paths['name'] == 'paper', paper_paths['name']
+    assert paper_paths['data']["dir"] == '/Users/jamesfulford/biggest-losers-data/remote-environments/paper'
+
+    prod_paths = get_paths('prod')
+    print(prod_paths)
+    assert prod_paths['name'] == 'prod', prod_paths['name']
+    assert prod_paths['data']["dir"] == '/Users/jamesfulford/biggest-losers-data/remote-environments/prod'
