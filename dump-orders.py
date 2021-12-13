@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import sys
 
-from src.broker import get_filled_orders
+from src.broker.alpaca import get_filled_orders
 from src.pathing import get_paths
 
 
