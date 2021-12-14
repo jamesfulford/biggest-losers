@@ -6,7 +6,7 @@ from src.broker.generic import get_filled_orders
 from src.pathing import get_paths
 
 
-target_environment_name = sys.argv[1]
+target_environment_name = sys.argv[1] if len(sys.argv) > 2 else None
 
 
 MARKET_TZ = ZoneInfo("America/New_York")

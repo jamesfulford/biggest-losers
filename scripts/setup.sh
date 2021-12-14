@@ -58,6 +58,10 @@ case $BROKER in
         # - sell orders need to happen day after for avoiding Pattern Day Trader limitations
         assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy"
         assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell"
+
+        # just dump all orders to output directory, ideally after buy for biggest-loser strategy
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders"
+
         assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
 
         # TODO: dump-orders.py for each environment

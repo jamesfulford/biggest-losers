@@ -1,16 +1,12 @@
 #!/bin/bash
 
-echo "Getting data (including trade intentions) from server..."
+echo "Getting data (including trade intentions and orders csvs) from server..."
 ./scripts/deploy/sync-data-back.sh paper
 ./scripts/deploy/sync-data-back.sh prod
-
-echo "Getting Filled orders from broker..."
-echo TODO: make it hard to mix up paper and prod
-. paper.env && python3 dump-orders.py paper
-. prod.env && python3 dump-orders.py prod
+./scripts/deploy/sync-data-back.sh td-cash
 
 echo "Preparing theoretical backtest numbers..."
-. paper.env && python3 prepare_csv.py
+./run.sh biggest-losers-csv
 
 echo "Starting analysis..."
 nodemon -e py -x "python3 analyze.py"

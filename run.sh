@@ -63,6 +63,14 @@ case $action in
         cp -f $log_path $log_path.$(date +%Y-%m-%d)
         echo "# starting new log"
         ;;
+    "dump-orders")
+        $python_exec dump-orders.py
+        echo "(return code was $?)"
+        ;;
+    "biggest-losers-csv")
+        $python_exec prepare_csv.py
+        echo "(return code was $?)"
+        ;;
     *)
         echo "unknown action $action"
         exit 1

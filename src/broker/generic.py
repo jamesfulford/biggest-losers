@@ -1,7 +1,7 @@
 import os
 
 
-broker_name = os.environ.get('BROKER_NAME', "td")
+broker_name = os.environ.get('BROKER', "td")
 
 if broker_name == "alpaca":
     import src.broker.alpaca as alpaca
