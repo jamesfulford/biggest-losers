@@ -239,9 +239,48 @@ def _build_order(order):
 #
 
 
+def _build_position(position):
+    """
+    Map TD API position to a dict similar to Alpaca API position
+    {
+        "shortQuantity": 0.0,
+        "averagePrice": 6.325,
+        "currentDayProfitLoss": 0.0,
+        "currentDayProfitLossPercentage": 0.0,
+        "longQuantity": 1.0,
+        "settledLongQuantity": 0.0,
+        "settledShortQuantity": 0.0,
+        "instrument": {
+            "assetType": "EQUITY",
+            "cusip": "82968B103",
+            "symbol": "SIRI"
+        },
+        "marketValue": 6.33,
+        "maintenanceRequirement": 1.9,
+        "currentDayCost": 6.33,
+        "previousSessionLongQuantity": 0.0
+    }
+    """
+    return {
+        "symbol": position["instrument"]["symbol"],
+        "qty": position["longQuantity"],
+        "avg_price": position["averagePrice"],
+    }
+
+
 def get_positions(account_id: str = None):
-    # TODO: implement this
-    pass
+    if not account_id:
+        account_id = get_account_id()
+
+    response = requests.get(
+        f"https://api.tdameritrade.com/v1/accounts/{account_id}", params={
+            'fields': 'positions'
+        }, headers=_get_headers())
+
+    response.raise_for_status()
+    raw_account = response.json()
+    positions = raw_account['securitiesAccount']['positions']
+    return list(map(_build_position, positions))
 
 #
 # Placing orders
@@ -314,9 +353,7 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
         ]
     }, headers=_get_headers())
 
-    print(response.json())
     response.raise_for_status()
-    return response.json()
 
 
 try:
@@ -330,4 +367,5 @@ except KeyError as e:
 
 
 def main():
-    print('development...')
+    import json
+    print(json.dumps(get_positions(), indent=2))
