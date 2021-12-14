@@ -74,13 +74,13 @@ def try_top_10_with_price_over_3(path, baseline_start_date):
     lines = get_lines_from_biggest_losers_csv(path, baseline_start_date)
     print(lines[0].keys())
     lines = list(
-        filter(lambda l: l["close_to_close_percent_change_day_of_loss"] < -.1, lines))
+        filter(lambda l: l["close_to_close_percent_change_day_of_loss"] < -.08, lines))
     lines = list(
-        filter(lambda l: l["close_day_of_loss"] > 3, lines))
+        filter(lambda l: l["close_day_of_loss"] > 0, lines))
     lines = list(
-        filter(lambda l: l["volume_day_of_loss"] > 1000000, lines))
+        filter(lambda l: l["volume_day_of_loss"] > 0, lines))
     lines = list(
-        filter(lambda l: not is_warrant(l["ticker"]), lines))
+        filter(lambda l: is_warrant(l["ticker"]), lines))
 
     lines.sort(key=lambda t: (t["day_of_loss"],
                t["close_to_close_percent_change_day_of_loss"]))
@@ -221,6 +221,7 @@ def evaluate_results(lines):
         0.5,  # use half your balance every day
         # use most of your balance every day (good approximation for 1.0 in run.py because of rounding down)
         .95,
+        1.0,
         1.5,  # use overnight margin
     ]
     for _day, trades in trades_by_day.items():
