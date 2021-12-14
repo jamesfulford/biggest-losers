@@ -61,7 +61,7 @@ case $BROKER in
         echo "using td"
         current_dir=`pwd`
         test -f $DATA_DIR/inputs/td-token/output/token.json || fail_script "could not find $DATA_DIR/inputs/td-token/output/token.json, follow instructions here: https://github.com/jamesfulford/td-token"
-        cd $DATA_DIR/inputs/td-token && ./refresh_tokens.sh || fail_script "failed to refresh tokens"
+        cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh || fail_script "failed to refresh tokens"
         cd $current_dir
         ;;
     *)

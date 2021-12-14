@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 
 current_dir=`pwd`
@@ -48,12 +48,23 @@ fi
 # Execute action
 #
 
+function fail_script() {
+    echo "ERROR $1"
+    exit 1
+}
+
+function refresh_tokens() {
+    current_dir=`pwd`
+    exit_code=0
+    cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh > /dev/null 2>&1 || exit_code=1 
+    cd $current_dir
+    return $exit_code
+}
+
 function refresh_tokens_if_needed() {
     if [ "$BROKER" == "td" ]; then
         echo "Refreshing tokens..."
-        current_dir=`pwd` 
-        cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh
-        cd $current_dir
+        refresh_tokens || fail_script "Failed to refresh tokens"
     fi
 }
 
