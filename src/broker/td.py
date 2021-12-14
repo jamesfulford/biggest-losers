@@ -279,7 +279,8 @@ def get_positions(account_id: str = None):
 
     response.raise_for_status()
     raw_account = response.json()
-    positions = raw_account['securitiesAccount']['positions']
+    positions = raw_account['securitiesAccount'].get(
+        'positions', [])  # if no positions, no 'positions' key
     return list(map(_build_position, positions))
 
 #
