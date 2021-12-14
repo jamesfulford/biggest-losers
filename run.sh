@@ -6,6 +6,7 @@ ENV_NAME=`basename $current_dir`
 PARENT_DIR=`dirname $current_dir`
 
 APP_DIR=$current_dir
+# TODO: work out pathing for local development and multiple data dirs (remote-environments folder)
 DATA_DIR=$PARENT_DIR/$ENV_NAME-data
 
 echo APP_DIR $APP_DIR
@@ -33,7 +34,8 @@ if [ "$DRY_RUN" == "" ] && [ "`whoami`" == "root" ]; then
     echo
 fi
 
-source $DATA_DIR/inputs/.env
+env_file=${ENV_FILE:-"$DATA_DIR/inputs/.env"}
+source $env_file
 
 # select correct python command (python3.9 manually installed on server, python3 on my laptop)
 python_exec=python3
@@ -42,17 +44,55 @@ if [[ $py3_version != *"3.9"* ]]; then
     python_exec=python3.9
 fi
 
+# 
+# Execute action
+#
+
+function refresh_tokens_if_needed() {
+    if [ "$BROKER" == "td" ]; then
+        echo "Refreshing tokens..."
+        current_dir=`pwd` 
+        cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh
+        cd $current_dir
+    fi
+}
 
 action="$1"
 
 case $action in
     "buy")
-        $python_exec run.py "buy" "$2"
-        echo "(return code was $?)"
+        refresh_tokens_if_needed
+        case $BROKER in
+            "alpaca")
+                $python_exec biggest-losers-alpaca.py "buy" "$2"
+                echo "(return code was $?)"
+                ;;
+            "td")
+                $python_exec biggest-losers-td.py "buy" "$2"
+                echo "(return code was $?)"
+                ;;
+            *)
+                echo "Unknown broker: '$BROKER', exiting"
+                exit 1
+                ;;
+        esac
         ;;
     "sell")
-        $python_exec run.py "sell" "$2"
-        echo "(return code was $?)"
+        refresh_tokens_if_needed
+        case $BROKER in
+            "alpaca")
+                $python_exec biggest-losers-alpaca.py "sell" "$2"
+                echo "(return code was $?)"
+                ;;
+            "td")
+                $python_exec biggest-losers-td.py "sell" "$2"
+                echo "(return code was $?)"
+                ;;
+            *)
+                echo "Unknown broker: '$BROKER', exiting"
+                exit 1
+                ;;
+        esac
         ;;
     "rotate-logs")
         if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
@@ -64,6 +104,7 @@ case $action in
         echo "# starting new log"
         ;;
     "dump-orders")
+        refresh_tokens_if_needed
         $python_exec dump-orders.py
         echo "(return code was $?)"
         ;;

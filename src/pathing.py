@@ -26,6 +26,8 @@ def get_paths(target_environment_name=None):
 
     paths['data']["inputs"] = {
         'dir': os.path.join(paths['data']['dir'], 'inputs')}
+    paths['data']["inputs"]["td-token_json"] = os.path.join(
+        paths['data']['inputs']['dir'], "td-token", "output", 'token.json')
 
     paths['data']["outputs"] = {
         'dir': os.path.join(paths['data']['dir'], 'outputs')}

@@ -2,7 +2,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from src.broker.dry_run import DRY_RUN
-from src.broker.alpaca import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
+from src.broker.td import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
 from src.losers import get_biggest_losers
 from src.criteria import is_skipped_day, is_warrant
 
@@ -33,7 +33,7 @@ def buy_biggest_losers_at_close(today):
 
     closing_price_min = 0.0  # no price requirement
     minimum_volume = 0  # no volume requirement, let's see how we do.
-    def warrant_criteria(c): return not is_warrant(c["T"])
+    def warrant_criteria(c): return is_warrant(c["T"])
 
     top_n = 10
 
@@ -44,6 +44,7 @@ def buy_biggest_losers_at_close(today):
     # 1.0 is using all cash every night.
     # higher will start using margin. Overnight margin has special rules, max is probably near 1.5 as far as I can tell
     cash_percent_to_use = 1.0
+    max_cash_usage = 500.0  # max cash to use per day, geometric only
 
     # arithmetic
     base_nominal = 10000
@@ -75,7 +76,9 @@ def buy_biggest_losers_at_close(today):
     if use_geometric:
         account = get_account()
         # TODO: figure out leverage for overnight positions
-        effective_cash = float(account["cash"]) * cash_percent_to_use
+        # TODO: enable higher cash for TD after testing
+        effective_cash = min(
+            float(account["cash"]) * cash_percent_to_use, max_cash_usage)
         nominal = effective_cash / len(losers)
     else:
         nominal = base_nominal

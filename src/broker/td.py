@@ -1,8 +1,9 @@
-from datetime import date, datetime
+from datetime import datetime
 import json
 import os
 import requests
 
+from src.pathing import get_paths
 from src.broker.dry_run import DRY_RUN
 
 
@@ -11,7 +12,8 @@ def get_account_id():
 
 
 def _get_token():
-    with open('/Users/jamesfulford/td-token/output/token.json') as f:
+    path = get_paths()['data']["inputs"]["td-token_json"]
+    with open(path) as f:
         return json.load(f)
 
 

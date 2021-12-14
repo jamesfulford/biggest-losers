@@ -37,6 +37,9 @@ test -f $DATA_DIR/inputs/.env || fail_script "could not find $DATA_DIR/inputs/.e
 source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourceable"
 
 
+# TODO: account for time and timezones in crontab entries
+# - cls orders (buy) needs to happen before 3:50pm Market Time
+# - sell orders need to happen day after for avoiding Pattern Day Trader limitations
 function assert_crontab_entry_exists() {
     local entry="$1"
     local grep_ready_entry=`echo "$entry" | python3 -c "import sys;print(sys.stdin.read().replace('.', '\\.'))"`  # replace . with \., for escaping in grep
@@ -53,25 +56,13 @@ case $BROKER in
     "alpaca")
         echo "using alpaca"
         ./scripts/alpaca-ops/account-settings.sh "false" || fail_script "failed to set up settings"
-        # TODO: account for time and timezones in crontab entries
-        # - cls orders (buy) needs to happen before 3:50pm Market Time
-        # - sell orders need to happen day after for avoiding Pattern Day Trader limitations
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy"
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell"
-
-        # just dump all orders to output directory, ideally after buy for biggest-loser strategy
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders"
-
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
-
-        # TODO: dump-orders.py for each environment
-        # TODO: convert run.sh to generic script starter
-
-        DRY_RUN=1 ./run.sh buy || fail_script "failed to run buy"
-        DRY_RUN=1 ./run.sh sell || fail_script "failed to run sell"
         ;;
     "td")
         echo "using td"
+        current_dir=`pwd`
+        test -f $DATA_DIR/inputs/td-token/output/token.json || fail_script "could not find $DATA_DIR/inputs/td-token/output/token.json, follow instructions here: https://github.com/jamesfulford/td-token"
+        cd $DATA_DIR/inputs/td-token && ./refresh_tokens.sh || fail_script "failed to refresh tokens"
+        cd $current_dir
         ;;
     *)
         fail_script "BROKER '$BROKER' is unexpected value"
@@ -82,4 +73,16 @@ esac
 #
 # check crontab entries (don't suggest doing locally and on server for same broker creds, can get confusing)
 #
+assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell"
+assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders"
+assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
+assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy"
+
+#
+# assert that scripts still run, but don't execute any trades for this test
+#
+DRY_RUN=1 ./run.sh buy || fail_script "failed to run buy"
+DRY_RUN=1 ./run.sh sell || fail_script "failed to run sell"
+./run.sh dump-orders || fail_script "failed to run dump-orders"
+
 
