@@ -56,8 +56,12 @@ case $BROKER in
         # TODO: account for time and timezones in crontab entries
         # - cls orders (buy) needs to happen before 3:50pm Market Time
         # - sell orders need to happen day after for avoiding Pattern Day Trader limitations
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy >> $DATA_DIR/logs/run.log 2>&1"
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell >> $DATA_DIR/logs/run.log 2>&1"
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy"
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell"
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
+
+        # TODO: dump-orders.py for each environment
+        # TODO: convert run.sh to generic script starter
 
         DRY_RUN=1 ./run.sh buy || fail_script "failed to run buy"
         DRY_RUN=1 ./run.sh sell || fail_script "failed to run sell"

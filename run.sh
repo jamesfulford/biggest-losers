@@ -1,18 +1,5 @@
 #!/bin/bash
 
-# in crontab:
-# To Buy:
-# 45 15 * * * cd /Users/jamesfulford/scanners && ./run.sh buy >> /tmp/run.log 2>&1
-# To Sell:
-# 0 20 * * * cd /Users/jamesfulford/scanners && ./run.sh sell >> /tmp/run.log 2>&1
-
-echo
-echo "###"
-echo "### starting new run in run.sh"
-echo "###"
-echo
-date
-echo
 
 current_dir=`pwd`
 ENV_NAME=`basename $current_dir`
@@ -26,24 +13,58 @@ echo DATA_DIR $DATA_DIR
 
 log_path=$DATA_DIR/logs/run.log
 
+
+# if running live on my remote server,
+# send output of this script to log file
+if [ "$DRY_RUN" == "" ] && [ "`whoami`" == "root" ]; then
+    function cleanup () {
+        echo
+        echo "### End of script at `date`"
+        echo
+        killall tail
+    }
+    trap 'cleanup' EXIT
+    tail -f $log_path &  # send logs to current terminal, but cleanup tail afterwards
+    exec >> $log_path 2>&1  # send logs to log file
+
+    echo
+    echo "### Start of script at `date`"
+    echo "### $@"
+    echo
+fi
+
 source $DATA_DIR/inputs/.env
 
+# select correct python command (python3.9 manually installed on server, python3 on my laptop)
 python_exec=python3
 py3_version=`$python_exec --version`
 if [[ $py3_version != *"3.9"* ]]; then
     python_exec=python3.9
 fi
 
-$python_exec run.py "$1" "$2"
-echo "(return code was $?)"
 
-H=$(date +%H)
-if (( 12 <= 10#$H && 10#$H < 13 )); then 
-    if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
-        echo "# already found today's log file, won't rotate"
-        exit 0
-    fi
-    echo "# rotating logs"
-    cp -f $log_path $log_path.$(date +%Y-%m-%d)
-    echo "# starting new log"
-fi
+action="$1"
+
+case $action in
+    "buy")
+        $python_exec run.py "buy" "$2"
+        echo "(return code was $?)"
+        ;;
+    "sell")
+        $python_exec run.py "sell" "$2"
+        echo "(return code was $?)"
+        ;;
+    "rotate-logs")
+        if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
+            echo "# already found today's log file, won't rotate"
+            exit 0
+        fi
+        echo "# rotating logs"
+        cp -f $log_path $log_path.$(date +%Y-%m-%d)
+        echo "# starting new log"
+        ;;
+    *)
+        echo "unknown action $action"
+        exit 1
+        ;;
+esac
