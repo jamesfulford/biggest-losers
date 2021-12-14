@@ -1,6 +1,8 @@
 import os
 import requests
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
+
+from src.broker.dry_run import DRY_RUN
 
 
 ALPACA_URL = os.environ['ALPACA_URL']
@@ -11,12 +13,6 @@ APCA_HEADERS = {
     'APCA-API-KEY-ID': APCA_API_KEY_ID,
     'APCA-API-SECRET-KEY': APCA_API_SECRET_KEY,
 }
-
-DRY_RUN = 'DRY_RUN' in os.environ
-if DRY_RUN:
-    print('DRY RUN, will not execute any trades')
-else:
-    print('LIVE RUN, will execute trades')
 
 
 def _get_alpaca(url):
@@ -41,17 +37,6 @@ def buy_symbol_at_close(symbol, quantity):
         # buy at close
         'time_in_force': 'cls'
     }, headers=APCA_HEADERS)
-    response.raise_for_status()
-    return response.json()
-
-
-def liquidate():
-    if DRY_RUN:
-        print(f'DRY_RUN: liquidate()')
-        return
-
-    response = requests.delete(
-        ALPACA_URL + '/v2/positions', headers=APCA_HEADERS)
     response.raise_for_status()
     return response.json()
 
@@ -82,10 +67,6 @@ def get_positions():
 
 def get_account():
     return _get_alpaca('/v2/account')
-
-
-def get_open_orders():
-    return _get_alpaca('/v2/orders')
 
 
 def get_filled_orders(start: datetime, end: datetime):
