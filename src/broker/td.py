@@ -1,9 +1,9 @@
-from datetime import date
+from datetime import date, datetime
 import json
 import os
 import requests
 
-from dry_run import DRY_RUN
+from src.broker.dry_run import DRY_RUN
 
 
 def get_account_id():
@@ -124,21 +124,21 @@ def get_accounts():
 #
 # Orders
 #
-def get_filled_orders(start: date, end: date, account_id: str = None):
+def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
     if not account_id:
         account_id = get_account_id()
-    # inclusive (API is exclusive)
-    # sorted from earliest to latest
 
     response = requests.get(
         f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", headers=_get_headers(), params={
             'status': 'filled',
-            'fromEnteredTime': start.isoformat(),
-            'toEnteredTime': end.isoformat(),
+            'fromEnteredTime': start.date().isoformat(),
+            'toEnteredTime': end.date().isoformat(),
         })
 
     response.raise_for_status()
-    return list(map(_build_order, response.json()))
+    filled_orders = list(map(_build_order, response.json()))
+    filled_orders.sort(key=lambda x: x['filled_at'])
+    return filled_orders
 
 
 def _get_average_fill_price(order):
@@ -227,8 +227,8 @@ def _build_order(order):
         'filled_avg_price': average_fill_price,
         'side': instruction["instruction"],
         # "%Y-%m-%dT%H:%M:%S.%fZ"
-        'filled_at': order["closeTime"].replace("+0000", "Z"),
-        'submitted_at': order["enteredTime"].replace("+0000", "Z"),
+        'filled_at': order["closeTime"].replace("+0000", ".000Z"),
+        'submitted_at': order["enteredTime"].replace("+0000", ".000Z"),
     }
 
 #
