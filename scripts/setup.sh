@@ -31,19 +31,12 @@ which pip3 || fail_script "could not find 'pip3'"
 pip3 install -r requirements.txt || fail_script "failed to install requirements.txt"
 
 #
-# check creds exist and are valid, also configure account
+# check creds exist
 #
 test -f $DATA_DIR/inputs/.env || fail_script "could not find $DATA_DIR/inputs/.env"
 source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourceable"
-./scripts/ops/account-settings.sh "false" || fail_script "failed to set up settings"
 
-#
-# check crontab entries (don't suggest doing locally and on server for same broker creds, can get confusing)
-#
 
-# TODO: account for time and timezones in crontab entries
-# - cls orders (buy) needs to happen before 3:50pm Market Time
-# - sell orders need to happen day after for avoiding Pattern Day Trader limitations
 function assert_crontab_entry_exists() {
     local entry="$1"
     local grep_ready_entry=`echo "$entry" | python3 -c "import sys;print(sys.stdin.read().replace('.', '\\.'))"`  # replace . with \., for escaping in grep
@@ -56,8 +49,29 @@ function assert_crontab_entry_exists() {
     fi
 }
 
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy >> $DATA_DIR/logs/run.log 2>&1"
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell >> $DATA_DIR/logs/run.log 2>&1"
+case $BROKER in
+    "alpaca")
+        echo "using alpaca"
+        ./scripts/alpaca-ops/account-settings.sh "false" || fail_script "failed to set up settings"
+        # TODO: account for time and timezones in crontab entries
+        # - cls orders (buy) needs to happen before 3:50pm Market Time
+        # - sell orders need to happen day after for avoiding Pattern Day Trader limitations
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy >> $DATA_DIR/logs/run.log 2>&1"
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell >> $DATA_DIR/logs/run.log 2>&1"
 
-DRY_RUN=1 ./run.sh buy || fail_script "failed to run buy"
-DRY_RUN=1 ./run.sh sell || fail_script "failed to run sell"
+        DRY_RUN=1 ./run.sh buy || fail_script "failed to run buy"
+        DRY_RUN=1 ./run.sh sell || fail_script "failed to run sell"
+        ;;
+    "td")
+        echo "using td"
+        ;;
+    *)
+        fail_script "BROKER '$BROKER' is unexpected value"
+        ;;
+esac
+
+
+#
+# check crontab entries (don't suggest doing locally and on server for same broker creds, can get confusing)
+#
+
