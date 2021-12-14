@@ -44,7 +44,6 @@ def buy_biggest_losers_at_close(today):
     # 1.0 is using all cash every night.
     # higher will start using margin. Overnight margin has special rules, max is probably near 1.5 as far as I can tell
     cash_percent_to_use = 1.0
-    max_cash_usage = 500.0  # max cash to use per day, geometric only
 
     # arithmetic
     base_nominal = 10000
@@ -77,8 +76,7 @@ def buy_biggest_losers_at_close(today):
         account = get_account()
         # TODO: figure out leverage for overnight positions
         # TODO: enable higher cash for TD after testing
-        effective_cash = min(
-            float(account["cash"]) * cash_percent_to_use, max_cash_usage)
+        effective_cash = float(account["cash"]) * cash_percent_to_use
         nominal = effective_cash / len(losers)
     else:
         nominal = base_nominal

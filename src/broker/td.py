@@ -90,17 +90,18 @@ def _build_account(account):
         }
     }
     """
+    account_type = account['securitiesAccount']["type"]
+
     return {
         "id": account['securitiesAccount']["accountId"],
-        # on alpaca, all are margin account type
-        # on TD, CASH for both individual and IRA. I bet this is MARGIN for margin-enabled accounts.
-        "type": account['securitiesAccount']["type"],
+        # on alpaca, all are margin account type. CASH | MARGIN
+        "type": account_type,
         # less than just cash, it's only cash we can use right now.
-        "cash": account['securitiesAccount']['currentBalances']['cashAvailableForTrading'],
+        "cash": account['securitiesAccount']['currentBalances']['cashBalance'],
         "equity": account['securitiesAccount']['currentBalances']['liquidationValue'],
         "long_market_value": account['securitiesAccount']['currentBalances']['longMarketValue'],
         # cash accounts only, not on Alpaca
-        "unsettled_cash": account['securitiesAccount']['currentBalances']['unsettledCash'],
+        "unsettled_cash": account['securitiesAccount']['currentBalances']['unsettledCash'] if account_type == 'CASH' else 0,
     }
 
 
@@ -314,7 +315,7 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
 try:
     get_account_id()
 except KeyError as e:
-    print(f"ERROR: cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable one of these:")
+    print(f"ERROR: cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
     for account in get_accounts():
         print(
             f"  '{account['id']}' (has ${round(account['cash'], 2)} in cash)")
