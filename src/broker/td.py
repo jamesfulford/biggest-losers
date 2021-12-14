@@ -252,6 +252,8 @@ def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
     if not account_id:
         account_id = get_account_id()
 
+    symbol = normalize_symbol(symbol)
+
     if DRY_RUN:
         print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
         return
@@ -267,21 +269,27 @@ def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
                 "quantity": quantity,
                 "instrument": {
                     "symbol": symbol,
-                    # TODO: Do I need to treat warrants differently?
                     "assetType": "EQUITY"
                 }
             }
         ]
     }, headers=_get_headers())
 
-    print(response)
     response.raise_for_status()
-    return response.json()
+
+
+def normalize_symbol(symbol: str):
+    """
+    TD API doesn't like ., replace with /
+    """
+    return symbol.replace('.', '/')
 
 
 def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
     if not account_id:
         account_id = get_account_id()
+
+    symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
         print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
@@ -300,7 +308,6 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
                 "quantity": quantity,
                 "instrument": {
                     "symbol": symbol,
-                    # TODO: Do I need to treat warrants differently?
                     "assetType": "EQUITY"
                 }
             }
@@ -322,5 +329,5 @@ except KeyError as e:
     exit(1)
 
 
-if __name__ == '__main__':
-    pass
+def main():
+    print('development...')
