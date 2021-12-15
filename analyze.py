@@ -74,33 +74,36 @@ def g_avg(l):
     return m ** (1/len(l))
 
 
-def merge_trades(paper_trades, prod_trades, backtest_trades):
-    paper_trades_by_day = group_trades_by_closed_day(paper_trades)
-    prod_trades_by_day = group_trades_by_closed_day(prod_trades)
+def merge_trades(backtest_trades, *trade_lists):
 
-    days_iso = set(paper_trades_by_day.keys()).intersection(
-        set(prod_trades_by_day.keys()))
+    trades_by_day_lists = list(map(group_trades_by_closed_day, trade_lists))
+
+    days_iso = set()
+    for trades_by_day_list in trades_by_day_lists:
+        days_iso = days_iso.union(trades_by_day_list.keys())
 
     for day_iso in sorted(days_iso):
-        trades_paper = paper_trades_by_day[day_iso]
-        trades_prod = prod_trades_by_day[day_iso]
 
-        symbols = set(map(lambda t: t["symbol"], trades_paper)).union(
-            set(map(lambda t: t["symbol"], trades_prod)))
+        trades_on_day_list = list(
+            map(lambda trades_by_day: trades_by_day.get(day_iso, []), trades_by_day_lists))
+
+        symbols = set()
+        for trades_on_day in trades_on_day_list:
+            symbols = symbols.union(
+                set(map(lambda t: t["symbol"], trades_on_day)))
 
         for symbol in sorted(symbols):
-            # for each paper/prod trade, do inner join with paper,prod,backtest trades and print when there are misses
-            paper_trade = next(
-                filter(lambda t: t["symbol"] == symbol, trades_paper), None)
-            if not paper_trade:
-                print(f"missing paper trade for {day_iso} {symbol}")
-                continue
 
-            prod_trade = next(
-                filter(lambda t: t["symbol"] == symbol, trades_prod), None)
-            if not prod_trade:
-                print(f"missing prod trade for {day_iso} {symbol}")
-                continue
+            symbol_trade_list = []
+            for i, trade_list in enumerate(trade_lists):
+                trade = next(
+                    filter(lambda t: t["symbol"] == symbol, trade_list), None)
+                symbol_trade_list.append(trade)
+                # if not trade:
+                #     print(f"missing trade from set {i} for {day_iso} {symbol}")
+
+            # if len(symbol_trade_list) != len(trade_lists):
+            #     continue
 
             backtest_trade = next(
                 filter(lambda t: t["day_after"].isoformat() == day_iso and t["ticker"] == symbol, backtest_trades), None)
@@ -110,18 +113,16 @@ def merge_trades(paper_trades, prod_trades, backtest_trades):
 
             yield {
                 "symbol": symbol,
-                "paper_trade": paper_trade,
-                "prod_trade": prod_trade,
-                "backtest_trade": backtest_trade
+                "backtest_trade": backtest_trade,
+                "trades": symbol_trade_list,
             }
 
 
 if __name__ == "__main__":
-    paper_trades = get_trades("paper")
-    prod_trades = get_trades("prod")
 
     # print summaries of each
     print(f"paper environment:")
+    paper_trades = get_trades("paper")
     paper_trades_by_day = group_trades_by_closed_day(paper_trades)
     print_order_summary(paper_trades_by_day)
     print()
@@ -129,8 +130,17 @@ if __name__ == "__main__":
     print("=" * 80)
 
     print(f"prod environment:")
+    prod_trades = get_trades("prod")
     prod_trades_by_day = group_trades_by_closed_day(prod_trades)
     print_order_summary(prod_trades_by_day)
+    print()
+
+    print("=" * 80)
+
+    print(f"td-cash environment:")
+    td_cash_trades = get_trades("td-cash")
+    td_cash_trades_by_day = group_trades_by_closed_day(td_cash_trades)
+    print_order_summary(td_cash_trades_by_day)
     print()
 
     print("=" * 80)
@@ -151,6 +161,7 @@ if __name__ == "__main__":
             #
             "paper_trade_enter_price",
             "prod_trade_enter_price",
+            "td_cash_trade_enter_price",
             "backtest_trade_enter_price",
             # extra fields
             # TODO: add volume/quantities
@@ -160,6 +171,7 @@ if __name__ == "__main__":
             #
             "paper_trade_exit_price",
             "prod_trade_exit_price",
+            "td_cash_trade_exit_price",
             "backtest_trade_exit_price",
             # extra fields
             "backtest_high_day_after",
@@ -181,28 +193,40 @@ if __name__ == "__main__":
         f.write(",".join(headers) + "\n")
 
         # TODO: merge in paper and prod trade intentions
-        for merged_trade in merge_trades(paper_trades, prod_trades, get_backtest_theoretical_trades()):
-            f.write(",".join([
-                merged_trade["backtest_trade"]["day_of_loss"].isoformat(),
-                merged_trade["backtest_trade"]["ticker"],
-                merged_trade["backtest_trade"]["day_after"].isoformat(),
+        for merged_trade in merge_trades(get_backtest_theoretical_trades(), paper_trades, prod_trades, td_cash_trades):
+            symbol = merged_trade["symbol"]
+            backtest_trade = merged_trade["backtest_trade"]
+            paper_trade, prod_trade, td_cash_trade = tuple(
+                merged_trade["trades"])
 
-                str(round(merged_trade["paper_trade"]["bought_price"], 4)),
-                str(round(merged_trade["prod_trade"]["bought_price"], 4)),
-                str(round(merged_trade["backtest_trade"]
+            f.write(",".join([
+                backtest_trade["day_of_loss"].isoformat(),
+                backtest_trade["ticker"],
+                backtest_trade["day_after"].isoformat(),
+
+                str(round(paper_trade["bought_price"], 4)
+                    ) if paper_trade else "",
+                str(round(prod_trade["bought_price"], 4)
+                    ) if prod_trade else "",
+                str(round(td_cash_trade["bought_price"], 4)
+                    ) if td_cash_trade else "",
+                str(round(backtest_trade
                     ["close_day_of_loss"], 4)),
 
-                str(round(merged_trade["backtest_trade"]
+                str(round(backtest_trade
                     ["volume_day_of_loss"], 0)),
 
-                str(round(merged_trade["paper_trade"]["sold_price"], 4)),
-                str(round(merged_trade["prod_trade"]["sold_price"], 4)),
-                str(round(merged_trade["backtest_trade"]
+                str(round(paper_trade["sold_price"], 4)
+                    ) if paper_trade else "",
+                str(round(prod_trade["sold_price"], 4)) if prod_trade else "",
+                str(round(td_cash_trade["sold_price"], 4)
+                    ) if td_cash_trade else "",
+                str(round(backtest_trade
                     ["open_day_after"], 4)),
 
-                str(round(merged_trade["backtest_trade"]
+                str(round(backtest_trade
                     ["high_day_after"], 4)),
-                str(round(merged_trade["backtest_trade"]["low_day_after"], 4)),
-                str(round(merged_trade["backtest_trade"]
+                str(round(backtest_trade["low_day_after"], 4)),
+                str(round(backtest_trade
                     ["close_day_after"], 4)),
             ]) + "\n")
