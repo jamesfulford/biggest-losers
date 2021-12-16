@@ -213,6 +213,47 @@ def evaluate_results(lines):
     return results
 
 
+def print_out_interesting_results(pockets):
+    widest_criteria = get_widest_criteria_with_results(pockets)
+
+    baseline_results = widest_criteria["results"]
+    print("baseline names", "    ".join(
+        sorted(widest_criteria["names"].values())))
+    print("baseline results", baseline_results)
+    print()
+
+    widest_top_10_criteria = get_widest_criteria_with_results(
+        list(filter(lambda p: p["names"]["top_n"] == "top 10", pockets)))
+    print("baseline top 10 names", "    ".join(
+        sorted(widest_top_10_criteria["names"].values())))
+    print("baseline top 10 results", widest_top_10_criteria["results"])
+    print()
+
+    key_criteria = "g_85%"
+    passing_criterion_sets = list(filter(
+        lambda r: r["results"][key_criteria] > baseline_results[key_criteria], pockets))
+
+    show_top = 10
+    print(f"subsets which outperform baseline on {key_criteria}:", len(
+        passing_criterion_sets))
+    best_criteria_sets = sorted(
+        passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]
+    for criteria_set in best_criteria_sets:
+        print("  ", "  ".join(
+            criteria_set["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
+
+    return best_criteria_sets
+
+
+def get_widest_criteria_with_results(pockets):
+    widest_criteria = pockets[0]
+    for criteria_result in pockets:
+        widest_criteria = criteria_result if criteria_result["results"][
+            "plays"] > widest_criteria["results"]["plays"] else widest_criteria
+
+    return widest_criteria
+
+
 def build_criteria_set():
 
     # rank_day_of_loss
@@ -390,56 +431,13 @@ def build_criteria_set():
     }
 
 
-def print_out_interesting_results(pockets):
-    widest_criteria = get_widest_criteria_with_results(pockets)
-
-    baseline_results = widest_criteria["results"]
-    print("baseline names", "    ".join(
-        sorted(widest_criteria["names"].values())))
-    print("baseline results", baseline_results)
-    print()
-
-    widest_top_10_criteria = get_widest_criteria_with_results(
-        list(filter(lambda p: p["names"]["top_n"] == "top 10", pockets)))
-    print("baseline top 10 names", "    ".join(
-        sorted(widest_top_10_criteria["names"].values())))
-    print("baseline top 10 results", widest_top_10_criteria["results"])
-    print()
-
-    key_criteria = "g_85%"
-    passing_criterion_sets = list(filter(
-        lambda r: r["results"][key_criteria] > baseline_results[key_criteria], pockets))
-
-    show_top = 10
-    print(f"subsets which outperform baseline on {key_criteria}:", len(
-        passing_criterion_sets))
-    best_criteria_sets = sorted(
-        passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]
-    for criteria_set in best_criteria_sets:
-        print("  ", "  ".join(
-            criteria_set["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
-
-    return best_criteria_sets
-
-
-def get_widest_criteria_with_results(pockets):
-    widest_criteria = pockets[0]
-    for criteria_result in pockets:
-        widest_criteria = criteria_result if criteria_result["results"][
-            "plays"] > widest_criteria["results"]["plays"] else widest_criteria
-
-    return widest_criteria
-
-
 if __name__ == "__main__":
     # TODO: test based off of total loss / drawdown
 
     from src.pathing import get_paths
 
     path = get_paths()['data']['outputs']["biggest_losers_csv"]
-    baseline_start_date = date(2020, 6, 1)
-
-    # try_top_10_with_price_over_3(path, baseline_start_date)
+    baseline_start_date = date(2021, 1, 1)
 
     pockets = analyze_biggest_losers_csv(path, baseline_start_date)
     best_pockets = print_out_interesting_results(pockets)
