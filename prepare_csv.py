@@ -261,7 +261,7 @@ def main():
     # earliest date I have data for on my machine
     # start_date = date(2019, 11, 18)
 
-    start_date = date(2021, 1, 1)
+    start_date = date(2020, 6, 1)
     end_date = date.today()
     prepare_biggest_losers_csv(path, start_date=start_date, end_date=end_date)
 

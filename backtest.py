@@ -437,7 +437,7 @@ if __name__ == "__main__":
     from src.pathing import get_paths
 
     path = get_paths()['data']['outputs']["biggest_losers_csv"]
-    baseline_start_date = date(2021, 1, 1)
+    baseline_start_date = date(2020, 6, 1)
 
     # try_top_10_with_price_over_3(path, baseline_start_date)
 
