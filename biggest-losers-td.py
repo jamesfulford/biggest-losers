@@ -22,6 +22,9 @@ def print_losers_csv(losers):
 
     print()
 
+    for loser in losers:
+        print(loser['T'])
+
 
 def print_current_positions():
     positions = get_positions()
