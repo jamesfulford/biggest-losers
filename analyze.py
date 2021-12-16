@@ -107,9 +107,6 @@ def merge_trades(backtest_trades, *trade_lists):
 
             backtest_trade = next(
                 filter(lambda t: t["day_after"].isoformat() == day_iso and t["ticker"] == symbol, backtest_trades), None)
-            if not backtest_trade:
-                print(f"missing backtest trade for {day_iso} {symbol}")
-                continue
 
             yield {
                 "symbol": symbol,
@@ -180,15 +177,15 @@ if __name__ == "__main__":
             #
             # computed fields
             #
-
-            # Initial results seem to show that prod trade enters at the same price as the backtest says.
+            "paper_trade_roi",
+            "prod_trade_roi",
+            "td_cash_trade_roi",
+            "backtest_trade_roi",
 
             # TODO: add slippage %'s enter and exit
             # - correlate close quantity/volume with slippage?
             # - correlate close slippage with price?
             # - correlate close slippage with high-low of day of selling
-
-            # TODO: add rois, add best possible roi
         ]
         f.write(",".join(headers) + "\n")
 
@@ -199,10 +196,17 @@ if __name__ == "__main__":
             paper_trade, prod_trade, td_cash_trade = tuple(
                 merged_trade["trades"])
 
+            day_of_loss = backtest_trade["day_of_loss"] if backtest_trade else (paper_trade["opened_at"].date() if paper_trade else (
+                prod_trade["opened_at"].date() if prod_trade else td_cash_trade["opened_at"].date()))
+            ticker = backtest_trade["ticker"] if backtest_trade else (paper_trade["symbol"] if paper_trade else (
+                prod_trade["symbol"] if prod_trade else td_cash_trade["symbol"]))
+            day_after = backtest_trade["day_after"] if backtest_trade else (paper_trade["closed_at"].date() if paper_trade else (
+                prod_trade["closed_at"].date() if prod_trade else td_cash_trade["closed_at"].date()))
+
             f.write(",".join([
-                backtest_trade["day_of_loss"].isoformat(),
-                backtest_trade["ticker"],
-                backtest_trade["day_after"].isoformat(),
+                day_of_loss.isoformat(),
+                ticker,
+                day_after.isoformat(),
 
                 str(round(paper_trade["bought_price"], 4)
                     ) if paper_trade else "",
@@ -211,10 +215,10 @@ if __name__ == "__main__":
                 str(round(td_cash_trade["bought_price"], 4)
                     ) if td_cash_trade else "",
                 str(round(backtest_trade
-                    ["close_day_of_loss"], 4)),
+                    ["close_day_of_loss"], 4)) if backtest_trade else "",
 
                 str(round(backtest_trade
-                    ["volume_day_of_loss"], 0)),
+                    ["volume_day_of_loss"], 0)) if backtest_trade else "",
 
                 str(round(paper_trade["sold_price"], 4)
                     ) if paper_trade else "",
@@ -222,11 +226,21 @@ if __name__ == "__main__":
                 str(round(td_cash_trade["sold_price"], 4)
                     ) if td_cash_trade else "",
                 str(round(backtest_trade
-                    ["open_day_after"], 4)),
+                    ["open_day_after"], 4)) if backtest_trade else "",
 
                 str(round(backtest_trade
-                    ["high_day_after"], 4)),
-                str(round(backtest_trade["low_day_after"], 4)),
+                    ["high_day_after"], 4)) if backtest_trade else "",
+                str(round(backtest_trade["low_day_after"], 4)
+                    ) if backtest_trade else "",
                 str(round(backtest_trade
-                    ["close_day_after"], 4)),
+                    ["close_day_after"], 4)) if backtest_trade else "",
+
+                str(round(
+                    (paper_trade["sold_price"] - paper_trade["bought_price"]) / paper_trade["bought_price"], 4)) if paper_trade else "",
+                str(round(
+                    (prod_trade["sold_price"] - prod_trade["bought_price"]) / prod_trade["bought_price"], 4)) if prod_trade else "",
+                str(round(
+                    (td_cash_trade["sold_price"] - td_cash_trade["bought_price"]) / td_cash_trade["bought_price"], 4)) if td_cash_trade else "",
+                str(round(
+                    backtest_trade["overnight_strategy_roi"], 4)) if backtest_trade else "",
             ]) + "\n")
