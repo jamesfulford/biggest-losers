@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 import itertools
 from copy import deepcopy
 
-from src.criteria import is_warrant
+from src.criteria import is_skipped_day, is_warrant
 
 
 def get_lines_from_biggest_losers_csv(path, baseline_start_date):
@@ -64,7 +64,7 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
             print("\t", unmapped_field, raw_dict_lines[0][unmapped_field])
 
     def baseline_criteria(t):
-        return t["day_of_loss"] > baseline_start_date
+        return t["day_of_loss"] > baseline_start_date and not is_skipped_day(t['day_of_loss']) and not is_skipped_day(t['day_after'])
 
     lines = list(filter(baseline_criteria, lines))
 
