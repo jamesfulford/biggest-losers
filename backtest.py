@@ -1,8 +1,8 @@
 from datetime import date, datetime, timedelta
 import itertools
+from copy import deepcopy
 
-from src.cache import read_json_cache, write_json_cache
-from src.criteria import is_skipped_day, is_warrant
+from src.criteria import is_warrant
 
 
 def get_lines_from_biggest_losers_csv(path, baseline_start_date):
@@ -41,6 +41,7 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
         "14atr": float(l["14atr"]) if l["14atr"] else None,
         "50ema": float(l["50ema"]) if l["50ema"] else None,
         "100ema": float(l["100ema"]) if l["100ema"] else None,
+        "100sma": float(l["100sma"]) if l["100sma"] else None,
 
         "spy_day_of_loss_percent_change": float(l["spy_day_of_loss_percent_change"]),
         "spy_day_of_loss_intraday_percent_change": float(l["spy_day_of_loss_intraday_percent_change"]),
@@ -70,67 +71,17 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
     return lines
 
 
-def try_top_10_with_price_over_3(path, baseline_start_date):
-    lines = get_lines_from_biggest_losers_csv(path, baseline_start_date)
-    print(lines[0].keys())
-    lines = list(
-        filter(lambda l: l["close_to_close_percent_change_day_of_loss"] < -.08, lines))
-    lines = list(
-        filter(lambda l: l["close_day_of_loss"] > 0, lines))
-    lines = list(
-        filter(lambda l: l["volume_day_of_loss"] > 0, lines))
-    lines = list(
-        filter(lambda l: is_warrant(l["ticker"]), lines))
+def take_top_n_daily(trades, n=10):
+    trades_by_day = {}
+    for trade in trades:
+        key = trade["day_of_loss"].isoformat()
+        trades_by_day[key] = trades_by_day.get(key, []) + [trade]
 
-    lines.sort(key=lambda t: (t["day_of_loss"],
-               t["close_to_close_percent_change_day_of_loss"]))
+    new_trades = []
+    for _day, days_trades in sorted(trades_by_day.items()):
+        new_trades.extend(days_trades[:n])
 
-    def each_day(lines):
-        current_day = lines[0]["day_of_loss"]
-        lines_for_current_day = []
-        for line in lines:
-            day = line["day_of_loss"]
-            if day != current_day:
-                # day has ended
-                yield lines_for_current_day
-                lines_for_current_day = []
-                current_day = day
-
-            lines_for_current_day.append(line)
-
-    for top_n in range(1, 21):
-        trades = []
-        days_with_insufficient_trades = 0
-        for top_losers_of_day in each_day(lines):
-            day_of_loss = top_losers_of_day[0]["day_of_loss"]
-            day_after = top_losers_of_day[0]["day_after"]
-
-            if is_skipped_day(day_of_loss) or is_skipped_day(day_after):
-                continue
-
-            losers_to_trade = top_losers_of_day[:top_n]
-
-            # print(losers_to_trade[0]["day_of_loss"])
-            # for loser in losers_to_trade:
-            #     print(loser["ticker"], loser["close_to_close_percent_change_day_of_loss"],
-            #           loser["rank_day_of_loss"])
-            # print()
-
-            if len(losers_to_trade) < top_n:
-                days_with_insufficient_trades += 1
-                # print(
-                #     f"WARNING: not enough losers to trade on, continuing with {len(losers_to_trade)} {top_losers_of_day[0]['day_of_loss']}")
-
-            trades.extend(losers_to_trade)
-
-        # default weighting is equally over all trades in a day
-        results = evaluate_results(trades)
-        if top_n == 10:
-            print()
-        print(
-            f"top {top_n} ({days_with_insufficient_trades} days not enough)", results)
-        if top_n == 10:
-            print()
+    return new_trades
 
 
 def analyze_biggest_losers_csv(path, baseline_start_date):
@@ -151,7 +102,7 @@ def analyze_biggest_losers_csv(path, baseline_start_date):
 
     line_count = len(lines)
     evaluations = possible_pockets * line_count
-    evaluations_per_second = 2.8e6  # found empirically on my computer
+    evaluations_per_second = 1.8e6  # found empirically on my computer
 
     print("estimated time:", timedelta(
         seconds=evaluations / evaluations_per_second))
@@ -167,19 +118,24 @@ def analyze_biggest_losers_csv(path, baseline_start_date):
 
         criterion = list(map(lambda t: t[1], raw_criteria_set))
 
+        # TODO: refactor this into a function so we can evaluate a criteria set independent of this loop (something exists in hybrid_backtest.py)
         filtered_lines = lines
         for criteria in criterion:
             new_lines = list(filter(criteria, filtered_lines))
             filtered_lines = new_lines
 
-        results = evaluate_results(filtered_lines)
-        if not results:
-            continue
+        for n in [8, 10, 12, 15, 20]:
 
-        criteria_results.append({
-            "names": criteria_set_descriptor,
-            "results": results,
-        })
+            results = evaluate_results(take_top_n_daily(filtered_lines, n=n))
+            if not results:
+                continue
+
+            new_criteria_set_descriptor = deepcopy(criteria_set_descriptor)
+            new_criteria_set_descriptor["top_n"] = f"top {n}"
+            criteria_results.append({
+                "names": new_criteria_set_descriptor,
+                "results": results,
+            })
 
     end_time = datetime.now()
     print('actual time:', end_time-start_time)
@@ -204,10 +160,10 @@ def evaluate_results(lines):
 
     trades_by_day = {}
     for line in lines:
-        key = line["day_of_loss"].strftime("%Y-%m-%d")
+        key = line["day_of_loss"].isoformat()
         trades_by_day[key] = trades_by_day.get(key, []) + [line]
 
-    def get_weight(trade, trades):
+    def get_weight(_trade, trades):
         # give each trade a weight of 1/len(trades)
         # (equal weighting of trades each day)
         return 1/len(trades)
@@ -217,9 +173,8 @@ def evaluate_results(lines):
 
     geometric_balances = {}
     geometric_coefficients = [
-        0.33,  # cash trading
-        0.5,  # use half your balance every day
-        # use most of your balance every day (good approximation for 1.0 in run.py because of rounding down)
+        0.33,  # cash account with settling
+        .85,
         .95,
         1.0,
         1.5,  # use overnight margin
@@ -261,20 +216,17 @@ def evaluate_results(lines):
 def build_criteria_set():
 
     # rank_day_of_loss
-    rank_day_of_loss = {}
+    rank_day_of_loss = {
+        "* rank": lambda _: True,
+    }
 
     def build_rank_criterion(rank):
         def rank_criterion(t):
             return t["rank_day_of_loss"] <= rank
         return rank_criterion
 
-    # top 5
-    # top 10
-    # top 15
-    # top 20 (all)
-    for i in [10]:
-        # for i in range(1, 21):
-        rank_day_of_loss[f"top {i}"] = build_rank_criterion(i)
+    for i in range(5, 50, 5):
+        rank_day_of_loss[f"rank {i}"] = build_rank_criterion(i)
 
     # intraday_percent_change_day_of_loss
     intraday_percent_change_day_of_loss = {
@@ -323,19 +275,19 @@ def build_criteria_set():
             percent)
 
     return {
-        "rank_day_of_loss": rank_day_of_loss,
-        # "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
-        # "close_to_close_percent_change_day_of_loss": close_to_close_percent_change_day_of_loss,
-        # "spy_day_of_loss_percent_change": {
-        #     # very red day
-        #     # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
-        #     # "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
-        #     "spy down": lambda t: t["spy_day_of_loss_percent_change"] < 0,
-        #     # "spy up": lambda t: t["spy_day_of_loss_percent_change"] > 0,
-        #     # not big happy day
-        #     # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
-        #     "* spy": lambda _: True,
-        # },
+        # "rank_day_of_loss": rank_day_of_loss,
+        "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
+        "close_to_close_percent_change_day_of_loss": close_to_close_percent_change_day_of_loss,
+        "spy_day_of_loss_percent_change": {
+            # very red day
+            # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
+            # "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
+            # "spy down": lambda t: t["spy_day_of_loss_percent_change"] < 0,
+            # "spy up": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+            # not big happy day
+            # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+            "* spy": lambda _: True,
+        },
         # "dollar_volume_day_of_loss": {
         #     # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
         #     # '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
@@ -344,20 +296,20 @@ def build_criteria_set():
         #     # NOTE: this has GREAT results, but it would be hard to enter/exit
         #     '* $vol': lambda _: True,
         # },
-        "close_day_of_loss": {
-            # "p < 1": lambda t: t["close_day_of_loss"] < 1,
-            # "p < 3": lambda t: t["close_day_of_loss"] < 3,
-            "p > 3": lambda t: t["close_day_of_loss"] > 3,
-            # "p < 5": lambda t: t["close_day_of_loss"] < 5,
-            # "p < 10": lambda t: t["close_day_of_loss"] < 10,
-            # "p < 20": lambda t: t["close_day_of_loss"] < 20,
-            # tried a few >, but it was too restrictive
-            # "all $": lambda _: True,
-        },
+        # "close_day_of_loss": {
+        #     "p < 1": lambda t: t["close_day_of_loss"] < 1,
+        #     "p < 3": lambda t: t["close_day_of_loss"] < 3,
+        #     "p > 3": lambda t: t["close_day_of_loss"] > 3,
+        #     "p < 5": lambda t: t["close_day_of_loss"] < 5,
+        #     "p < 10": lambda t: t["close_day_of_loss"] < 10,
+        #     "p < 20": lambda t: t["close_day_of_loss"] < 20,
+        #     tried a few >, but it was too restrictive
+        #     "all $": lambda _: True,
+        # },
         "ticker_is_warrant": {
             # "no w": lambda t: not is_warrant(t["ticker"]),
-            # "only w": lambda t: is_warrant(t["ticker"]),
-            "*w": lambda _: True,
+            "only w": lambda t: is_warrant(t["ticker"]),
+            # "*w": lambda _: True,
         },
 
         #
@@ -439,10 +391,7 @@ def build_criteria_set():
 
 
 def print_out_interesting_results(pockets):
-    widest_criteria = pockets[0]
-    for criteria_result in pockets:
-        widest_criteria = criteria_result if criteria_result["results"][
-            "plays"] > widest_criteria["results"]["plays"] else widest_criteria
+    widest_criteria = get_widest_criteria_with_results(pockets)
 
     baseline_results = widest_criteria["results"]
     print("baseline names", "    ".join(
@@ -450,16 +399,27 @@ def print_out_interesting_results(pockets):
     print("baseline results", baseline_results)
     print()
 
-    for key_criteria in ["g_roix4"]:
-        passing_criterion_sets = list(filter(
-            lambda r: r["results"][key_criteria] > baseline_results[key_criteria], pockets))
+    widest_top_10_criteria = get_widest_criteria_with_results(
+        list(filter(lambda p: p["names"]["top_n"] == "top 10", pockets)))
+    print("baseline top 10 names", "    ".join(
+        sorted(widest_top_10_criteria["names"].values())))
+    print("baseline top 10 results", widest_top_10_criteria["results"])
+    print()
 
-        show_top = 10
-        print(f"subsets which outperform baseline on {key_criteria}:", len(
-            passing_criterion_sets))
-        for criteria_set in sorted(passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]:
-            print("  ", "  ".join(
-                criteria_set["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
+    key_criteria = "g_85%"
+    passing_criterion_sets = list(filter(
+        lambda r: r["results"][key_criteria] > baseline_results[key_criteria], pockets))
+
+    show_top = 10
+    print(f"subsets which outperform baseline on {key_criteria}:", len(
+        passing_criterion_sets))
+    best_criteria_sets = sorted(
+        passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True)[:show_top]
+    for criteria_set in best_criteria_sets:
+        print("  ", "  ".join(
+            criteria_set["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", criteria_set["results"].items()))))
+
+    return best_criteria_sets
 
 
 def get_widest_criteria_with_results(pockets):
@@ -471,75 +431,6 @@ def get_widest_criteria_with_results(pockets):
     return widest_criteria
 
 
-def try_hybrid_model(pockets, path, baseline_start_date, is_quality_pocket):
-    quality_pockets = list(filter(is_quality_pocket, pockets))
-
-    lines = get_lines_from_biggest_losers_csv(path, baseline_start_date)
-
-    hybrid_model_trades = []
-
-    criteria_set = build_criteria_set()
-
-    def pocket_includes_line(pocket, line):
-
-        # every criteria must be met
-        for dimension_name, segment_name in pocket["names"].items():
-            criteria = criteria_set[dimension_name][segment_name]
-            if not criteria(line):
-                return False
-
-        return True
-
-    for line in lines:
-        for pocket in quality_pockets:
-            # if any pocket contains the line, then we have a trade
-            if pocket_includes_line(pocket, line):
-                hybrid_model_trades.append(line)
-                break
-
-    results = evaluate_results(hybrid_model_trades)
-    if not results:
-        return None
-
-    results["hybrid"] = {
-        "pockets": len(quality_pockets),
-    }
-
-    return results, quality_pockets
-
-
-def build_pocket_quality_criteria(min_plays=None, min_avg_roi=None, min_win_percent=None, min_g_roi=None, min_a_roi=None):
-    criterion = []
-
-    if min_plays:
-        criterion.append(
-            lambda pocket: pocket["results"]["plays"] >= min_plays)
-
-    if min_avg_roi:
-        criterion.append(
-            lambda pocket: pocket["results"]["avg_roi"] >= min_avg_roi)
-
-    if min_win_percent:
-        criterion.append(
-            lambda pocket: pocket["results"]["win%"] >= min_win_percent)
-
-    if min_g_roi:
-        criterion.append(
-            lambda pocket: pocket["results"]["g_roi"] >= min_g_roi)
-
-    if min_a_roi:
-        criterion.append(
-            lambda pocket: pocket["results"]["a_roi"] >= min_a_roi)
-
-    def is_quality_pocket(pocket):
-        return all((
-            criteria(pocket)
-            for criteria in criterion
-        ))
-
-    return is_quality_pocket
-
-
 if __name__ == "__main__":
     # TODO: test based off of total loss / drawdown
 
@@ -548,42 +439,9 @@ if __name__ == "__main__":
     path = get_paths()['data']['outputs']["biggest_losers_csv"]
     baseline_start_date = date(2021, 1, 1)
 
-    try_top_10_with_price_over_3(path, baseline_start_date)
-    exit(0)
+    # try_top_10_with_price_over_3(path, baseline_start_date)
 
-    write_new_model = True
-    model_cache_entry = "modelv2"
-
-    if write_new_model:
-        pockets = analyze_biggest_losers_csv(
-            path, baseline_start_date)
-        write_json_cache(model_cache_entry, pockets)
-    else:
-        pockets = read_json_cache(model_cache_entry)
-
-    print()
-    print_out_interesting_results(pockets)
-    print()
-    print("-" * 80)
-    baseline_results = get_widest_criteria_with_results(pockets)["results"]
-    print(f"baseline with {len(pockets)} pockets", baseline_results)
-    print()
-
-    is_quality_pocket = build_pocket_quality_criteria(
-        min_win_percent=.5, min_avg_roi=.05, min_plays=30)
-
-    # TODO: try a hybrid model if pockets are non-overlapping and then use quality + min pocket criteria
-
-    hybrid_results_pockets = try_hybrid_model(
-        pockets, path, baseline_start_date, is_quality_pocket)
-    if not hybrid_results_pockets:
-        print("no hybrid model")
-        exit(1)
-    results, pockets = hybrid_results_pockets
-
-    for pocket in pockets:
-        print("  ", "  ".join(
-            pocket["names"].values()).ljust(64), "| " + " ".join(list(map(lambda tup: f"{tup[0]}={round(tup[1], 3)}", pocket["results"].items()))))
-
-    print()
-    print("hybrid", results)
+    pockets = analyze_biggest_losers_csv(path, baseline_start_date)
+    best_pockets = print_out_interesting_results(pockets)
+    best_pocket = best_pockets[0]
+    # TODO: get trades of best pocket and look at some more interesting stats
