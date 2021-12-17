@@ -124,7 +124,8 @@ def analyze_biggest_losers_csv(path, baseline_start_date):
             new_lines = list(filter(criteria, filtered_lines))
             filtered_lines = new_lines
 
-        for n in [8, 10, 12, 15, 20]:
+        for n in [10]:
+            # for n in [8, 10, 12, 15, 20]:
 
             results = evaluate_results(take_top_n_daily(filtered_lines, n=n))
             if not results:
@@ -169,15 +170,17 @@ def evaluate_results(lines):
         return 1/len(trades)
 
     trading_days = 0
+    green_days = 0
+
     arithmetic_roi = 0
 
     geometric_balances = {}
     geometric_coefficients = [
-        0.33,  # cash account with settling
+        # 0.33,  # cash account with settling
         .85,
-        .95,
-        1.0,
-        1.5,  # use overnight margin
+        # .95,
+        # 1.0,
+        # 1.5,  # use overnight margin
     ]
     for _day, trades in trades_by_day.items():
         trading_days += 1
@@ -190,6 +193,8 @@ def evaluate_results(lines):
         # just take returns, do not reinvest, only withdraw to replenish original capital
         arithmetic_roi += today_roi
 
+        green_days += 1 if today_roi > 0 else 0
+
         for coefficient in geometric_coefficients:
             balance = geometric_balances.get(coefficient, 1)
             geometric_balances[coefficient] = balance + \
@@ -198,10 +203,13 @@ def evaluate_results(lines):
     # TODO: calculate drawdown and other stats
 
     results = {
-        "a_*": round(arithmetic_roi + 1, 2),
         "avg_roi": round(average_roi, 3),
-        "win%": round(win_rate, 3),
+        "win%": 100*round(win_rate, 3),
         "plays": plays,
+
+        # This right now is calculated exactly the same as avg_roi...
+        # "day_avg_roi": round(arithmetic_roi / trading_days, 3),
+        "day_win%": 100*round(green_days / trading_days, 3),
         "days": trading_days,
     }
 
@@ -319,37 +327,37 @@ def build_criteria_set():
         # "rank_day_of_loss": rank_day_of_loss,
         "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
         "close_to_close_percent_change_day_of_loss": close_to_close_percent_change_day_of_loss,
-        "spy_day_of_loss_percent_change": {
-            # very red day
-            # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
-            # "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
-            # "spy down": lambda t: t["spy_day_of_loss_percent_change"] < 0,
-            # "spy up": lambda t: t["spy_day_of_loss_percent_change"] > 0,
-            # not big happy day
-            # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
-            "* spy": lambda _: True,
-        },
+        # "spy_day_of_loss_percent_change": {
+        # very red day
+        # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
+        # "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
+        # "spy down": lambda t: t["spy_day_of_loss_percent_change"] < 0,
+        # "spy up": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+        # not big happy day
+        # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+        #     "* spy": lambda _: True,
+        # },
         # "dollar_volume_day_of_loss": {
-        #     # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
-        #     # '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
-        #     # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
-        #     # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
-        #     # NOTE: this has GREAT results, but it would be hard to enter/exit
-        #     '* $vol': lambda _: True,
+        # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+        # '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
+        # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
+        # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
+        # NOTE: this has GREAT results, but it would be hard to enter/exit
+        # '* $vol': lambda _: True,
         # },
         # "close_day_of_loss": {
-        #     "p < 1": lambda t: t["close_day_of_loss"] < 1,
-        #     "p < 3": lambda t: t["close_day_of_loss"] < 3,
-        #     "p > 3": lambda t: t["close_day_of_loss"] > 3,
-        #     "p < 5": lambda t: t["close_day_of_loss"] < 5,
-        #     "p < 10": lambda t: t["close_day_of_loss"] < 10,
-        #     "p < 20": lambda t: t["close_day_of_loss"] < 20,
-        #     tried a few >, but it was too restrictive
-        #     "all $": lambda _: True,
+        # "p < 1": lambda t: t["close_day_of_loss"] < 1,
+        # "p < 3": lambda t: t["close_day_of_loss"] < 3,
+        # "p > 3": lambda t: t["close_day_of_loss"] > 3,
+        # "p < 5": lambda t: t["close_day_of_loss"] < 5,
+        # "p < 10": lambda t: t["close_day_of_loss"] < 10,
+        # "p < 20": lambda t: t["close_day_of_loss"] < 20,
+        # tried a few >, but it was too restrictive
+        # "all $": lambda _: True,
         # },
         "ticker_is_warrant": {
-            # "no w": lambda t: not is_warrant(t["ticker"]),
-            "only w": lambda t: is_warrant(t["ticker"]),
+            "no w": lambda t: not is_warrant(t["ticker"]),
+            # "only w": lambda t: is_warrant(t["ticker"]),
             # "*w": lambda _: True,
         },
 
