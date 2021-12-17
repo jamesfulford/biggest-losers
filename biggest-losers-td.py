@@ -2,7 +2,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from src.broker.dry_run import DRY_RUN
-from src.broker.td import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
+from src.broker.td import buy_symbol_market, get_account, get_positions, sell_symbol_at_open
 from src.losers import get_biggest_losers
 from src.criteria import is_skipped_day, is_warrant
 
@@ -31,7 +31,7 @@ def print_current_positions():
     print('DEBUG: current positions', positions)
 
 
-def buy_biggest_losers_at_close(today):
+def buy_biggest_losers(today):
     minimum_loss_percent = 0.1  # down at least 10%; aka percent_change < -0.1
 
     closing_price_min = 0.0  # no price requirement
@@ -103,7 +103,7 @@ def buy_biggest_losers_at_close(today):
             "side": "buy"
         })
         try:
-            buy_symbol_at_close(symbol, quantity)
+            buy_symbol_market(symbol, quantity)
         except Exception as e:
             print(e.response.status_code, e.response.json())
     return order_intentions
@@ -163,7 +163,7 @@ if __name__ == '__main__':
         exit(0)
 
     if action == 'buy':
-        order_intentions = buy_biggest_losers_at_close(today)
+        order_intentions = buy_biggest_losers(today)
         # write order intentions to file so we can evaluate slippage later
         record_intentions(today, order_intentions)
     elif action == 'sell':

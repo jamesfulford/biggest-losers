@@ -12,7 +12,7 @@ if broker_name == "alpaca":
     get_filled_orders = alpaca.get_filled_orders
 elif broker_name == "td":
     import src.broker.td as td
-    buy_symbol_at_close = td.buy_symbol_at_close
+    buy_symbol_at_close = td.buy_symbol_market
     sell_symbol_at_open = td.sell_symbol_at_open
     get_positions = td.get_positions
     get_account = td.get_account
