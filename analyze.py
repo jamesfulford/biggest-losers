@@ -1,13 +1,56 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
+from functools import lru_cache
+from zoneinfo import ZoneInfo
 from backtest import get_lines_from_biggest_losers_csv
 from src.pathing import get_paths
 from src.trades import get_closed_trades_from_orders_csv
 
 
+MARKET_TZ = ZoneInfo("America/New_York")
+
+
 def get_trades(environment_name):
     path = get_paths(environment_name)['data']["outputs"]["filled_orders_csv"]
     trades = list(get_closed_trades_from_orders_csv(path))
+    for trade in trades:
+        try:
+            opening_day_intentions = get_intentions_by_day(
+                environment_name, trade["opened_at"].date())
+            open_intention = next(filter(
+                lambda intention: intention["symbol"] == trade["symbol"], opening_day_intentions))
+            trade["open_intention"] = open_intention
+        except Exception as e:
+            print("failed to find:", trade)
+            pass
     return trades
+
+
+@lru_cache(maxsize=1)
+def get_intentions_by_day(environment_name: str, day: date):
+    path = get_paths(environment_name)[
+        'data']["outputs"]["order_intentions_csv"].format(today=day)
+
+    lines = []
+    with open(path, "r") as f:
+        lines.extend(f.readlines())
+
+    headers = lines[0].strip().split(",")
+
+    # remove newlines and header row
+    lines = [l.strip() for l in lines[1:]]
+
+    # convert to dicts
+    raw_dict_lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
+
+    lines = [{
+        "datetime": datetime.strptime(l["Date"] + " " + l["Time"], '%Y-%m-%d %H:%M:%S').astimezone(MARKET_TZ),
+        "symbol": l["Symbol"],
+        "quantity": float(l["Quantity"]),
+        "price": float(l["Price"]),
+        "side": l["Side"].lower(),
+    } for l in raw_dict_lines]
+
+    return lines
 
 
 def group_trades_by_closed_day(trades):
@@ -157,8 +200,11 @@ if __name__ == "__main__":
             # entrance slippage
             #
             "paper_trade_enter_price",
+            "paper_trade_enter_intention_price",
             "prod_trade_enter_price",
+            "prod_trade_enter_intention_price",
             "td_cash_trade_enter_price",
+            "td_cash_enter_intention_price",
             "backtest_trade_enter_price",
             # extra fields
             # TODO: add volume/quantities
@@ -203,44 +249,67 @@ if __name__ == "__main__":
             day_after = backtest_trade["day_after"] if backtest_trade else (paper_trade["closed_at"].date() if paper_trade else (
                 prod_trade["closed_at"].date() if prod_trade else td_cash_trade["closed_at"].date()))
 
-            f.write(",".join([
-                day_of_loss.isoformat(),
-                ticker,
-                day_after.isoformat(),
+            row = {
+                # identifiers
+                "day_of_loss": day_of_loss.isoformat(),
+                "symbol": ticker,
+                # bonus
+                "day_after": day_after.isoformat(),
+                #
+                # entrance slippage
+                #
+                "paper_trade_enter_price": str(round(paper_trade["bought_price"], 4)) if paper_trade else "",
+                "paper_trade_enter_intention_price": str(round(paper_trade["open_intention"]["price"], 4)
+                                                         ) if paper_trade and "open_intention" in paper_trade else "",
+                "prod_trade_enter_price": str(round(prod_trade["bought_price"], 4)
+                                              ) if prod_trade else "",
+                "prod_trade_enter_intention_price": str(round(prod_trade["open_intention"]["price"], 4)
+                                                        ) if prod_trade and "open_intention" in prod_trade else "",
+                "td_cash_trade_enter_price": str(round(td_cash_trade["bought_price"], 4)
+                                                 ) if td_cash_trade else "",
+                "td_cash_enter_intention_price": str(round(td_cash_trade["open_intention"]["price"], 4)
+                                                     ) if td_cash_trade and "open_intention" in td_cash_trade else "",
+                "backtest_trade_enter_price": str(round(backtest_trade
+                                                        ["close_day_of_loss"], 4)) if backtest_trade else "",
 
-                str(round(paper_trade["bought_price"], 4)
-                    ) if paper_trade else "",
-                str(round(prod_trade["bought_price"], 4)
-                    ) if prod_trade else "",
-                str(round(td_cash_trade["bought_price"], 4)
-                    ) if td_cash_trade else "",
-                str(round(backtest_trade
-                    ["close_day_of_loss"], 4)) if backtest_trade else "",
+                # extra fields
+                # TODO: add volume/quantities
+                "backtest_volume_day_of_loss": str(int(backtest_trade
+                                                       ["volume_day_of_loss"])) if backtest_trade else "",
 
-                str(round(backtest_trade
-                    ["volume_day_of_loss"], 0)) if backtest_trade else "",
-
-                str(round(paper_trade["sold_price"], 4)
-                    ) if paper_trade else "",
-                str(round(prod_trade["sold_price"], 4)) if prod_trade else "",
-                str(round(td_cash_trade["sold_price"], 4)
-                    ) if td_cash_trade else "",
-                str(round(backtest_trade
-                    ["open_day_after"], 4)) if backtest_trade else "",
-
-                str(round(backtest_trade
-                    ["high_day_after"], 4)) if backtest_trade else "",
-                str(round(backtest_trade["low_day_after"], 4)
-                    ) if backtest_trade else "",
-                str(round(backtest_trade
-                    ["close_day_after"], 4)) if backtest_trade else "",
-
-                str(round(
+                #
+                # exit slippage
+                #
+                "paper_trade_exit_price": str(round(paper_trade["sold_price"], 4)
+                                              ) if paper_trade else "",
+                "prod_trade_exit_price": str(round(prod_trade["sold_price"], 4)) if prod_trade else "",
+                "td_cash_trade_exit_price": str(round(td_cash_trade["sold_price"], 4)
+                                                ) if td_cash_trade else "",
+                "backtest_trade_exit_price": str(round(backtest_trade
+                                                       ["open_day_after"], 4)) if backtest_trade else "",
+                # extra fields
+                "backtest_high_day_after": str(round(backtest_trade
+                                                     ["high_day_after"], 4)) if backtest_trade else "",
+                "backtest_low_day_after": str(round(backtest_trade["low_day_after"], 4)
+                                              ) if backtest_trade else "",
+                "backtest_close_day_after": str(round(backtest_trade
+                                                      ["close_day_after"], 4)) if backtest_trade else "",
+                #
+                # computed fields
+                #
+                "paper_trade_roi": str(round(
                     (paper_trade["sold_price"] - paper_trade["bought_price"]) / paper_trade["bought_price"], 4)) if paper_trade else "",
-                str(round(
+                "prod_trade_roi": str(round(
                     (prod_trade["sold_price"] - prod_trade["bought_price"]) / prod_trade["bought_price"], 4)) if prod_trade else "",
-                str(round(
+                "td_cash_trade_roi": str(round(
                     (td_cash_trade["sold_price"] - td_cash_trade["bought_price"]) / td_cash_trade["bought_price"], 4)) if td_cash_trade else "",
-                str(round(
+                "backtest_trade_roi": str(round(
                     backtest_trade["overnight_strategy_roi"], 4)) if backtest_trade else "",
-            ]) + "\n")
+
+                # TODO: add slippage %'s enter and exit
+                # - correlate close quantity/volume with slippage?
+                # - correlate close slippage with price?
+                # - correlate close slippage with high-low of day of selling
+            }
+
+            f.write(",".join(list(map(lambda h: row[h], headers))) + "\n")
