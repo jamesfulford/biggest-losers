@@ -123,6 +123,16 @@ case $action in
         $python_exec prepare_csv.py
         echo "(return code was $?)"
         ;;
+    "build-drive-outputs")
+        echo "Getting data (including trade intentions and orders csvs) from server..."
+        ./scripts/deploy/sync-data-back.sh paper
+        ./scripts/deploy/sync-data-back.sh prod
+        ./scripts/deploy/sync-data-back.sh td-cash
+        echo "Preparing theoretical backtest numbers..."
+        ./run.sh biggest-losers-csv
+        echo "Starting analysis..."
+        $python_exec analyze.py
+        ;;
     *)
         echo "unknown action $action"
         exit 1
