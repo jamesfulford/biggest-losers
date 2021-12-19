@@ -225,7 +225,7 @@ def _build_order(order):
         'id': str(order['orderId']),
         'account_id': str(order['accountId']),  # TD-specific
         'status': order['status'].lower(),
-        'symbol': instruction["instrument"]["symbol"],
+        'symbol': instruction["instrument"]["symbol"].replace("+", ".WS"),
         'filled_qty': order['filledQuantity'],
         'filled_avg_price': average_fill_price,
         'side': instruction["instruction"],
