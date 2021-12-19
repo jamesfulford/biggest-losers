@@ -71,40 +71,26 @@ function refresh_tokens_if_needed() {
 action="$1"
 
 case $action in
-    "buy")
+    # biggest loser stocks
+    "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
-        case $BROKER in
-            "alpaca")
-                $python_exec biggest-losers-alpaca.py "buy" "$2"
-                echo "(return code was $?)"
-                ;;
-            "td")
-                $python_exec biggest-losers-td.py "buy" "$2"
-                echo "(return code was $?)"
-                ;;
-            *)
-                echo "Unknown broker: '$BROKER', exiting"
-                exit 1
-                ;;
-        esac
+        $python_exec biggest_losers_stocks.py "buy" "$2"
         ;;
-    "sell")
+    "biggest-loser-stocks-sell")
         refresh_tokens_if_needed
-        case $BROKER in
-            "alpaca")
-                $python_exec biggest-losers-alpaca.py "sell" "$2"
-                echo "(return code was $?)"
-                ;;
-            "td")
-                $python_exec biggest-losers-td.py "sell" "$2"
-                echo "(return code was $?)"
-                ;;
-            *)
-                echo "Unknown broker: '$BROKER', exiting"
-                exit 1
-                ;;
-        esac
+        $python_exec biggest_losers_stocks.py "sell" "$2"
         ;;
+
+    # biggest loser warrants
+    "biggest-loser-warrants-buy")
+        refresh_tokens_if_needed
+        $python_exec biggest_losers_warrants.py "buy" "$2"
+        ;;
+    "biggest-loser-warrants-sell")
+        refresh_tokens_if_needed
+        $python_exec biggest_losers_stocks.py "sell" "$2"
+        ;;
+
     "rotate-logs")
         if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
             echo "# already found today's log file, won't rotate"

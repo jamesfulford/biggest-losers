@@ -73,16 +73,15 @@ esac
 #
 # check crontab entries (don't suggest doing locally and on server for same broker creds, can get confusing)
 #
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh sell"
+assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-sell"
+assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-buy"
 assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders"
 assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh buy"
 
 #
 # assert that scripts still run, but don't execute any trades for this test
 #
-DRY_RUN=1 ./run.sh buy || fail_script "failed to run buy"
-DRY_RUN=1 ./run.sh sell || fail_script "failed to run sell"
+# TODO: dry run fails on weekends because of divide by 0, have it act like its Friday or something
+DRY_RUN=1 ./run.sh biggest-loser-stocks-buy || fail_script "failed to run buy"
+DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run sell"
 ./run.sh dump-orders || fail_script "failed to run dump-orders"
-
-
