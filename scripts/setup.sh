@@ -81,11 +81,10 @@ assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
 #
 # assert that scripts still run, but don't execute any trades for this test
 #
-# TODO: dry run fails on weekends because of divide by 0, have it act like its Friday or something
-DRY_RUN=1 ./run.sh biggest-loser-stocks-buy || fail_script "failed to run biggest-loser-stocks-buy"
-DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run biggest-loser-stocks-sell"
+DRY_RUN=1 ./run.sh biggest-loser-stocks-buy "2021-12-17" || fail_script "failed to run biggest-loser-stocks-buy"
+DRY_RUN=1 ./run.sh biggest-loser-stocks-sell "2021-12-17" || fail_script "failed to run biggest-loser-stocks-sell"
 
-DRY_RUN=1 ./run.sh biggest-loser-warrants-buy || fail_script "failed to run biggest-loser-warrants-buy"
-DRY_RUN=1 ./run.sh biggest-loser-warrants-sell || fail_script "failed to run biggest-loser-warrants-sell"
+DRY_RUN=1 ./run.sh biggest-loser-warrants-buy "2021-12-17" || fail_script "failed to run biggest-loser-warrants-buy"
+DRY_RUN=1 ./run.sh biggest-loser-warrants-sell "2021-12-17" || fail_script "failed to run biggest-loser-warrants-sell"
 
 ./run.sh dump-orders || fail_script "failed to run dump-orders"
