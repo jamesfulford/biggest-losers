@@ -19,8 +19,9 @@ def get_trades(environment_name):
             open_intention = next(filter(
                 lambda intention: intention["symbol"] == trade["symbol"], opening_day_intentions))
             trade["open_intention"] = open_intention
-        except Exception as e:
-            print("failed to find:", trade)
+        except Exception:
+            # print(
+            #     f"failed to get open intention for {trade['symbol']} on {trade['opened_at']}")
             pass
     return trades
 
@@ -158,38 +159,12 @@ def merge_trades(backtest_trades, *trade_lists):
             }
 
 
-if __name__ == "__main__":
+def write_performance_csv(environment):
+    trades = get_trades(environment)
+    path = get_paths()["data"]["outputs"]["performance_csv"].format(
+        environment=environment)
 
-    # print summaries of each
-    print(f"paper environment:")
-    paper_trades = get_trades("paper")
-    paper_trades_by_day = group_trades_by_closed_day(paper_trades)
-    print_order_summary(paper_trades_by_day)
-    print()
-
-    print("=" * 80)
-
-    print(f"prod environment:")
-    prod_trades = get_trades("prod")
-    prod_trades_by_day = group_trades_by_closed_day(prod_trades)
-    print_order_summary(prod_trades_by_day)
-    print()
-
-    print("=" * 80)
-
-    print(f"td-cash environment:")
-    td_cash_trades = get_trades("td-cash")
-    td_cash_trades_by_day = group_trades_by_closed_day(td_cash_trades)
-    print_order_summary(td_cash_trades_by_day)
-    print()
-
-    print("=" * 80)
-
-    #
-    # merge trades
-    #
-
-    with open(get_paths()["data"]["outputs"]["performance_csv"], 'w') as f:
+    with open(path, 'w') as f:
         headers = [
             # identifiers
             "day_of_loss",
@@ -199,12 +174,8 @@ if __name__ == "__main__":
             #
             # entrance slippage
             #
-            "paper_trade_enter_price",
-            "paper_trade_enter_intention_price",
-            "prod_trade_enter_price",
-            "prod_trade_enter_intention_price",
-            "td_cash_trade_enter_price",
-            "td_cash_enter_intention_price",
+            "trade_enter_price",
+            "trade_enter_intention_price",
             "backtest_trade_enter_price",
             # extra fields
             # TODO: add volume/quantities
@@ -212,9 +183,7 @@ if __name__ == "__main__":
             #
             # exit slippage
             #
-            "paper_trade_exit_price",
-            "prod_trade_exit_price",
-            "td_cash_trade_exit_price",
+            "trade_exit_price",
             "backtest_trade_exit_price",
             # extra fields
             "backtest_high_day_after",
@@ -223,9 +192,7 @@ if __name__ == "__main__":
             #
             # computed fields
             #
-            "paper_trade_roi",
-            "prod_trade_roi",
-            "td_cash_trade_roi",
+            "trade_roi",
             "backtest_trade_roi",
 
             # TODO: add slippage %'s enter and exit
@@ -235,40 +202,28 @@ if __name__ == "__main__":
         ]
         f.write(",".join(headers) + "\n")
 
-        # TODO: merge in paper and prod trade intentions
-        for merged_trade in merge_trades(get_backtest_theoretical_trades(), paper_trades, prod_trades, td_cash_trades):
+        for merged_trade in merge_trades(get_backtest_theoretical_trades(), trades):
             symbol = merged_trade["symbol"]
             backtest_trade = merged_trade["backtest_trade"]
-            paper_trade, prod_trade, td_cash_trade = tuple(
-                merged_trade["trades"])
+            trade = merged_trade["trades"][0]
 
-            day_of_loss = backtest_trade["day_of_loss"] if backtest_trade else (paper_trade["opened_at"].date() if paper_trade else (
-                prod_trade["opened_at"].date() if prod_trade else td_cash_trade["opened_at"].date()))
-            ticker = backtest_trade["ticker"] if backtest_trade else (paper_trade["symbol"] if paper_trade else (
-                prod_trade["symbol"] if prod_trade else td_cash_trade["symbol"]))
-            day_after = backtest_trade["day_after"] if backtest_trade else (paper_trade["closed_at"].date() if paper_trade else (
-                prod_trade["closed_at"].date() if prod_trade else td_cash_trade["closed_at"].date()))
+            day_of_loss = backtest_trade["day_of_loss"] if backtest_trade else (
+                trade["opened_at"].date())
+            day_after = backtest_trade["day_after"] if backtest_trade else (
+                trade["closed_at"].date())
 
             row = {
                 # identifiers
                 "day_of_loss": day_of_loss.isoformat(),
-                "symbol": ticker,
+                "symbol": symbol,
                 # bonus
                 "day_after": day_after.isoformat(),
                 #
                 # entrance slippage
                 #
-                "paper_trade_enter_price": str(round(paper_trade["bought_price"], 4)) if paper_trade else "",
-                "paper_trade_enter_intention_price": str(round(paper_trade["open_intention"]["price"], 4)
-                                                         ) if paper_trade and "open_intention" in paper_trade else "",
-                "prod_trade_enter_price": str(round(prod_trade["bought_price"], 4)
-                                              ) if prod_trade else "",
-                "prod_trade_enter_intention_price": str(round(prod_trade["open_intention"]["price"], 4)
-                                                        ) if prod_trade and "open_intention" in prod_trade else "",
-                "td_cash_trade_enter_price": str(round(td_cash_trade["bought_price"], 4)
-                                                 ) if td_cash_trade else "",
-                "td_cash_enter_intention_price": str(round(td_cash_trade["open_intention"]["price"], 4)
-                                                     ) if td_cash_trade and "open_intention" in td_cash_trade else "",
+                "trade_enter_price": str(round(trade["bought_price"], 4)) if trade else "",
+                "trade_enter_intention_price": str(round(trade["open_intention"]["price"], 4)
+                                                   ) if trade and "open_intention" in trade else "",
                 "backtest_trade_enter_price": str(round(backtest_trade
                                                         ["close_day_of_loss"], 4)) if backtest_trade else "",
 
@@ -280,11 +235,8 @@ if __name__ == "__main__":
                 #
                 # exit slippage
                 #
-                "paper_trade_exit_price": str(round(paper_trade["sold_price"], 4)
-                                              ) if paper_trade else "",
-                "prod_trade_exit_price": str(round(prod_trade["sold_price"], 4)) if prod_trade else "",
-                "td_cash_trade_exit_price": str(round(td_cash_trade["sold_price"], 4)
-                                                ) if td_cash_trade else "",
+                "trade_exit_price": str(round(trade["sold_price"], 4)
+                                        ) if trade else "",
                 "backtest_trade_exit_price": str(round(backtest_trade
                                                        ["open_day_after"], 4)) if backtest_trade else "",
                 # extra fields
@@ -297,12 +249,8 @@ if __name__ == "__main__":
                 #
                 # computed fields
                 #
-                "paper_trade_roi": str(round(
-                    (paper_trade["sold_price"] - paper_trade["bought_price"]) / paper_trade["bought_price"], 4)) if paper_trade else "",
-                "prod_trade_roi": str(round(
-                    (prod_trade["sold_price"] - prod_trade["bought_price"]) / prod_trade["bought_price"], 4)) if prod_trade else "",
-                "td_cash_trade_roi": str(round(
-                    (td_cash_trade["sold_price"] - td_cash_trade["bought_price"]) / td_cash_trade["bought_price"], 4)) if td_cash_trade else "",
+                "trade_roi": str(round(
+                    (trade["sold_price"] - trade["bought_price"]) / trade["bought_price"], 4)) if trade else "",
                 "backtest_trade_roi": str(round(
                     backtest_trade["overnight_strategy_roi"], 4)) if backtest_trade else "",
 
@@ -313,3 +261,18 @@ if __name__ == "__main__":
             }
 
             f.write(",".join(list(map(lambda h: row[h], headers))) + "\n")
+
+
+if __name__ == "__main__":
+
+    for environment in ["paper", "prod", "td-cash"]:
+        # print summaries of each
+        print(f"{environment} environment:")
+        trades = get_trades(environment)
+        trades_by_day = group_trades_by_closed_day(trades)
+        print_order_summary(trades_by_day)
+        print()
+
+        write_performance_csv(environment)
+
+        print("=" * 80)
