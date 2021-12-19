@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import os
 
 from src.intention import record_intentions
 from src.criteria import is_warrant
@@ -59,6 +60,7 @@ if __name__ == '__main__':
             "minimum_volume": minimum_volume,
             "top_n": top_n,
             "cash_percent_to_use": cash_percent_to_use,
+            "git_commit": os.environ.get("GIT_COMMIT", ""),
         })
     elif action == 'sell':
         sell_biggest_losers_at_open(today)

@@ -70,6 +70,8 @@ function refresh_tokens_if_needed() {
 
 action="$1"
 
+export GIT_COMMIT=`git rev-parse --short HEAD`
+
 case $action in
     # biggest loser stocks
     "biggest-loser-stocks-buy")
