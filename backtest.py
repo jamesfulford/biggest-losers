@@ -337,27 +337,29 @@ def build_criteria_set():
         # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
         #     "* spy": lambda _: True,
         # },
-        # "dollar_volume_day_of_loss": {
-        # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
-        # '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
-        # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
-        # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
-        # NOTE: this has GREAT results, but it would be hard to enter/exit
-        # '* $vol': lambda _: True,
-        # },
-        # "close_day_of_loss": {
-        # "p < 1": lambda t: t["close_day_of_loss"] < 1,
-        # "p < 3": lambda t: t["close_day_of_loss"] < 3,
-        # "p > 3": lambda t: t["close_day_of_loss"] > 3,
-        # "p < 5": lambda t: t["close_day_of_loss"] < 5,
-        # "p < 10": lambda t: t["close_day_of_loss"] < 10,
-        # "p < 20": lambda t: t["close_day_of_loss"] < 20,
-        # tried a few >, but it was too restrictive
-        # "all $": lambda _: True,
-        # },
+        "dollar_volume_day_of_loss": {
+            # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
+            # '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
+            # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
+            # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
+            '$10k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 10000,
+            # NOTE: this has GREAT results, but it would be hard to enter/exit
+            # '* $vol': lambda _: True,
+        },
+        "close_day_of_loss": {
+            "p > 0.1": lambda t: t["close_day_of_loss"] > 0.1,
+            # "p < 1": lambda t: t["close_day_of_loss"] < 1,
+            # "p < 3": lambda t: t["close_day_of_loss"] < 3,
+            # "p > 3": lambda t: t["close_day_of_loss"] > 3,
+            # "p < 5": lambda t: t["close_day_of_loss"] < 5,
+            # "p < 10": lambda t: t["close_day_of_loss"] < 10,
+            # "p < 20": lambda t: t["close_day_of_loss"] < 20,
+            # tried a few >, but it was too restrictive
+            # "all $": lambda _: True,
+        },
         "ticker_is_warrant": {
-            "no w": lambda t: not is_warrant(t["ticker"]),
-            # "only w": lambda t: is_warrant(t["ticker"]),
+            # "no w": lambda t: not is_warrant(t["ticker"]),
+            "only w": lambda t: is_warrant(t["ticker"]),
             # "*w": lambda _: True,
         },
 
@@ -413,8 +415,8 @@ def build_criteria_set():
 
         # "is_holiday": {
         #     "! holiday": lambda l: not l["overnight_has_holiday_bool"],
-        # ":) holiday": lambda l: l["overnight_has_holiday_bool"],
-        # "* holiday": lambda _: True,
+        #     ":) holiday": lambda l: l["overnight_has_holiday_bool"],
+        #     "* holiday": lambda _: True,
         # },
 
         #
