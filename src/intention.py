@@ -16,10 +16,11 @@ def get_order_intentions_csv_path(today, environment_name=None):
 
 
 def record_intentions(today: date, order_intentions: list, metadata: dict = {}):
+    path = None
     if DRY_RUN:
         print("DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
-
-    path = get_order_intentions_csv_path(today)
+    else:
+        path = get_order_intentions_csv_path(today)
 
     def yield_lines(lines):
         for line in lines:
@@ -44,7 +45,7 @@ def record_intentions(today: date, order_intentions: list, metadata: dict = {}):
             row["Side"] = side.upper()
 
             row.update(metadata)
-            yield line
+            yield row
 
     write_csv(path, yield_lines(order_intentions), headers=[
               "Date", "Time", "Symbol", "Quantity", "Price", "Side"])
