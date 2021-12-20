@@ -38,8 +38,9 @@ if __name__ == '__main__':
     if action == 'buy':
         strategy_name = "biggest_losers_warrants"
         minimum_loss_percent = 0.1
-        closing_price_min = 0.0
+        closing_price_min = 0.1
         minimum_volume = 0
+        minimum_dollar_volume = 10000
         top_n = 10
         cash_percent_to_use = 0.9
 
@@ -48,6 +49,7 @@ if __name__ == '__main__':
             minimum_loss_percent=minimum_loss_percent,
             closing_price_min=closing_price_min,
             minimum_volume=minimum_volume,
+            minimum_dollar_volume=minimum_dollar_volume,
             top_n=top_n,
             warrant_criteria=lambda c: is_warrant(c["T"]),
             cash_percent_to_use=cash_percent_to_use,
@@ -58,6 +60,7 @@ if __name__ == '__main__':
             "minimum_loss_percent": minimum_loss_percent,
             "closing_price_min": closing_price_min,
             "minimum_volume": minimum_volume,
+            "minimum_dollar_volume": minimum_dollar_volume,
             "top_n": top_n,
             "cash_percent_to_use": cash_percent_to_use,
             "git_commit": os.environ.get("GIT_COMMIT", ""),
