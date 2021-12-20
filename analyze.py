@@ -1,7 +1,10 @@
 from datetime import date, datetime
-from functools import lru_cache
 from zoneinfo import ZoneInfo
+from copy import copy
+
 from backtest import get_lines_from_biggest_losers_csv
+from src.csv_dump import write_csv
+from src.intention import get_intentions_by_day
 from src.pathing import get_paths
 from src.trades import get_closed_trades_from_orders_csv
 
@@ -19,39 +22,13 @@ def get_trades(environment_name):
             open_intention = next(filter(
                 lambda intention: intention["symbol"] == trade["symbol"], opening_day_intentions))
             trade["open_intention"] = open_intention
-        except Exception:
-            # print(
-            #     f"failed to get open intention for {trade['symbol']} on {trade['opened_at']}")
+        except FileNotFoundError:
             pass
+        except Exception as e:
+            print(
+                f"failed to get open intention for {trade['symbol']} on {trade['opened_at'].date()}", type(e), e)
+            # raise e
     return trades
-
-
-@lru_cache(maxsize=1)
-def get_intentions_by_day(environment_name: str, day: date):
-    path = get_paths(environment_name)[
-        'data']["outputs"]["order_intentions_csv"].format(today=day)
-
-    lines = []
-    with open(path, "r") as f:
-        lines.extend(f.readlines())
-
-    headers = lines[0].strip().split(",")
-
-    # remove newlines and header row
-    lines = [l.strip() for l in lines[1:]]
-
-    # convert to dicts
-    raw_dict_lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
-
-    lines = [{
-        "datetime": datetime.strptime(l["Date"] + " " + l["Time"], '%Y-%m-%d %H:%M:%S').astimezone(MARKET_TZ),
-        "symbol": l["Symbol"],
-        "quantity": float(l["Quantity"]),
-        "price": float(l["Price"]),
-        "side": l["Side"].lower(),
-    } for l in raw_dict_lines]
-
-    return lines
 
 
 def group_trades_by_closed_day(trades):
@@ -164,47 +141,11 @@ def write_performance_csv(environment):
     path = get_paths()["data"]["outputs"]["performance_csv"].format(
         environment=environment)
 
-    with open(path, 'w') as f:
-        headers = [
-            # identifiers
-            "day_of_loss",
-            "symbol",
-            # bonus
-            "day_after",
-            #
-            # entrance slippage
-            #
-            "trade_enter_price",
-            "trade_enter_intention_price",
-            "backtest_trade_enter_price",
-            # extra fields
-            # TODO: add volume/quantities
-            "backtest_volume_day_of_loss",
-            #
-            # exit slippage
-            #
-            "trade_exit_price",
-            "backtest_trade_exit_price",
-            # extra fields
-            "backtest_high_day_after",
-            "backtest_low_day_after",
-            "backtest_close_day_after",
-            #
-            # computed fields
-            #
-            "trade_roi",
-            "backtest_trade_roi",
-
-            # TODO: add slippage %'s enter and exit
-            # - correlate close quantity/volume with slippage?
-            # - correlate close slippage with price?
-            # - correlate close slippage with high-low of day of selling
-        ]
-        f.write(",".join(headers) + "\n")
-
+    def yield_trades():
         for merged_trade in merge_trades(get_backtest_theoretical_trades(), trades):
             symbol = merged_trade["symbol"]
             backtest_trade = merged_trade["backtest_trade"]
+            # since only merging 1 trade set, will always be 1
             trade = merged_trade["trades"][0]
 
             day_of_loss = backtest_trade["day_of_loss"] if backtest_trade else (
@@ -212,60 +153,88 @@ def write_performance_csv(environment):
             day_after = backtest_trade["day_after"] if backtest_trade else (
                 trade["closed_at"].date())
 
-            row = {
-                # identifiers
-                "day_of_loss": day_of_loss.isoformat(),
-                "symbol": symbol,
-                # bonus
-                "day_after": day_after.isoformat(),
-                #
-                # entrance slippage
-                #
-                "trade_enter_price": str(round(trade["bought_price"], 4)) if trade else "",
-                "trade_enter_intention_price": str(round(trade["open_intention"]["price"], 4)
-                                                   ) if trade and "open_intention" in trade else "",
-                "backtest_trade_enter_price": str(round(backtest_trade
-                                                        ["close_day_of_loss"], 4)) if backtest_trade else "",
+            row = {}
+            # row = copy(trade["open_intention"])
+            # if backtest_trade:
+            #     row.update(backtest_trade)
+            row["day_of_loss"] = day_of_loss
+            row["symbol"] = symbol
+            row["day_after"] = day_after
+            #
+            # entrance slippage
+            #
+            row["trade_enter_price"] = trade["bought_price"]
+            row["trade_enter_intention_price"] = trade["open_intention"]["price"]
+            row["backtest_trade_enter_price"] = backtest_trade and backtest_trade["close_day_of_loss"]
 
-                # extra fields
-                # TODO: add volume/quantities
-                "backtest_volume_day_of_loss": str(int(backtest_trade
-                                                       ["volume_day_of_loss"])) if backtest_trade else "",
+            # extra fields
+            # TODO: add volume/quantities
+            row["backtest_volume_day_of_loss"] = backtest_trade and int(
+                backtest_trade["volume_day_of_loss"])
 
-                #
-                # exit slippage
-                #
-                "trade_exit_price": str(round(trade["sold_price"], 4)
-                                        ) if trade else "",
-                "backtest_trade_exit_price": str(round(backtest_trade
-                                                       ["open_day_after"], 4)) if backtest_trade else "",
-                # extra fields
-                "backtest_high_day_after": str(round(backtest_trade
-                                                     ["high_day_after"], 4)) if backtest_trade else "",
-                "backtest_low_day_after": str(round(backtest_trade["low_day_after"], 4)
-                                              ) if backtest_trade else "",
-                "backtest_close_day_after": str(round(backtest_trade
-                                                      ["close_day_after"], 4)) if backtest_trade else "",
-                #
-                # computed fields
-                #
-                "trade_roi": str(round(
-                    (trade["sold_price"] - trade["bought_price"]) / trade["bought_price"], 4)) if trade else "",
-                "backtest_trade_roi": str(round(
-                    backtest_trade["overnight_strategy_roi"], 4)) if backtest_trade else "",
+            #
+            # exit slippage
+            #
+            row["trade_exit_price"] = trade["sold_price"]
+            row["backtest_trade_exit_price"] = backtest_trade and backtest_trade["open_day_after"]
+            # extra fields
+            row["backtest_high_day_after"] = backtest_trade and backtest_trade["high_day_after"]
+            row["backtest_low_day_after"] = backtest_trade and backtest_trade["low_day_after"]
+            row["backtest_close_day_after"] = backtest_trade and backtest_trade["close_day_after"]
+            #
+            # computed fields
+            #
+            row["trade_roi"] = (trade["sold_price"] -
+                                trade["bought_price"]) / trade["bought_price"]
+            row["backtest_trade_roi"] = backtest_trade and backtest_trade["overnight_strategy_roi"]
 
-                # TODO: add slippage %'s enter and exit
-                # - correlate close quantity/volume with slippage?
-                # - correlate close slippage with price?
-                # - correlate close slippage with high-low of day of selling
-            }
+            # TODO: add slippage %'s enter and exit
+            # - correlate close quantity/volume with slippage?
+            # - correlate close slippage with price?
+            # - correlate close slippage with high-low of day of selling
+            yield row
 
-            f.write(",".join(list(map(lambda h: row[h], headers))) + "\n")
+    write_csv(path, yield_trades(), headers=[
+        # identifiers
+        "day_of_loss",
+        "symbol",
+        # bonus
+        "day_after",
+        #
+        # entrance slippage
+        #
+        "trade_enter_price",
+        "trade_enter_intention_price",
+        "backtest_trade_enter_price",
+        # extra fields
+        # TODO: add volume/quantities
+        "backtest_volume_day_of_loss",
+        #
+        # exit slippage
+        #
+        "trade_exit_price",
+        "backtest_trade_exit_price",
+        # extra fields
+        "backtest_high_day_after",
+        "backtest_low_day_after",
+        "backtest_close_day_after",
+        #
+        # computed fields
+        #
+        "trade_roi",
+        "backtest_trade_roi",
+
+        # TODO: add slippage %'s enter and exit
+        # - correlate close quantity/volume with slippage?
+        # - correlate close slippage with price?
+        # - correlate close slippage with high-low of day of selling
+    ])
 
 
 if __name__ == "__main__":
 
-    for environment in ["paper", "prod", "td-cash"]:
+    # for environment in ["paper", "prod", "td-cash"]:
+    for environment in ["prod"]:
         # print summaries of each
         print(f"{environment} environment:")
         trades = get_trades(environment)

@@ -48,10 +48,6 @@ def get_paths(target_environment_name=None):
     return paths
 
 
-def get_order_intentions_csv_path(today):
-    return get_paths()['data']['outputs']['order_intentions_csv'].format(today=today)
-
-
 if __name__ == '__main__':
     # on James' local machine this code is checked out at ~/biggest-losers
     default_paths = get_paths()
