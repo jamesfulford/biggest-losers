@@ -63,7 +63,8 @@ def buy_biggest_losers_at_close(today: date, minimum_loss_percent=0.1, closing_p
             "symbol": symbol,
             "quantity": quantity,
             "price": price,
-            "side": "buy"
+            "side": "buy",
+            # TODO: pass back various account balances here
         })
         try:
             buy_symbol_at_close(symbol, quantity)
