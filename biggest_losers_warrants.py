@@ -38,7 +38,7 @@ if __name__ == '__main__':
     if action == 'buy':
         strategy_name = "biggest_losers_warrants"
         minimum_loss_percent = 0.1
-        closing_price_min = 0.1
+        closing_price_min = 0.0
         minimum_volume = 0
         minimum_dollar_volume = 10000
         top_n = 10
