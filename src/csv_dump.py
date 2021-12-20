@@ -28,9 +28,10 @@ def write_csv(path, lines, headers=None):
     f = open(path, 'w') if path else None
 
     # write provided headers first, in order, then rest of keys in alphabetical order
-    key_headers = set(lines[0].keys())
-    headers = headers if headers else []
-    headers = headers + sorted(key_headers.symmetric_difference(headers))
+    existing_headers = set()
+    for line in lines:
+        existing_headers.update(line.keys())
+    headers = headers + sorted(existing_headers.difference(set(headers)))
     print(",".join(headers), file=f)
 
     for line in lines:

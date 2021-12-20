@@ -15,7 +15,10 @@ MARKET_TZ = ZoneInfo("America/New_York")
 def get_trades(environment_name):
     path = get_paths(environment_name)['data']["outputs"]["filled_orders_csv"]
     trades = list(get_closed_trades_from_orders_csv(path))
+
+    # enrich trade with intentions recorded at time of trade opening
     for trade in trades:
+
         try:
             opening_day_intentions = get_intentions_by_day(
                 environment_name, trade["opened_at"].date())
@@ -25,8 +28,9 @@ def get_trades(environment_name):
         except FileNotFoundError:
             pass
         except Exception as e:
-            print(
-                f"failed to get open intention for {trade['symbol']} on {trade['opened_at'].date()}", type(e), e)
+            pass
+            # print(
+            #     f"failed to get open intention for {trade['symbol']} on {trade['opened_at'].date()}", type(e), e)
             # raise e
     return trades
 
@@ -95,36 +99,21 @@ def g_avg(l):
     return m ** (1/len(l))
 
 
-def merge_trades(backtest_trades, *trade_lists):
+def merge_trades(backtest_trades, trades):
+    trades_by_day = group_trades_by_closed_day(trades)
 
-    trades_by_day_lists = list(map(group_trades_by_closed_day, trade_lists))
-
-    days_iso = set()
-    for trades_by_day_list in trades_by_day_lists:
-        days_iso = days_iso.union(trades_by_day_list.keys())
+    days_iso = set(trades_by_day.keys())
 
     for day_iso in sorted(days_iso):
+        trades_on_day = trades_by_day.get(day_iso, [])
 
-        trades_on_day_list = list(
-            map(lambda trades_by_day: trades_by_day.get(day_iso, []), trades_by_day_lists))
-
-        symbols = set()
-        for trades_on_day in trades_on_day_list:
-            symbols = symbols.union(
-                set(map(lambda t: t["symbol"], trades_on_day)))
+        symbols = set(map(lambda t: t["symbol"], trades_on_day))
 
         for symbol in sorted(symbols):
-
-            symbol_trade_list = []
-            for i, trade_list in enumerate(trade_lists):
-                trade = next(
-                    filter(lambda t: t["symbol"] == symbol, trade_list), None)
-                symbol_trade_list.append(trade)
-                # if not trade:
-                #     print(f"missing trade from set {i} for {day_iso} {symbol}")
-
-            # if len(symbol_trade_list) != len(trade_lists):
-            #     continue
+            trade = next(
+                filter(lambda t: t["symbol"] == symbol and t["closed_at"].date().isoformat() == day_iso, trades), None)
+            # if not trade:
+            #     print(f"missing trade for {day_iso} {symbol}")
 
             backtest_trade = next(
                 filter(lambda t: t["day_after"].isoformat() == day_iso and t["ticker"] == symbol, backtest_trades), None)
@@ -132,7 +121,7 @@ def merge_trades(backtest_trades, *trade_lists):
             yield {
                 "symbol": symbol,
                 "backtest_trade": backtest_trade,
-                "trades": symbol_trade_list,
+                "trade": trade,
             }
 
 
@@ -143,50 +132,29 @@ def write_performance_csv(environment):
 
     def yield_trades():
         for merged_trade in merge_trades(get_backtest_theoretical_trades(), trades):
-            symbol = merged_trade["symbol"]
             backtest_trade = merged_trade["backtest_trade"]
-            # since only merging 1 trade set, will always be 1
-            trade = merged_trade["trades"][0]
-
-            day_of_loss = backtest_trade["day_of_loss"] if backtest_trade else (
-                trade["opened_at"].date())
-            day_after = backtest_trade["day_after"] if backtest_trade else (
-                trade["closed_at"].date())
+            trade = merged_trade["trade"]
 
             row = {}
-            # row = copy(trade["open_intention"])
-            # if backtest_trade:
-            #     row.update(backtest_trade)
-            row["day_of_loss"] = day_of_loss
-            row["symbol"] = symbol
-            row["day_after"] = day_after
-            #
-            # entrance slippage
-            #
-            row["trade_enter_price"] = trade["bought_price"]
-            row["trade_enter_intention_price"] = trade["open_intention"]["price"]
-            row["backtest_trade_enter_price"] = backtest_trade and backtest_trade["close_day_of_loss"]
 
-            # extra fields
-            # TODO: add volume/quantities
-            row["backtest_volume_day_of_loss"] = backtest_trade and int(
-                backtest_trade["volume_day_of_loss"])
+            for key in trade.keys() - {"open_intention"}:
+                row[f"t_{key}"] = trade[key]
 
-            #
-            # exit slippage
-            #
-            row["trade_exit_price"] = trade["sold_price"]
-            row["backtest_trade_exit_price"] = backtest_trade and backtest_trade["open_day_after"]
-            # extra fields
-            row["backtest_high_day_after"] = backtest_trade and backtest_trade["high_day_after"]
-            row["backtest_low_day_after"] = backtest_trade and backtest_trade["low_day_after"]
-            row["backtest_close_day_after"] = backtest_trade and backtest_trade["close_day_after"]
+            if "open_intention" in trade:
+                for key in trade["open_intention"].keys() - {"symbol"}:
+                    row[f"oi_{key}"] = trade["open_intention"][key]
+
+            if backtest_trade:
+                for key in backtest_trade.keys() - {"ticker"}:
+                    row[f"b_{key}"] = backtest_trade[key]
+                row["b_overnight_strategy_is_win"] = bool(
+                    row["b_overnight_strategy_is_win"])
+
             #
             # computed fields
             #
-            row["trade_roi"] = (trade["sold_price"] -
-                                trade["bought_price"]) / trade["bought_price"]
-            row["backtest_trade_roi"] = backtest_trade and backtest_trade["overnight_strategy_roi"]
+            row["t_roi"] = (trade["sold_price"] -
+                            trade["bought_price"]) / trade["bought_price"]
 
             # TODO: add slippage %'s enter and exit
             # - correlate close quantity/volume with slippage?
@@ -195,46 +163,60 @@ def write_performance_csv(environment):
             yield row
 
     write_csv(path, yield_trades(), headers=[
-        # identifiers
-        "day_of_loss",
-        "symbol",
-        # bonus
-        "day_after",
-        #
-        # entrance slippage
-        #
-        "trade_enter_price",
-        "trade_enter_intention_price",
-        "backtest_trade_enter_price",
-        # extra fields
-        # TODO: add volume/quantities
-        "backtest_volume_day_of_loss",
-        #
-        # exit slippage
-        #
-        "trade_exit_price",
-        "backtest_trade_exit_price",
-        # extra fields
-        "backtest_high_day_after",
-        "backtest_low_day_after",
-        "backtest_close_day_after",
-        #
-        # computed fields
-        #
-        "trade_roi",
-        "backtest_trade_roi",
+        # opening
+        "t_opened_at",
+        "b_day_of_loss",
+        "oi_datetime",
+        # ticker
+        "t_symbol",
+        # closing
+        "b_day_after",
+        "t_closed_at",
 
+        # timing extra fields
+        "b_day_of_loss_month",
+        "b_day_of_loss_weekday",
+        "b_days_overnight",
+        "b_overnight_has_holiday_bool",
+
+        # entrance
+        "/",
+        "t_bought_price",
+        "t_quantity",
+
+        "oi_price",
+        "oi_quantity",
+
+        "b_close_day_of_loss",
+        "b_volume_day_of_loss",
+
+        # exit
+        "/",
+        "t_sold_price",
+        "b_open_day_after",
+
+        # results
+        "/",
+        "t_price_difference",
+        "t_profit_loss",
+        "t_roi",
+        "t_is_win",
+
+        "b_overnight_strategy_roi",
+        "b_overnight_strategy_is_win",
+
+        # computed fields
         # TODO: add slippage %'s enter and exit
         # - correlate close quantity/volume with slippage?
         # - correlate close slippage with price?
         # - correlate close slippage with high-low of day of selling
+        "|",
     ])
 
 
 if __name__ == "__main__":
 
-    # for environment in ["paper", "prod", "td-cash"]:
-    for environment in ["prod"]:
+    for environment in ["paper", "prod", "td-cash"]:
         # print summaries of each
         print(f"{environment} environment:")
         trades = get_trades(environment)
