@@ -113,7 +113,11 @@ case $action in
         echo "(return code was $?)"
         ;;
     "biggest-losers-csv")
-        $python_exec prepare_csv.py
+        $python_exec prepare_csv_losers.py
+        echo "(return code was $?)"
+        ;;
+    "biggest-winners-csv")
+        $python_exec prepare_csv_winners.py
         echo "(return code was $?)"
         ;;
     "build-drive-outputs")
@@ -124,6 +128,7 @@ case $action in
         ./scripts/deploy/sync-data-back.sh intrac1
         echo "Preparing theoretical backtest numbers..."
         ./run.sh biggest-losers-csv
+        ./run.sh biggest-winners-csv
         echo "Starting analysis..."
         $python_exec analyze.py
         ;;
