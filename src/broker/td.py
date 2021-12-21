@@ -147,7 +147,7 @@ def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
 def _get_average_fill_price(order):
     total_cost = 0
     total_quantity = 0
-    for activity in order['orderActivityCollection']:
+    for activity in order.get('orderActivityCollection', []):
         # average fill price of execution legs of each activity in the order
         total_cost += sum(list(map(lambda x: x['price']
                           * x['quantity'], activity['executionLegs'])))
