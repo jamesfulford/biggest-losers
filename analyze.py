@@ -92,6 +92,8 @@ def print_order_summary(trades_by_closed_day):
 
 
 def g_avg(l):
+    if not l:
+        return 0
     assert not any(map(lambda x: x <= 0, l)), "All elements must be positive"
     m = 1
     for i in l:
@@ -216,7 +218,7 @@ def write_performance_csv(environment):
 
 if __name__ == "__main__":
 
-    for environment in ["paper", "prod", "td-cash"]:
+    for environment in ["paper", "prod", "td-cash", "intrac1"]:
         # print summaries of each
         print(f"{environment} environment:")
         trades = get_trades(environment)
