@@ -139,7 +139,8 @@ def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
         })
 
     response.raise_for_status()
-    filled_orders = list(map(_build_order, response.json()))
+    filled_orders = list(
+        filter(bool, list(map(_build_order, response.json()))))
     filled_orders.sort(key=lambda x: x['filled_at'])
     return filled_orders
 
@@ -147,7 +148,7 @@ def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
 def _get_average_fill_price(order):
     total_cost = 0
     total_quantity = 0
-    for activity in order.get('orderActivityCollection', []):
+    for activity in order['orderActivityCollection']:
         # average fill price of execution legs of each activity in the order
         total_cost += sum(list(map(lambda x: x['price']
                           * x['quantity'], activity['executionLegs'])))
@@ -213,10 +214,15 @@ def _build_order(order):
         ]
     }
     """
+    if len(order.get('orderLegCollection', [])) != 1:
+        print(f"WARNING: {order['orderId']} has multiple legs, skipping")
+        return None
 
     instruction = order['orderLegCollection'][0]
-    if len(order['orderLegCollection']) > 1:
-        print(f"WARNING: {order['orderId']} has multiple legs, skipping")
+
+    if "orderActivityCollection" not in order:
+        print(
+            f"WARNING: {order['orderId']} has no orderActivityCollection, skipping")
         return None
 
     average_fill_price = _get_average_fill_price(order)
