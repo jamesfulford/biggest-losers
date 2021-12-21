@@ -8,7 +8,7 @@ def serialize(v):
     elif t == type(None):
         return ""
     elif t == bool:
-        return str(v).upper()
+        return str(int(v))
     elif t == float:
         return str(round(v, 4))
     elif t == int:
