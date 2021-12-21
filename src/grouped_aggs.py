@@ -19,6 +19,7 @@ def fetch_grouped_aggs_with_cache(day, bust_cache=False):
 
     # cache intraday values separately
     key = f"grouped_aggs_{strftime}"
+    # TODO: .intraday handle timezones
     if day == date.today() and datetime.now().hour < 16:
         key = f"grouped_aggs_{strftime}.intraday"
 
