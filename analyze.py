@@ -133,6 +133,7 @@ def write_performance_csv(environment):
         environment=environment)
 
     def yield_trades():
+        # TODO: include the biggest losers we would have bought in backtest so we can see difference
         for merged_trade in merge_trades(get_backtest_theoretical_trades(), trades):
             backtest_trade = merged_trade["backtest_trade"]
             trade = merged_trade["trade"]
@@ -141,10 +142,14 @@ def write_performance_csv(environment):
 
             for key in trade.keys() - {"open_intention"}:
                 row[f"t_{key}"] = trade[key]
+            row["t_roi"] = (trade["sold_price"] -
+                            trade["bought_price"]) / trade["bought_price"]
 
             if "open_intention" in trade:
                 for key in trade["open_intention"].keys() - {"symbol"}:
                     row[f"oi_{key}"] = trade["open_intention"][key]
+                row["entry_slippage%"] = (
+                    row["t_bought_price"] - row["oi_price"]) / row["oi_price"]
 
             if backtest_trade:
                 for key in backtest_trade.keys() - {"ticker"}:
@@ -152,16 +157,14 @@ def write_performance_csv(environment):
                 row["b_overnight_strategy_is_win"] = bool(
                     row["b_overnight_strategy_is_win"])
 
-            #
-            # computed fields
-            #
-            row["t_roi"] = (trade["sold_price"] -
-                            trade["bought_price"]) / trade["bought_price"]
+                # - TODO: correlate close quantity/volume with slippage?
+                # - TODO: correlate close slippage with price?
+                # - TODO: correlate close slippage with high-low of day of selling
+                row["entry_backtest_disparity%"] = (
+                    row["t_bought_price"] - row["b_close_day_of_loss"]) / row["b_close_day_of_loss"]
+                row["exit_backtest_disparity%"] = (
+                    row["t_sold_price"] - row["b_open_day_after"]) / row["b_open_day_after"]
 
-            # TODO: add slippage %'s enter and exit
-            # - correlate close quantity/volume with slippage?
-            # - correlate close slippage with price?
-            # - correlate close slippage with high-low of day of selling
             yield row
 
     write_csv(path, yield_trades(), headers=[
