@@ -8,11 +8,11 @@ from src.trading_day import previous_trading_day
 
 
 def get_all_biggest_losers_with_day_after(start_date: date, end_date: date):
-    movers = collect_overnights(
-        start_date, end_date, get_actions_on_day=lambda day: get_biggest_losers(day, top_n=1000))
-    # TODO: enrich as we go for faster failure during development (iterators)
-    for mover in movers:
+    movers = []
+    for mover in collect_overnights(
+            start_date, end_date, get_actions_on_day=lambda day: get_biggest_losers(day, top_n=1000)):
         enrich_mover(mover)
+        movers.append(mover)
     return movers
 
 

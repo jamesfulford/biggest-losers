@@ -41,7 +41,6 @@ def overnights(start_date: date, end_date: date):
 
 def collect_overnights(start_date: date, end_date: date, get_actions_on_day: callable):
     previous_day_movers = []
-    total_movers = []
 
     for previous_day, day in overnights(start_date, end_date):
         grouped_aggs = get_today_grouped_aggs(day)
@@ -51,15 +50,12 @@ def collect_overnights(start_date: date, end_date: date, get_actions_on_day: cal
         for mover_yesterday in filter(lambda t: t["T"] in grouped_aggs['tickermap'], previous_day_movers):
             mover_today = grouped_aggs['tickermap'][mover_yesterday["T"]]
 
-            mover = {
+            yield {
                 "day_of_action": previous_day,
                 "day_after": day,
                 "mover_day_of_action": mover_yesterday,
                 "mover_day_after": mover_today,
             }
-            total_movers.append(mover)
 
         # go find today's biggest winners
         previous_day_movers = get_actions_on_day(day)
-
-    return total_movers
