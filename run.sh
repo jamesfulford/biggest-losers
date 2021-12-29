@@ -14,26 +14,6 @@ echo DATA_DIR $DATA_DIR
 
 log_path=$DATA_DIR/logs/run.log
 
-
-# if running live on my remote server,
-# send output of this script to log file
-if [ "$DRY_RUN" == "" ] && [ "`whoami`" == "root" ]; then
-    function cleanup () {
-        echo
-        echo "### End of script at `date`"
-        echo
-        killall tail
-    }
-    trap 'cleanup' EXIT
-    tail -f $log_path &  # send logs to current terminal, but cleanup tail afterwards
-    exec >> $log_path 2>&1  # send logs to log file
-
-    echo
-    echo "### Start of script at `date`"
-    echo "### $@"
-    echo
-fi
-
 env_file=${ENV_FILE:-"$DATA_DIR/inputs/.env"}
 source $env_file
 

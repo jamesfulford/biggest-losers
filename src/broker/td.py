@@ -362,6 +362,8 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
 
     response.raise_for_status()
 
+    return response.json()
+
 
 try:
     get_account_id()

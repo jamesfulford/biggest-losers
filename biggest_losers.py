@@ -79,5 +79,5 @@ def sell_biggest_losers_at_open(today: date):
         return
 
     for position in get_positions():
-        sell_symbol_at_open(
-            position['symbol'], position['qty'])
+        print(sell_symbol_at_open(
+            position['symbol'], position['qty']))
