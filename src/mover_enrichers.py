@@ -1,60 +1,67 @@
-from src.grouped_aggs import get_last_2_candles, get_last_n_candles, get_last_trading_day_grouped_aggs, get_today_grouped_aggs
-from src.indicators import current_sma_of, ema_of, get_atr
+from datetime import date
+from src.grouped_aggs import get_last_2_candles, get_last_n_candles
+from src.indicators import atr_of, current_sma_of, ema_of
 
 
-def enrich_with_ema(mover, n, field='c'):
+def enrich_mover(mover):
     ticker = mover["mover_day_of_action"]["T"]
     day_of_action = mover["day_of_action"]
+
+    for interesting_ticker in ["SPY"]:
+        changes = get_ticker_changes(
+            day_of_action, interesting_ticker=interesting_ticker)
+
+        mover[f"{interesting_ticker.lower()}_day_of_action_percent_change"] = changes["close_to_close_percent_change"]
+        mover[f"{interesting_ticker.lower()}_day_of_action_intraday_percent_change"] = changes["close_to_open_percent_change"]
+
+    # TODO: when using shared csv function, remove the `or ""`
+
+    mover[f"100sma"] = get_sma(ticker, day_of_action, 100) or ""  # S!!!
+
+    mover[f"100ema"] = get_ema(ticker, day_of_action, 100) or ""
+    mover[f"50ema"] = get_ema(ticker, day_of_action, 50) or ""
+
+    mover[f"14atr"] = get_atr(ticker, day_of_action, 14) or ""
+
+    return mover
+
+
+def get_ema(ticker: str, day_of_action: date, n: int, field='c'):
     candles = get_last_n_candles(day_of_action, ticker, n=n)
     if not candles:
         return
     emas = ema_of(list(map(lambda c: c[field], reversed(candles))))
 
-    mover[f"{n}ema"] = emas[-1]
+    return emas[-1]
 
 
-def enrich_with_sma(mover, n, field='c'):
-    ticker = mover["mover_day_of_action"]["T"]
-    day_of_action = mover["day_of_action"]
+def get_sma(ticker: str, day_of_action: date, n: int, field='c'):
     candles = get_last_n_candles(day_of_action, ticker, n=n)
     if not candles:
         return
     sma = current_sma_of(list(map(lambda c: c[field], candles)))
 
-    mover[f"{n}sma"] = sma
+    return sma
 
 
-def enrich_with_atr(mover, n):
-    ticker = mover["mover_day_of_action"]["T"]
-    day_of_action = mover["day_of_action"]
+def get_atr(ticker: str, day_of_action: date, n: int):
     candles = get_last_n_candles(day_of_action, ticker, n=n)
     if not candles:
         return
-    atrs = get_atr(list(reversed(candles)))
+    atrs = atr_of(list(reversed(candles)))
 
-    mover[f"{n}atr"] = atrs[0]
-
-
-def enrich_with_adx(mover):
-    ticker = mover["mover_day_of_action"]["T"]
-    day_of_action = mover["day_of_action"]
-
-    last_14_candles = get_last_n_candles(day_of_action, ticker, n=14)
-    if not last_14_candles:
-        return
-    # TODO: complete implementation
+    return atrs[0]
 
 
-def enrich_with_ticker_changes(mover, ticker):
-    day_of_action = mover["day_of_action"]
+def get_ticker_changes(day_of_action: date, interesting_ticker: str):
     ticker_day_of_action, ticker_day_before = get_last_2_candles(
-        day_of_action, ticker)
+        day_of_action, interesting_ticker)
 
-    mover[f"{ticker.lower()}_day_of_action_percent_change"] = (
-        ticker_day_of_action['c'] - ticker_day_before['c']) / ticker_day_before['c']
-    mover[f"{ticker.lower()}_day_of_action_intraday_percent_change"] = (
-        ticker_day_of_action['c'] - ticker_day_of_action['o']) / ticker_day_of_action['o']
+    return {
+        "close_to_close_percent_change": (ticker_day_of_action['c'] - ticker_day_before['c']) / ticker_day_before['c'],
+        "close_to_open_percent_change": (ticker_day_of_action['c'] - ticker_day_of_action['o']) / ticker_day_of_action['o']
+    }
 
 
-def enrich_with_spy_changes(mover):
-    return enrich_with_ticker_changes(mover, ticker="SPY")
+def get_spy_changes(day_of_action: date):
+    return get_ticker_changes(day_of_action, interesting_ticker="SPY")

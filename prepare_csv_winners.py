@@ -1,7 +1,7 @@
 from datetime import date
 import os
 
-from src.mover_enrichers import enrich_with_atr, enrich_with_ema, enrich_with_sma, enrich_with_spy_changes
+from src.mover_enrichers import enrich_mover
 from src.movers import collect_overnights
 from src.winners import get_biggest_winners
 from src.trading_day import previous_trading_day
@@ -14,16 +14,6 @@ def get_all_biggest_winners_with_day_after(start_date: date, end_date: date):
         enrich_mover(mover)
         movers.append(mover)
     return movers
-
-
-def enrich_mover(mover):
-    enrich_with_spy_changes(mover)
-    enrich_with_sma(mover, n=100)  # S!!!
-    enrich_with_ema(mover, n=100)
-    enrich_with_ema(mover, n=50)
-    enrich_with_atr(mover, n=14)
-    # enrich_with_adx(mover)  # TODO: complete
-    return mover
 
 
 # keep in sync with usage of write_csv

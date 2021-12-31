@@ -30,7 +30,7 @@ def current_sma_of(values):
     return s / n
 
 
-def get_atr(candles):
+def atr_of(candles):
     """
     Returns a list of average true range values. Last should be most recent.
     """
@@ -42,7 +42,7 @@ def get_atr(candles):
 
 
 if __name__ == "__main__":
-    print(get_atr([
+    print(atr_of([
         {
             "h": 10,
             "l": 5,

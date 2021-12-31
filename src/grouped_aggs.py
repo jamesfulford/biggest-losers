@@ -13,7 +13,7 @@ HOME = os.environ['HOME']
 
 
 @lru_cache(maxsize=30)
-def fetch_grouped_aggs_with_cache(day, bust_cache=False):
+def fetch_grouped_aggs_with_cache(day: date, bust_cache=False):
 
     strftime = day.strftime("%Y-%m-%d")
 
@@ -36,7 +36,7 @@ def fetch_grouped_aggs_with_cache(day, bust_cache=False):
     return data
 
 
-def fetch_grouped_aggs(day):
+def fetch_grouped_aggs(day: date):
     strftime = day.strftime("%Y-%m-%d")
     print(f'fetching grouped aggs for {strftime}')
 
@@ -61,7 +61,7 @@ def enrich_grouped_aggs(grouped_aggs):
 
 
 @lru_cache(maxsize=30)
-def get_last_trading_day_grouped_aggs(today):
+def get_last_trading_day_grouped_aggs(today: date):
     yesterday = previous_trading_day(today)
     yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
     while 'results' not in yesterday_raw_grouped_aggs:
@@ -72,7 +72,7 @@ def get_last_trading_day_grouped_aggs(today):
 
 
 @lru_cache(maxsize=130)
-def get_today_grouped_aggs(today, bust_cache=False):
+def get_today_grouped_aggs(today: date, bust_cache=False):
     today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(
         today, bust_cache=bust_cache)
 
@@ -84,7 +84,7 @@ def get_today_grouped_aggs(today, bust_cache=False):
     return today_grouped_aggs
 
 
-def get_last_n_candles(today, ticker, n=14):
+def get_last_n_candles(today: date, ticker, n=14):
     """
     returns last n candles for a given ticker, with entry [0] being the most recent.
     if returned None, indicates that the ticker was not trading one of those days.
@@ -103,7 +103,7 @@ def get_last_n_candles(today, ticker, n=14):
     return list(candles)
 
 
-def get_last_2_candles(today, ticker):
+def get_last_2_candles(today: date, ticker: str):
     candle, candle_yesterday = tuple(
         get_last_n_candles(today, ticker, n=2))
 
