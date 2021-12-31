@@ -52,8 +52,8 @@ def prepare_supernovas_csv(path, start_date, end_date):
                 "today_volume": nova['mover_day_of_action']['v']
             }
 
-
     write_csv(path, yield_supernovas(), csv_headers)
+
 
 def main():
     from src.pathing import get_paths
@@ -63,7 +63,7 @@ def main():
     # start_date = date(2019, 11, 18)
     # (but need more time because of 100smas)
 
-    start_date = date(2021, 12, 1)
+    start_date = date(2020, 6, 1)
     end_date = date(2021, 12, 30)
     prepare_supernovas_csv(path, start_date=start_date, end_date=end_date)
 

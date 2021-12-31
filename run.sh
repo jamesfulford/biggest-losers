@@ -78,6 +78,11 @@ case $action in
         $python_exec biggest_losers_stocks.py "sell" "$2"
         ;;
 
+    "clear-cache")
+        # TODO: clear cache only if last cache fill has a different "next_trading_day"
+        rm -rf $DATA_DIR/cache
+        ;;
+
     "rotate-logs")
         if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
             echo "# already found today's log file, won't rotate"
@@ -100,6 +105,10 @@ case $action in
         $python_exec prepare_csv_winners.py
         echo "(return code was $?)"
         ;;
+    "supernovas-csv")
+        $python_exec prepare_csv_supernovas.py
+        echo "(return code was $?)"
+        ;;
     "build-drive-outputs")
         echo "Getting data (including trade intentions and orders csvs) from server..."
         ./scripts/deploy/sync-data-back.sh paper
@@ -107,8 +116,11 @@ case $action in
         ./scripts/deploy/sync-data-back.sh td-cash
         ./scripts/deploy/sync-data-back.sh intrac1
         echo "Preparing theoretical backtest numbers..."
+        ./run.sh clear-cache
+
         ./run.sh biggest-losers-csv
         ./run.sh biggest-winners-csv
+        ./run.sh supernovas-csv
         echo "Starting analysis..."
         $python_exec analyze.py
         ;;
