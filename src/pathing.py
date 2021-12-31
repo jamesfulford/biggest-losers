@@ -35,6 +35,8 @@ def get_paths(target_environment_name=None):
         paths['data']['outputs']['dir'], 'biggest_losers.csv')
     paths['data']["outputs"]["biggest_winners_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'biggest_winners.csv')
+    paths['data']["outputs"]["supernovas_csv"] = os.path.join(
+        paths['data']['outputs']['dir'], 'supernovas.csv')
     paths['data']["outputs"]["filled_orders_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'filled_orders.csv')
     paths['data']["outputs"]["order_intentions_csv"] = os.path.join(
