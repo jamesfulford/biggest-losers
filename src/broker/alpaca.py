@@ -23,7 +23,7 @@ def _get_alpaca(url):
 
 def buy_symbol_at_close(symbol, quantity):
     """
-    Buy a symbol
+    Buy a symbol at close
     """
     if DRY_RUN:
         print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
@@ -36,6 +36,25 @@ def buy_symbol_at_close(symbol, quantity):
         'type': 'market',
         # buy at close
         'time_in_force': 'cls'
+    }, headers=APCA_HEADERS)
+    response.raise_for_status()
+    return response.json()
+
+
+def buy_symbol_market(symbol, quantity):
+    """
+    Buy a symbol now
+    """
+    if DRY_RUN:
+        print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
+        return
+
+    response = requests.post(ALPACA_URL + '/v2/orders', json={
+        'symbol': symbol,
+        'qty': quantity,
+        'side': 'buy',
+        'type': 'market',
+        'time_in_force': 'day'
     }, headers=APCA_HEADERS)
     response.raise_for_status()
     return response.json()

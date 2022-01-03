@@ -4,7 +4,7 @@ import os
 from src.intention import record_intentions
 from src.criteria import is_warrant
 
-from biggest_losers import buy_biggest_losers_at_close, sell_biggest_losers_at_open
+from biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
 
 
 if __name__ == '__main__':
@@ -43,7 +43,7 @@ if __name__ == '__main__':
         top_n = 10
         cash_percent_to_use = 0.9
 
-        order_intentions = buy_biggest_losers_at_close(
+        order_intentions = buy_biggest_losers(
             today,
             minimum_loss_percent=minimum_loss_percent,
             closing_price_min=closing_price_min,

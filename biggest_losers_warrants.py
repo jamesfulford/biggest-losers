@@ -3,10 +3,17 @@ import os
 
 from src.intention import record_intentions
 from src.criteria import is_warrant
+from src.broker.generic import buy_symbol_market
 
-from biggest_losers import buy_biggest_losers_at_close, sell_biggest_losers_at_open
+from biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
 
 
+#
+# NOTE:
+# this is nearly identical to biggest_losers_stocks.py with these changes:
+# 1. only warrants are considered
+# 2. market orders, not market_on_close orders, are submitted
+#
 if __name__ == '__main__':
     today = date.today()
 
@@ -44,7 +51,7 @@ if __name__ == '__main__':
         top_n = 10
         cash_percent_to_use = 0.9
 
-        order_intentions = buy_biggest_losers_at_close(
+        order_intentions = buy_biggest_losers(
             today,
             minimum_loss_percent=minimum_loss_percent,
             closing_price_min=closing_price_min,
@@ -53,6 +60,9 @@ if __name__ == '__main__':
             top_n=top_n,
             warrant_criteria=lambda c: is_warrant(c["T"]),
             cash_percent_to_use=cash_percent_to_use,
+            # Buys with market order, not at close
+            buy_function=lambda symbol, quantity: buy_symbol_market(
+                symbol, quantity),
         )
         # write order intentions to file so we can evaluate slippage later
         record_intentions(today, order_intentions, metadata={

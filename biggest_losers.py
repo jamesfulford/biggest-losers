@@ -5,7 +5,17 @@ from src.losers import get_biggest_losers
 from src.criteria import is_skipped_day
 
 
-def buy_biggest_losers_at_close(today: date, minimum_loss_percent=0.1, closing_price_min=0.0, minimum_volume=0, minimum_dollar_volume=0, top_n=10, warrant_criteria=lambda _: True, cash_percent_to_use=0.9):
+def buy_biggest_losers(
+    today: date,
+    minimum_loss_percent=0.1,
+    closing_price_min=0.0,
+    minimum_volume=0,
+    minimum_dollar_volume=0,
+    top_n=10,
+    warrant_criteria=lambda _: True,
+    cash_percent_to_use=0.9,
+    buy_function=lambda symbol, quantity: buy_symbol_at_close(symbol, quantity)
+):
     """
     minimum_loss_percent = 0.1  # down at least 10%; aka percent_change < -0.1
 
@@ -67,7 +77,7 @@ def buy_biggest_losers_at_close(today: date, minimum_loss_percent=0.1, closing_p
             # TODO: pass back various account balances here
         })
         try:
-            buy_symbol_at_close(symbol, quantity)
+            buy_function(symbol, quantity)
         except Exception as e:
             print(e.response.status_code, e.response.json())
     return order_intentions

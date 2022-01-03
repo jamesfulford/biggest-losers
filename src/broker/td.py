@@ -294,6 +294,36 @@ def get_positions(account_id: str = None):
 #
 
 
+def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
+    if not account_id:
+        account_id = get_account_id()
+
+    symbol = normalize_symbol(symbol)
+
+    if DRY_RUN:
+        print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
+        return
+
+    response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
+        "orderType": "MARKET_ON_CLOSE",
+        "session": "NORMAL",
+        "duration": "DAY",
+        "orderStrategyType": "SINGLE",
+        "orderLegCollection": [
+            {
+                "instruction": "BUY",
+                "quantity": quantity,
+                "instrument": {
+                    "symbol": symbol,
+                    "assetType": "EQUITY"
+                }
+            }
+        ]
+    }, headers=_get_headers())
+
+    response.raise_for_status()
+
+
 def buy_symbol_market(symbol: str, quantity: int, account_id: str = None):
     if not account_id:
         account_id = get_account_id()
