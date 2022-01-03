@@ -88,9 +88,9 @@ case $action in
             echo "# already found today's log file, won't rotate"
             exit 0
         fi
-        echo "# rotating logs"
+        echo "# rotating logs" >> $log_path
         cp -f $log_path $log_path.$(date +%Y-%m-%d)
-        echo "# starting new log"
+        echo "# starting new log" > $log_path
         ;;
     "dump-orders")
         refresh_tokens_if_needed
