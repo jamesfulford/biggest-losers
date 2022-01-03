@@ -4,7 +4,7 @@ import os
 from src.intention import record_intentions
 from src.criteria import is_warrant
 
-from biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
+from src.biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
 
 
 if __name__ == '__main__':
