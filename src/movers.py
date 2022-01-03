@@ -1,30 +1,27 @@
 from datetime import date
-from requests.models import HTTPError
 
-from src.grouped_aggs import get_last_trading_day_grouped_aggs, get_today_grouped_aggs
+from src.grouped_aggs import get_today_grouped_aggs
 from src.trading_day import next_trading_day
 
 
-def overnights(start_date: date, end_date: date):
-    day = start_date
-    # scroll until we can query last trading day
-    while True:
-        try:
-            get_last_trading_day_grouped_aggs(day)
-            break
-        except HTTPError as e:
-            if e.response.status_code == 403:
-                print(e, e.response.json())
-                day = next_trading_day(day)
-                continue
-            raise e
+# TODO: rename file to `overnights.py`
 
-    # TODO: I might be losing a day in here
+
+def overnights(start: date, end: date):
+    """
+    Yields all (previous_day, day) trading day pairs entirely contained in `start` to `end` range (inclusive).
+    """
+    day = start
+    # if `start` is a holiday, skip it
+    while True:
+        if get_today_grouped_aggs(start):
+            break
+        day = next_trading_day(day)
 
     previous_day = day
     day = next_trading_day(day)
 
-    while day <= end_date:
+    while day <= end:
         grouped_aggs = get_today_grouped_aggs(day)
         if not grouped_aggs:
             print(f'no results for {day}, might have been a trading holiday')

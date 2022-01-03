@@ -301,7 +301,7 @@ def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
     symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
-        print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
+        # print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
         return
 
     response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
@@ -331,7 +331,7 @@ def buy_symbol_market(symbol: str, quantity: int, account_id: str = None):
     symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
-        print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
+        # print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
         return
 
     response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
@@ -368,7 +368,7 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
     symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
-        print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
+        # print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
         return
 
     response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={

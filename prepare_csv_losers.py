@@ -1,5 +1,6 @@
 from datetime import date
 import os
+from src.grouped_aggs import prepare_backtest
 
 from src.mover_enrichers import enrich_mover
 from src.movers import collect_overnights
@@ -10,7 +11,7 @@ from src.trading_day import previous_trading_day
 def get_all_biggest_losers_with_day_after(start_date: date, end_date: date):
     movers = []
     for mover in collect_overnights(
-            start_date, end_date, get_actions_on_day=lambda day: get_biggest_losers(day, top_n=1000)):
+            start_date, end_date, get_actions_on_day=lambda day: get_biggest_losers(day)):
         enrich_mover(mover)
         movers.append(mover)
     return movers
@@ -130,12 +131,12 @@ def main():
     from src.pathing import get_paths
     path = get_paths()['data']['outputs']["biggest_losers_csv"]
 
-    # earliest date I have data for on my machine
-    # start_date = date(2019, 11, 18)
-    # (but need more time because of 100smas)
+    # have to fetch earlier than backtest start date for 100smas
+    start_fetch_date = date(2020, 1, 15)
 
-    start_date = date(2020, 6, 1)
-    end_date = date.today()
+    start_date = date(2021, 1, 1)
+    end_date = date(2021, 12, 31)
+    prepare_backtest(start_fetch_date, end_date)
     prepare_biggest_losers_csv(path, start_date=start_date, end_date=end_date)
 
 

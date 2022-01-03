@@ -1,9 +1,8 @@
 from src.grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_aggs
 
 
-def get_supernovas(today, bust_cache=False, pct=2):
-    # TODO: remove top_n, just yield
-    today_grouped_aggs = get_today_grouped_aggs(today, bust_cache=bust_cache)
+def get_supernovas(today, skip_cache=False, pct=2):
+    today_grouped_aggs = get_today_grouped_aggs(today, skip_cache=skip_cache)
     if not today_grouped_aggs:
         print(f'no data for {today}, cannot fetch supernovas')
         return None
@@ -28,7 +27,7 @@ def get_supernovas(today, bust_cache=False, pct=2):
     supernovas = list(
         filter(lambda t: t['percent_change_high'] > pct, tickers_also_present_yesterday))
     supernovas = sorted(supernovas,
-                            key=lambda t: t['percent_change_high'])
+                        key=lambda t: t['percent_change_high'])
 
     for nova in supernovas:
         nova['rank'] = supernovas.index(nova) + 1

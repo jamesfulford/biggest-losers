@@ -38,9 +38,14 @@ def buy_biggest_losers(
     # Filter losers
     #
 
-    losers = get_biggest_losers(today, bust_cache=True, top_n=1000) or []
-    losers = list(
-        filter(lambda l: l["percent_change"] < -minimum_loss_percent, losers))
+    losers = get_biggest_losers(
+        today, max_percent_change=-minimum_loss_percent, skip_cache=True) or []
+
+    # NOTE: if we ever need multi-day averages, we will start to need the cache to be filled
+    # with enough days. If not careful, might use data with different adjustment base
+    # if stock split is done between caching and live run
+    # (like if a $10 becomes $5 due to split, cache will say $10 and
+    # 100EMA might be computed to be $9.83, but not adjusted for most recent split)
 
     losers = list(filter(lambda l: l["c"] > closing_price_min, losers))
     losers = list(filter(lambda l: l["v"] > minimum_volume, losers))

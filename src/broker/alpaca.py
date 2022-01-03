@@ -26,7 +26,7 @@ def buy_symbol_at_close(symbol, quantity):
     Buy a symbol at close
     """
     if DRY_RUN:
-        print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
+        # print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
         return
 
     response = requests.post(ALPACA_URL + '/v2/orders', json={
@@ -46,7 +46,7 @@ def buy_symbol_market(symbol, quantity):
     Buy a symbol now
     """
     if DRY_RUN:
-        print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
+        # print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
         return
 
     response = requests.post(ALPACA_URL + '/v2/orders', json={
@@ -65,7 +65,7 @@ def sell_symbol_at_open(symbol, quantity):
     Sell a symbol
     """
     if DRY_RUN:
-        print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
+        # print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
         return
 
     response = requests.post(ALPACA_URL + '/v2/orders', json={
