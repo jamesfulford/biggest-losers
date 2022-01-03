@@ -1,0 +1,11 @@
+#!/bin/bash
+ENV_NAME=${ENV_NAME:-"paper"}
+
+. $ENV_NAME.env
+if [ "$BROKER" == "td" ]; then
+    ENV_FILE=$ENV_NAME.env ./run.sh refresh-tokens
+fi
+
+export DRY_RUN=1
+
+nodemon -e py -x "python3 $@"

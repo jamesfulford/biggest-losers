@@ -1,6 +1,4 @@
 #!/bin/bash -e
-
-
 current_dir=`pwd`
 ENV_NAME=`basename $current_dir`
 PARENT_DIR=`dirname $current_dir`
@@ -8,9 +6,6 @@ PARENT_DIR=`dirname $current_dir`
 APP_DIR=$current_dir
 # TODO: work out pathing for local development and multiple data dirs (remote-environments folder)
 DATA_DIR=$PARENT_DIR/$ENV_NAME-data
-
-echo APP_DIR $APP_DIR
-echo DATA_DIR $DATA_DIR
 
 log_path=$DATA_DIR/logs/run.log
 
@@ -58,6 +53,10 @@ action="$1"
 export GIT_COMMIT=`git rev-parse --short HEAD`
 
 case $action in
+    "refresh-tokens")
+        refresh_tokens_if_needed
+        ;;
+
     # biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
