@@ -2,9 +2,21 @@ from datetime import datetime
 import json
 import os
 import requests
+import logging
+from http.client import HTTPConnection  # py3
+
 
 from src.pathing import get_paths
 from src.broker.dry_run import DRY_RUN
+
+
+log = logging.getLogger('urllib3')  # works
+
+log.setLevel(logging.DEBUG)  # needed
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+log.addHandler(ch)
+HTTPConnection.debuglevel = 1
 
 
 def get_account_id():
@@ -392,19 +404,28 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
 
     response.raise_for_status()
 
-    return response.json()
+    return {
+        "status_code": response.status_code,
+        "body": response.raw.read(),
+    }
+
+
+def print_accounts_summary():
+    for account in get_accounts():
+        print(
+            f"  '{account['id']}' (has ${round(account['cash'], 2)} in cash)")
 
 
 try:
     get_account_id()
 except KeyError as e:
     print(f"ERROR: cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
-    for account in get_accounts():
-        print(
-            f"  '{account['id']}' (has ${round(account['cash'], 2)} in cash)")
+    print_accounts_summary()
     exit(1)
 
 
 def main():
     import json
     print(json.dumps(get_positions(), indent=2))
+
+    sell_symbol_at_open("AAPL", 1)

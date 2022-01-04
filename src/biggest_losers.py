@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import json
 
 from src.broker.generic import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
 from src.losers import get_biggest_losers
@@ -72,19 +73,24 @@ def buy_biggest_losers(
         print(
             f"Submitting buy order of {symbol} {quantity} (current price {price}, target amount {quantity * price}) at close")
 
+        account_before = get_account()
+        print("account before:", json.dumps(account_before))
         order_intentions.append({
-            # use current time but same day
+            # use current time but same day, in case of testing with overriding date
             "datetime": datetime.now().replace(year=today.year, month=today.month, day=today.day),
             "symbol": symbol,
             "quantity": quantity,
             "price": price,
             "side": "buy",
-            # TODO: pass back various account balances here
+            # account balance before order
+            "cash_before": account_before["cash"],
         })
+
         try:
             buy_function(symbol, quantity)
         except Exception as e:
-            print(e.response.status_code, e.response.json())
+            print(e.response.status_code, e.response.raw.read())
+        print("account after:", json.dumps(get_account()))
     return order_intentions
 
 
