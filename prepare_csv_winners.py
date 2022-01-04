@@ -2,7 +2,7 @@ from datetime import date
 import os
 
 from src.mover_enrichers import enrich_mover
-from src.movers import collect_overnights
+from src.overnights import collect_overnights
 from src.winners import get_biggest_winners
 from src.trading_day import previous_trading_day
 

@@ -3,7 +3,7 @@ import os
 from src.grouped_aggs import prepare_backtest
 
 from src.mover_enrichers import enrich_mover
-from src.movers import collect_overnights
+from src.overnights import collect_overnights
 from src.losers import get_biggest_losers
 from src.trading_day import previous_trading_day
 

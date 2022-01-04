@@ -4,9 +4,6 @@ from src.grouped_aggs import get_today_grouped_aggs
 from src.trading_day import next_trading_day
 
 
-# TODO: rename file to `overnights.py`
-
-
 def overnights(start: date, end: date):
     """
     Yields all (previous_day, day) trading day pairs entirely contained in `start` to `end` range (inclusive).
