@@ -14,7 +14,7 @@ def overnights(start: date, end: date):
     day = start
     # if `start` is a holiday, skip it
     while True:
-        if get_today_grouped_aggs(start):
+        if get_today_grouped_aggs(day):
             break
         day = next_trading_day(day)
 
