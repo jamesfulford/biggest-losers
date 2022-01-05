@@ -1,10 +1,8 @@
 from datetime import date
 import os
 
-from src.mover_enrichers import enrich_mover
 from src.overnights import collect_overnights
 from src.supernovas import get_supernovas
-from src.trading_day import previous_trading_day
 from src.csv_dump import write_csv
 
 
@@ -12,7 +10,6 @@ def get_all_supernovas(start_date: date, end_date: date):
     novas = []
     for nova in collect_overnights(
             start_date, end_date, get_actions_on_day=lambda day: get_supernovas(day, pct=2)):
-        # enrich_mover(nova)
         novas.append(nova)
     return novas
 
