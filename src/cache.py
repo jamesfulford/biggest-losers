@@ -43,3 +43,7 @@ def clear_json_cache(substring: str) -> None:
 def get_entry_time(key: str) -> datetime:
     path = _get_cache_path(key)
     return datetime.fromtimestamp(os.path.getctime(path))
+
+
+def get_matching_entries(substring: str) -> list:
+    return [key for key in os.listdir(get_paths()["data"]["cache"]['dir']) if substring in key]

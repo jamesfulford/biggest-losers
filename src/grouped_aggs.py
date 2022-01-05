@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import requests
 from functools import lru_cache
 
-from src.cache import clear_json_cache, get_entry_time, read_json_cache, write_json_cache
+from src.cache import clear_json_cache, get_entry_time, get_matching_entries, read_json_cache, write_json_cache
 from src.trading_day import next_trading_day, previous_trading_day
 
 
@@ -63,6 +63,16 @@ def _refetch_cache(start: date, end: date):
     while day <= end:
         fetch_grouped_aggs_with_cache(day)
         day = next_trading_day(day)
+
+
+def get_current_cache_range():
+    entries = get_matching_entries("grouped_aggs_")
+    if not entries or len(entries) < 2:
+        return None
+    entries.sort()
+
+    start_entry, end_entry = entries[0], entries[-1]
+    return datetime.strptime(start_entry, 'grouped_aggs_%Y-%m-%d').date(), datetime.strptime(end_entry, 'grouped_aggs_%Y-%m-%d').date()
 
 
 def prepare_backtest(start: date, end: date) -> None:
