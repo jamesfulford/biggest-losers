@@ -53,11 +53,17 @@ action="$1"
 export GIT_COMMIT=`git rev-parse --short HEAD`
 
 case $action in
+    #
+    # Server actions
+    #
+    # TODO: simulate our own crontab by calling our own task manager script every minute from true crontab
+    # - puts rules in file in codebase, stop editing crontab on server
+    # - can fix timezone issue
     "refresh-tokens")
         refresh_tokens_if_needed
         ;;
 
-    # biggest loser stocks
+    # Strategy: biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
         $python_exec biggest_losers_stocks.py "buy" "$2"
@@ -67,7 +73,7 @@ case $action in
         $python_exec biggest_losers_stocks.py "sell" "$2"
         ;;
 
-    # biggest loser warrants
+    # Strategy: biggest loser warrants
     "biggest-loser-warrants-buy")
         refresh_tokens_if_needed
         $python_exec biggest_losers_warrants.py "buy" "$2"
@@ -77,6 +83,7 @@ case $action in
         $python_exec biggest_losers_stocks.py "sell" "$2"
         ;;
 
+    # Operations
     "rotate-logs")
         if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
             echo "# already found today's log file, won't rotate"
@@ -86,32 +93,55 @@ case $action in
         cp -f $log_path $log_path.$(date +%Y-%m-%d)
         echo "# starting new log" > $log_path
         ;;
+
+    # Performance
     "dump-orders")
         refresh_tokens_if_needed
         $python_exec dump-orders.py
         echo "(return code was $?)"
         ;;
-    "biggest-losers-csv")
+
+    #
+    # Backtesting Operations
+    #
+    "prepare-csvs")
         $python_exec prepare_csv_losers.py
-        echo "(return code was $?)"
-        ;;
-    "biggest-winners-csv")
         $python_exec prepare_csv_winners.py
-        echo "(return code was $?)"
-        ;;
-    "supernovas-csv")
         $python_exec prepare_csv_supernovas.py
-        echo "(return code was $?)"
         ;;
-    "build-drive-outputs")
-        echo "Getting data (including trade intentions and orders csvs) from server..."
+
+    "prepare-cache")
+        echo TODO pass start and end
+        exit 1
+        # $python_exec prepare_cache.py --start "$2" --end "$3"
+        ;;
+
+    #
+    # Client Operations (across environments/accounts)
+    #
+    "sync-data")
         ./scripts/deploy/sync-data-back.sh paper
         ./scripts/deploy/sync-data-back.sh prod
         ./scripts/deploy/sync-data-back.sh td-cash
         ./scripts/deploy/sync-data-back.sh intrac1
-        echo "Analyzing performance..."
+
+        echo TODO get csvs back from server
+        ;;
+
+    "analyze-performance")
         $python_exec performance.py
         ;;
+
+    "build-drive-outputs")
+        echo "Getting data (including trade intentions and orders csvs) from server..."
+        ./run.sh sync-data
+        echo "Analyzing performance..."
+        ./run.sh analyze-performance
+        ;;
+
+
+
+    # Catchall
     *)
         echo "unknown action $action"
         exit 1
