@@ -6,7 +6,7 @@ import requests
 from functools import lru_cache
 
 from src.cache import clear_json_cache, get_entry_time, get_matching_entries, read_json_cache, write_json_cache
-from src.trading_day import generate_trading_days, next_trading_day, previous_trading_day
+from src.trading_day import generate_trading_days, get_last_market_close, get_last_market_open, get_market_close_on_day, get_market_open_on_day, is_during_market_hours, next_trading_day, now, previous_trading_day, today_or_next_trading_day, today_or_previous_trading_day
 
 
 API_KEY = os.environ['POLYGON_API_KEY']
@@ -35,27 +35,33 @@ def _cache_is_missing_days(start: date, end: date):
     return False
 
 
+def get_cache_entry_refresh_time(day: date) -> datetime:
+    return now(get_entry_time(get_grouped_aggs_cache_key(day)))
+
+
 def _should_skip_clearing_cache(start: date, end: date):
     # if partial cache is more recent than last close, we can continue
     try:
-        # weekends -> monday, otherwise no-op
-        start_trading_day = next_trading_day(previous_trading_day(start))
-        last_cache_refresh_started_time = get_entry_time(
-            get_grouped_aggs_cache_key(start_trading_day)).astimezone(ZoneInfo("America/New_York"))
+        last_cache_refresh_started_time = get_cache_entry_refresh_time(
+            today_or_next_trading_day(start))
 
-        now = datetime.now().astimezone(ZoneInfo("America/New_York"))
-        today_or_prev_trading_day = previous_trading_day(
-            next_trading_day(now.date()))
-        today_or_prev_close = datetime(today_or_prev_trading_day.year, today_or_prev_trading_day.month,
-                                       today_or_prev_trading_day.day, 16, 0, 0).replace(tzinfo=ZoneInfo("America/New_York"))
+        market_now = now()
 
-        if last_cache_refresh_started_time > today_or_prev_close:
-            return True
+        # if last cache refresh was during market hours, should clear
+        if is_during_market_hours(last_cache_refresh_started_time):
+            return False
+
+        # if right now is during market hours, should clear
+        if is_during_market_hours(market_now):
+            return False
+
+        # so, it's outside market hours and last cache refresh was outside market hours.
+
+        # if both are after the same session, then we can continue with existing cache
+        return get_last_market_close(last_cache_refresh_started_time) == get_last_market_close(market_now)
     except:
         # cache entry we are checking for is missing, so we should definitely act as if clear
         return False
-
-    return False
 
 
 def _refetch_cache(start: date, end: date):

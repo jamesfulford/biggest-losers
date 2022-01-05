@@ -105,15 +105,19 @@ case $action in
     # Backtesting Operations
     #
     "prepare-csvs")
-        $python_exec prepare_csv_losers.py
-        $python_exec prepare_csv_winners.py
-        $python_exec prepare_csv_supernovas.py
+        for script in \
+            prepare_csv_losers.py \
+            prepare_csv_winners.py \
+            prepare_csv_supernovas.py
+        do
+            echo $script
+            $python_exec $script
+            echo
+        done
         ;;
 
     "prepare-cache")
-        echo TODO pass start and end
-        exit 1
-        # $python_exec prepare_cache.py --start "$2" --end "$3"
+        $python_exec prepare_cache.py --end today --start end-2
         ;;
 
     #
