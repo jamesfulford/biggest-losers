@@ -3,10 +3,6 @@ import argparse
 
 from src.grouped_aggs import get_current_cache_range, prepare_cache_grouped_aggs
 
-
-# TODO: also, adjust csv file makers to not prepare caches but assert cache is ready, move to a directory somewhere
-
-
 POLYGON_CALLS_PER_MINUTE = 5  # estimating fetch time
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@ from src.trading_day import generate_trading_days, previous_trading_day
 def get_all_biggest_winners_with_day_after(start_date: date, end_date: date):
     movers = []
     for mover in collect_overnights(
-            start_date, end_date, get_actions_on_day=lambda day: get_biggest_winners(day, top_n=1000)):
+            start_date, end_date, get_actions_on_day=lambda day: get_biggest_winners(day)):
         enrich_mover(mover)
         movers.append(mover)
     return movers

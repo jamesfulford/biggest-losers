@@ -48,6 +48,7 @@ def group_trades_by_closed_day(trades):
 
 def get_backtest_theoretical_trades():
     # TODO: this will not have most recent data unless we rebuild cache
+    # TODO: this only does biggest losers, we should evaluate more generically
     return get_lines_from_biggest_losers_csv(
         get_paths()['data']["outputs"]["biggest_losers_csv"], date(2020, 1, 1))
 

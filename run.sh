@@ -109,10 +109,6 @@ case $action in
         ./scripts/deploy/sync-data-back.sh prod
         ./scripts/deploy/sync-data-back.sh td-cash
         ./scripts/deploy/sync-data-back.sh intrac1
-        echo "Preparing theoretical backtest numbers..."
-        ./run.sh biggest-losers-csv
-        ./run.sh biggest-winners-csv
-        ./run.sh supernovas-csv
         echo "Starting analysis..."
         $python_exec analyze.py
         ;;

@@ -1,8 +1,7 @@
 from src.grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_aggs
 
 
-def get_biggest_winners(today, top_n=20, skip_cache=False):
-    # TODO: remove top_n, just yield
+def get_biggest_winners(today, skip_cache=False):
     today_grouped_aggs = get_today_grouped_aggs(today, skip_cache=skip_cache)
     if not today_grouped_aggs:
         print(f'no data for {today}, cannot fetch biggest losers')
@@ -27,8 +26,6 @@ def get_biggest_winners(today, top_n=20, skip_cache=False):
         filter(lambda t: t['percent_change'] > .08, tickers_also_present_yesterday))
     biggest_losers = sorted(biggest_losers,
                             key=lambda t: -t['percent_change'])
-
-    biggest_losers = biggest_losers[:top_n]
 
     for loser in biggest_losers:
         loser['rank'] = biggest_losers.index(loser) + 1

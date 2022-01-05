@@ -14,14 +14,12 @@ def enrich_mover(mover):
         mover[f"{interesting_ticker.lower()}_day_of_action_percent_change"] = changes["close_to_close_percent_change"]
         mover[f"{interesting_ticker.lower()}_day_of_action_intraday_percent_change"] = changes["close_to_open_percent_change"]
 
-    # TODO: when using shared csv function, remove the `or ""`
+    mover[f"100sma"] = get_sma(ticker, day_of_action, 100)  # S!!!
 
-    mover[f"100sma"] = get_sma(ticker, day_of_action, 100) or ""  # S!!!
+    mover[f"100ema"] = get_ema(ticker, day_of_action, 100)
+    mover[f"50ema"] = get_ema(ticker, day_of_action, 50)
 
-    mover[f"100ema"] = get_ema(ticker, day_of_action, 100) or ""
-    mover[f"50ema"] = get_ema(ticker, day_of_action, 50) or ""
-
-    mover[f"14atr"] = get_atr(ticker, day_of_action, 14) or ""
+    mover[f"14atr"] = get_atr(ticker, day_of_action, 14)
 
     return mover
 
