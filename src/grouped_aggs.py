@@ -133,6 +133,7 @@ def fetch_grouped_aggs(day: date):
 
     while True:
         # TODO: adjusted=false, do the adjustments on our side (more cache hits)
+        # TODO: use the API key in headers so logs are cleaner
         response = requests.get(
             f'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{strftime}?adjusted=true&apiKey={API_KEY}')
         if response.status_code == 429:

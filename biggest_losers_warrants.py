@@ -44,6 +44,7 @@ if __name__ == '__main__':
 
     if action == 'buy':
         strategy_name = "biggest_losers_warrants"
+        # TODO: read from config
         minimum_loss_percent = 0.1
         closing_price_min = 0.0
         minimum_volume = 0

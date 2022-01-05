@@ -150,7 +150,17 @@ case $action in
         ./run.sh analyze-performance
         ;;
 
+    "test-deploy")
+        echo "Testing deploy..."
+        ./scripts/deploy/send-to-server.sh paper
+        ;;
 
+    "prod-deploy")
+        echo "Deploying..."
+        for e in prod td-cash intrac1 collector; do
+            ./scripts/deploy/send-to-server.sh $e || fail_script "Failed to deploy $e"
+        done
+        ;;
 
     # Catchall
     *)

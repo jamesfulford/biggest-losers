@@ -11,6 +11,7 @@ target_environment_name = sys.argv[1] if len(sys.argv) > 2 else None
 
 MARKET_TZ = ZoneInfo("America/New_York")
 
+# TODO: read from config so intrac1 doesn't take so long during deploys
 start = datetime(2000, 1, 1)
 end = datetime.now() + timedelta(days=1)
 
