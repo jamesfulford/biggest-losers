@@ -117,19 +117,26 @@ case $action in
         ;;
 
     "prepare-cache")
-        $python_exec prepare_cache.py --end today --start end-2
+        $python_exec prepare_cache.py --end today --start end-2  # polygon free tier limits data to 2 years back
         ;;
 
+    "collector-nightly")
+        ./run.sh prepare-cache
+        ./run.sh prepare-csvs
+        ;;
     #
     # Client Operations (across environments/accounts)
     #
     "sync-data")
-        ./scripts/deploy/sync-data-back.sh paper
-        ./scripts/deploy/sync-data-back.sh prod
-        ./scripts/deploy/sync-data-back.sh td-cash
-        ./scripts/deploy/sync-data-back.sh intrac1
+        ./scripts/deploy/sync-collector-data-back.sh collector
 
-        echo TODO get csvs back from server
+        for e in paper prod td-cash intrac1; do
+            # TODO: this
+            echo
+            echo Syncing $e...
+            echo TODO: do sleepy retries if rsyncs are failing
+            ./scripts/deploy/sync-data-back.sh $e || sleep 10
+        done
         ;;
 
     "analyze-performance")

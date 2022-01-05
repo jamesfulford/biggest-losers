@@ -52,7 +52,17 @@ function assert_crontab_entry_exists() {
     fi
 }
 
+#
+# BROKER setup
+#
+
 case $BROKER in
+    "none")
+        echo "BROKER=none, skipping broker setup"
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh collector-nightly >> $DATA_DIR/logs/run.log 2>&1"
+        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
+        exit 0
+        ;;
     "alpaca")
         echo "using alpaca"
         ./scripts/alpaca-ops/account-settings.sh "false" || fail_script "failed to set up settings"
@@ -76,7 +86,7 @@ esac
 assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-sell >> $DATA_DIR/logs/run.log 2>&1"
 assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-buy >> $DATA_DIR/logs/run.log 2>&1"
 assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders >> $DATA_DIR/logs/run.log 2>&1"
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs >> $DATA_DIR/logs/run.log 2>&1"
+assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
 
 #
 # assert that scripts still run, but don't execute any trades for this test

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 environment=${1:-"paper"}
 server="solomon"
