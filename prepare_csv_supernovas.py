@@ -1,9 +1,11 @@
 from datetime import date
 import os
+from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 
 from src.overnights import collect_overnights
 from src.supernovas import get_supernovas
 from src.csv_dump import write_csv
+from src.trading_day import generate_trading_days
 
 
 def get_all_supernovas(start_date: date, end_date: date):
@@ -14,7 +16,6 @@ def get_all_supernovas(start_date: date, end_date: date):
     return novas
 
 
-# keep in sync with usage of write_csv
 csv_headers = [
     "ticker",
     "day_of_action",
@@ -26,14 +27,9 @@ csv_headers = [
 ]
 
 
-def prepare_supernovas_csv(path, start_date, end_date):
+def prepare_supernovas_csv(path: str, start, end):
     novas = get_all_supernovas(
-        start_date, end_date)
-
-    try:
-        os.remove(path)
-    except:
-        pass
+        start, end)
 
     def yield_supernovas():
         for nova in novas:
@@ -56,13 +52,14 @@ def main():
     from src.pathing import get_paths
     path = get_paths()['data']['outputs']["supernovas_csv"]
 
-    # earliest date I have data for on my machine
-    # start_date = date(2019, 11, 18)
-    # (but need more time because of 100smas)
+    start, end = get_cache_prepared_date_range_with_leadup_days(0)
 
-    start_date = date(2020, 6, 1)
-    end_date = date(2021, 12, 30)
-    prepare_supernovas_csv(path, start_date=start_date, end_date=end_date)
+    print("start:", start)
+    print("end:", end)
+    print("estimated trading days:", len(
+        list(generate_trading_days(start, end))))
+
+    prepare_supernovas_csv(path, start, end)
 
 
 if __name__ == "__main__":
