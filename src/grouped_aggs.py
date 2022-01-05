@@ -81,7 +81,6 @@ def get_cache_prepared_date_range_with_leadup_days(days: int):
     assert cache_range, "cache must be prepared"
     cache_start, cache_end = cache_range
 
-    # need at least 100 trading days for 100 EMA to compute
     backtestable_range = list(
         generate_trading_days(cache_start, cache_end))[days:]
     start, end = backtestable_range[0], backtestable_range[-1]

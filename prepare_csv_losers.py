@@ -122,6 +122,8 @@ def main():
     from src.pathing import get_paths
     path = get_paths()['data']['outputs']["biggest_losers_csv"]
 
+    # need at least 100 trading days for 100 EMA to compute
+    # TODO: if not 100 days available, make column blank so we can have more rows
     start, end = get_cache_prepared_date_range_with_leadup_days(110)
 
     print("start:", start)
