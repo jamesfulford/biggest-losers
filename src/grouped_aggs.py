@@ -6,7 +6,7 @@ import requests
 from functools import lru_cache
 
 from src.cache import clear_json_cache, get_entry_time, get_matching_entries, read_json_cache, write_json_cache
-from src.trading_day import next_trading_day, previous_trading_day
+from src.trading_day import generate_trading_days, next_trading_day, previous_trading_day
 
 
 API_KEY = os.environ['POLYGON_API_KEY']
@@ -75,7 +75,20 @@ def get_current_cache_range():
     return datetime.strptime(start_entry, 'grouped_aggs_%Y-%m-%d').date(), datetime.strptime(end_entry, 'grouped_aggs_%Y-%m-%d').date()
 
 
-def prepare_backtest(start: date, end: date) -> None:
+def get_cache_prepared_date_range_with_leadup_days(days: int):
+    assert days >= 0
+    cache_range = get_current_cache_range()
+    assert cache_range, "cache must be prepared"
+    cache_start, cache_end = cache_range
+
+    # need at least 100 trading days for 100 EMA to compute
+    backtestable_range = list(
+        generate_trading_days(cache_start, cache_end))[days:]
+    start, end = backtestable_range[0], backtestable_range[-1]
+    return start, end
+
+
+def prepare_cache_grouped_aggs(start: date, end: date) -> None:
     if _cache_is_missing_days(start, end):
         if not _should_skip_clearing_cache(start, end):
             print("cache is not complete and must be cleared")

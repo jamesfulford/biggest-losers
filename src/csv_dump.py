@@ -47,7 +47,15 @@ if __name__ == "__main__":
 
     def jam():
         yield {'a': 1, 'b': 2, 'd': 3, 'c': 4}
-        yield {'a': 1, 'b': 2, 'd': 3, 'c': 4}
+        yield {'a': 1, 'b': 2, 'd': 3, 'c': 5}
 
     write_csv('/tmp/james.csv',
               jam(), ['d', 'b'])
+
+    expected_str = "d,b,a,c\n"
+    expected_str += "3,2,1,4\n"
+    expected_str += "3,2,1,5\n"
+
+    output_csv_content = open('/tmp/james.csv').read()
+
+    assert expected_str == output_csv_content

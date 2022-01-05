@@ -162,7 +162,7 @@ def write_performance_csv(environment):
                 # - TODO: correlate close slippage with price?
                 # - TODO: correlate close slippage with high-low of day of selling
                 row["entry_backtest_disparity%"] = (
-                    row["t_bought_price"] - row["b_close_day_of_loss"]) / row["b_close_day_of_loss"]
+                    row["t_bought_price"] - row["b_close_day_of_action"]) / row["b_close_day_of_action"]
                 row["exit_backtest_disparity%"] = (
                     row["t_sold_price"] - row["b_open_day_after"]) / row["b_open_day_after"]
 
@@ -171,7 +171,7 @@ def write_performance_csv(environment):
     write_csv(path, yield_trades(), headers=[
         # opening
         "t_opened_at",
-        "b_day_of_loss",
+        "b_day_of_action",
         "oi_datetime",
         # ticker
         "t_symbol",
@@ -180,8 +180,8 @@ def write_performance_csv(environment):
         "t_closed_at",
 
         # timing extra fields
-        "b_day_of_loss_month",
-        "b_day_of_loss_weekday",
+        "b_day_of_action_month",
+        "b_day_of_action_weekday",
         "b_days_overnight",
         "b_overnight_has_holiday_bool",
 
@@ -191,10 +191,11 @@ def write_performance_csv(environment):
         "t_quantity",
 
         "oi_price",
+        "oi_price",
         "oi_quantity",
 
-        "b_close_day_of_loss",
-        "b_volume_day_of_loss",
+        "b_close_day_of_action",
+        "b_volume_day_of_action",
 
         # exit
         "/",

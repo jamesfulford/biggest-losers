@@ -21,7 +21,7 @@ def overnights(start: date, end: date):
     while day <= end:
         grouped_aggs = get_today_grouped_aggs(day)
         if not grouped_aggs:
-            print(f'no results for {day}, might have been a trading holiday')
+            print(f'{day} was a trading holiday (probably)')
 
             # don't progress previous_day
             day = next_trading_day(day)

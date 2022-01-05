@@ -18,9 +18,9 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
     raw_dict_lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
 
     lines = [{
-        "day_of_loss": datetime.strptime(l["day_of_loss"], "%Y-%m-%d").date(),
-        "day_of_loss_weekday": int(l["day_of_loss_weekday"]),
-        "day_of_loss_month": int(l["day_of_loss_month"]),
+        "day_of_action": datetime.strptime(l["day_of_action"], "%Y-%m-%d").date(),
+        "day_of_action_weekday": int(l["day_of_action_weekday"]),
+        "day_of_action_month": int(l["day_of_action_month"]),
         "days_overnight": int(l["days_overnight"]),
         "overnight_has_holiday_bool": l["overnight_has_holiday_bool"] == "True",
 
@@ -28,23 +28,23 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
 
         "ticker": l["ticker"],
 
-        "open_day_of_loss": float(l["open_day_of_loss"]),
-        "close_day_of_loss": float(l["close_day_of_loss"]),
-        "high_day_of_loss": float(l["high_day_of_loss"]),
-        "low_day_of_loss": float(l["low_day_of_loss"]),
-        "volume_day_of_loss": float(l["volume_day_of_loss"]),
+        "open_day_of_action": float(l["open_day_of_action"]),
+        "close_day_of_action": float(l["close_day_of_action"]),
+        "high_day_of_action": float(l["high_day_of_action"]),
+        "low_day_of_action": float(l["low_day_of_action"]),
+        "volume_day_of_action": float(l["volume_day_of_action"]),
 
-        "close_to_close_percent_change_day_of_loss": float(l["close_to_close_percent_change_day_of_loss"]),
-        "intraday_percent_change_day_of_loss": float(l["intraday_percent_change_day_of_loss"]),
-        "rank_day_of_loss": int(l["rank_day_of_loss"]),
+        "close_to_close_percent_change_day_of_action": float(l["close_to_close_percent_change_day_of_action"]),
+        "intraday_percent_change_day_of_action": float(l["intraday_percent_change_day_of_action"]),
+        "rank_day_of_action": int(l["rank_day_of_action"]),
 
         "14atr": float(l["14atr"]) if l["14atr"] else None,
         "50ema": float(l["50ema"]) if l["50ema"] else None,
         "100ema": float(l["100ema"]) if l["100ema"] else None,
         "100sma": float(l["100sma"]) if l["100sma"] else None,
 
-        "spy_day_of_loss_percent_change": float(l["spy_day_of_loss_percent_change"]),
-        "spy_day_of_loss_intraday_percent_change": float(l["spy_day_of_loss_intraday_percent_change"]),
+        "spy_day_of_action_percent_change": float(l["spy_day_of_action_percent_change"]),
+        "spy_day_of_action_intraday_percent_change": float(l["spy_day_of_action_intraday_percent_change"]),
 
         "open_day_after": float(l["open_day_after"]),
         "close_day_after": float(l["close_day_after"]),
@@ -64,7 +64,7 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
             print("\t", unmapped_field, raw_dict_lines[0][unmapped_field])
 
     def baseline_criteria(t):
-        return t["day_of_loss"] > baseline_start_date and not is_skipped_day(t['day_of_loss']) and not is_skipped_day(t['day_after'])
+        return t["day_of_action"] > baseline_start_date and not is_skipped_day(t['day_of_action']) and not is_skipped_day(t['day_after'])
 
     lines = list(filter(baseline_criteria, lines))
 
@@ -74,7 +74,7 @@ def get_lines_from_biggest_losers_csv(path, baseline_start_date):
 def take_top_n_daily(trades, n=10):
     trades_by_day = {}
     for trade in trades:
-        key = trade["day_of_loss"].isoformat()
+        key = trade["day_of_action"].isoformat()
         trades_by_day[key] = trades_by_day.get(key, []) + [trade]
 
     new_trades = []
@@ -161,7 +161,7 @@ def evaluate_results(lines):
 
     trades_by_day = {}
     for line in lines:
-        key = line["day_of_loss"].isoformat()
+        key = line["day_of_action"].isoformat()
         trades_by_day[key] = trades_by_day.get(key, []) + [line]
 
     def get_weight(_trade, trades):
@@ -263,29 +263,26 @@ def get_widest_criteria_with_results(pockets):
 
 
 def build_criteria_set():
-
-    # rank_day_of_loss
-    rank_day_of_loss = {
+    rank_day_of_action = {
         "* rank": lambda _: True,
     }
 
     def build_rank_criterion(rank):
         def rank_criterion(t):
-            return t["rank_day_of_loss"] <= rank
+            return t["rank_day_of_action"] <= rank
         return rank_criterion
 
     for i in range(5, 50, 5):
-        rank_day_of_loss[f"rank {i}"] = build_rank_criterion(i)
+        rank_day_of_action[f"rank {i}"] = build_rank_criterion(i)
 
-    # intraday_percent_change_day_of_loss
-    intraday_percent_change_day_of_loss = {
+    intraday_percent_change_day_of_action = {
         "intr * ": lambda _: True,
     }
 
-    def build_intraday_percent_change_day_of_loss(percent):
-        def intraday_percent_change_day_of_loss(t):
-            return t["intraday_percent_change_day_of_loss"] < percent
-        return intraday_percent_change_day_of_loss
+    def build_intraday_percent_change_day_of_action(percent):
+        def intraday_percent_change_day_of_action(t):
+            return t["intraday_percent_change_day_of_action"] < percent
+        return intraday_percent_change_day_of_action
 
     # intraday loss over -20%
     # intraday loss over -15%
@@ -296,18 +293,17 @@ def build_criteria_set():
     # intraday gain under 10%
     for i in range(-20, 10, 5):
         percent = i / 100
-        intraday_percent_change_day_of_loss[f"intr<{i}"] = build_intraday_percent_change_day_of_loss(
+        intraday_percent_change_day_of_action[f"intr<{i}"] = build_intraday_percent_change_day_of_action(
             percent)
 
-    # close_to_close_percent_change_day_of_loss
-    close_to_close_percent_change_day_of_loss = {
+    close_to_close_percent_change_day_of_action = {
         "change% *": lambda _: True,
     }
 
-    def build_close_to_close_percent_change_day_of_loss(percent):
-        def close_to_close_percent_change_day_of_loss(t):
-            return t["close_to_close_percent_change_day_of_loss"] < percent
-        return close_to_close_percent_change_day_of_loss
+    def build_close_to_close_percent_change_day_of_action(percent):
+        def close_to_close_percent_change_day_of_action(t):
+            return t["close_to_close_percent_change_day_of_action"] < percent
+        return close_to_close_percent_change_day_of_action
 
     # loss over 50%
     # loss over 45%
@@ -320,40 +316,40 @@ def build_criteria_set():
     # loss over 10%
     for i in range(-50, -10, 5):
         percent = i / 100
-        close_to_close_percent_change_day_of_loss[f"change%<{i}"] = build_close_to_close_percent_change_day_of_loss(
+        close_to_close_percent_change_day_of_action[f"change%<{i}"] = build_close_to_close_percent_change_day_of_action(
             percent)
 
     return {
-        # "rank_day_of_loss": rank_day_of_loss,
-        "intraday_percent_change_day_of_loss": intraday_percent_change_day_of_loss,
-        "close_to_close_percent_change_day_of_loss": close_to_close_percent_change_day_of_loss,
-        # "spy_day_of_loss_percent_change": {
+        # "rank_day_of_action": rank_day_of_action,
+        "intraday_percent_change_day_of_action": intraday_percent_change_day_of_action,
+        "close_to_close_percent_change_day_of_action": close_to_close_percent_change_day_of_action,
+        # "spy_day_of_action_percent_change": {
         # very red day
-        # "<-1%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.01,
-        # "<-.5%spy": lambda t: t["spy_day_of_loss_percent_change"] < -0.005,
-        # "spy down": lambda t: t["spy_day_of_loss_percent_change"] < 0,
-        # "spy up": lambda t: t["spy_day_of_loss_percent_change"] > 0,
+        # "<-1%spy": lambda t: t["spy_day_of_action_percent_change"] < -0.01,
+        # "<-.5%spy": lambda t: t["spy_day_of_action_percent_change"] < -0.005,
+        # "spy down": lambda t: t["spy_day_of_action_percent_change"] < 0,
+        # "spy up": lambda t: t["spy_day_of_action_percent_change"] > 0,
         # not big happy day
-        # "<+1%spy": lambda t: t["spy_day_of_loss_percent_change"] < 0.01,
+        # "<+1%spy": lambda t: t["spy_day_of_action_percent_change"] < 0.01,
         #     "* spy": lambda _: True,
         # },
-        "dollar_volume_day_of_loss": {
-            # '$1M vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 1000000,
-            # '$500k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 500000,
-            # '$100k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 100000,
-            # '$50k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 50000,
-            '$10k vol': lambda t: t["close_day_of_loss"] * t["volume_day_of_loss"] > 10000,
+        "dollar_volume_day_of_action": {
+            # '$1M vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 1000000,
+            # '$500k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 500000,
+            # '$100k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 100000,
+            # '$50k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 50000,
+            '$10k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 10000,
             # NOTE: this has GREAT results, but it would be hard to enter/exit
             # '* $vol': lambda _: True,
         },
-        "close_day_of_loss": {
-            "p > 0.1": lambda t: t["close_day_of_loss"] > 0.1,
-            # "p < 1": lambda t: t["close_day_of_loss"] < 1,
-            # "p < 3": lambda t: t["close_day_of_loss"] < 3,
-            # "p > 3": lambda t: t["close_day_of_loss"] > 3,
-            # "p < 5": lambda t: t["close_day_of_loss"] < 5,
-            # "p < 10": lambda t: t["close_day_of_loss"] < 10,
-            # "p < 20": lambda t: t["close_day_of_loss"] < 20,
+        "close_day_of_action": {
+            "p > 0.1": lambda t: t["close_day_of_action"] > 0.1,
+            # "p < 1": lambda t: t["close_day_of_action"] < 1,
+            # "p < 3": lambda t: t["close_day_of_action"] < 3,
+            # "p > 3": lambda t: t["close_day_of_action"] > 3,
+            # "p < 5": lambda t: t["close_day_of_action"] < 5,
+            # "p < 10": lambda t: t["close_day_of_action"] < 10,
+            # "p < 20": lambda t: t["close_day_of_action"] < 20,
             # tried a few >, but it was too restrictive
             # "all $": lambda _: True,
         },
@@ -368,23 +364,23 @@ def build_criteria_set():
         #
 
         # "doulikefriday": {
-        #     "! friday": lambda t: t["day_of_loss"].weekday() != 4,
+        #     "! friday": lambda t: t["day_of_action"].weekday() != 4,
         #     "* friday": lambda _: True,
         # },
         # "doulikethursday": {
-        #     "! thursday": lambda t: t["day_of_loss"].weekday() != 3,
+        #     "! thursday": lambda t: t["day_of_action"].weekday() != 3,
         #     "* thursday": lambda _: True,
         # },
         # "doulikewednesday": {
-        #     "! wednesday": lambda t: t["day_of_loss"].weekday() != 2,
+        #     "! wednesday": lambda t: t["day_of_action"].weekday() != 2,
         #     "* wednesday": lambda _: True,
         # },
         # "douliketuesday": {
-        #     "! tuesday": lambda t: t["day_of_loss"].weekday() != 1,
+        #     "! tuesday": lambda t: t["day_of_action"].weekday() != 1,
         #     "* tuesday": lambda _: True,
         # },
         # "doulikemonday": {
-        #     "! monday": lambda t: t["day_of_loss"].weekday() != 0,
+        #     "! monday": lambda t: t["day_of_action"].weekday() != 0,
         #     "* monday": lambda _: True,
         # },
 
@@ -393,19 +389,19 @@ def build_criteria_set():
         #
 
         # "doulikeq1": {
-        #     "!q1": lambda t: (t["day_of_loss"].month - 1) // 4 != 0,
+        #     "!q1": lambda t: (t["day_of_action"].month - 1) // 4 != 0,
         #     "*q1": lambda _: True,
         # },
         # "doulikeq2": {
-        #     "!q2": lambda t: (t["day_of_loss"].month - 1) // 4 != 1,
+        #     "!q2": lambda t: (t["day_of_action"].month - 1) // 4 != 1,
         #     "*q2": lambda _: True,
         # },
         # "doulikeq3": {
-        #     "!q3": lambda t: (t["day_of_loss"].month - 1) // 4 != 2,
+        #     "!q3": lambda t: (t["day_of_action"].month - 1) // 4 != 2,
         #     "*q3": lambda _: True,
         # },
         # "doulikeq4": {
-        #     "!q4": lambda t: (t["day_of_loss"].month - 1) // 4 != 3,
+        #     "!q4": lambda t: (t["day_of_action"].month - 1) // 4 != 3,
         #     "*q4": lambda _: True,
         # },
 
@@ -425,15 +421,15 @@ def build_criteria_set():
 
 
         # "100ema": {
-        #     ">100ema": lambda t: t["100ema"] and t["100ema"] > t["close_day_of_loss"],
-        #     # "<100ema": lambda t: t["100ema"] and t["100ema"] < t["close_day_of_loss"],
+        #     ">100ema": lambda t: t["100ema"] and t["100ema"] > t["close_day_of_action"],
+        #     # "<100ema": lambda t: t["100ema"] and t["100ema"] < t["close_day_of_action"],
         #     # "has 100ema": lambda t: t["100ema"] is not None,
         #     "*100ema": lambda _: True,
         # },
 
         # "50ema": {
-        #     ">50ema": lambda t: t["50ema"] and t["50ema"] > t["close_day_of_loss"],
-        #     "<50ema": lambda t: t["50ema"] and t["50ema"] < t["close_day_of_loss"],
+        #     ">50ema": lambda t: t["50ema"] and t["50ema"] > t["close_day_of_action"],
+        #     "<50ema": lambda t: t["50ema"] and t["50ema"] < t["close_day_of_action"],
         #     "has 50ema": lambda t: t["50ema"] is not None,
         #     "*50ema": lambda _: True,
         # },
