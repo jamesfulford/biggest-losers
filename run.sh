@@ -106,10 +106,10 @@ case $action in
     #
     "prepare-csvs")
         for script in \
-            prepare_csv_losers.py \
-            prepare_csv_winners.py \
-            prepare_csv_supernovas.py \
-            prepare_csv_gappers.py
+            "prepare_csv_losers.py" \
+            "prepare_csv_winners.py" \
+            "prepare_csv_supernovas.py" \
+            "prepare_csv_gappers.py"
         do
             echo $script
             $python_exec $script
