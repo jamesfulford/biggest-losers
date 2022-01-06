@@ -129,6 +129,7 @@ case $action in
     # Client Operations (across environments/accounts)
     #
     "sync-data")
+        # TODO: sync cache once a trading day, skip syncing if already synced!
         ./scripts/deploy/sync-collector-data-back.sh collector
 
         for e in paper prod td-cash intrac1; do

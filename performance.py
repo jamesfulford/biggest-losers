@@ -66,6 +66,8 @@ def print_order_summary(trades_by_closed_day):
 
         roi = change / used_cash
         print(f"{day}: {round(change, 2)} ({round(100 * roi, 1)}%)")
+        # TODO: print backtest % roi, actual values, intentions (disparity, slippage)
+        # TODO: maybe read from output csv instead of during spreadsheet creation
 
         total_change += change
         rois.append(roi)
