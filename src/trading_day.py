@@ -9,7 +9,9 @@ from zoneinfo import ZoneInfo
 
 
 def next_trading_day(day: date):
-    while day <= date.today():  # instead of infinite loop, give None
+    while day <= date.today() + timedelta(
+        days=100
+    ):  # instead of infinite loop, give None
         day = day + timedelta(days=1)
         if day.weekday() < 5:
             return day
@@ -80,7 +82,9 @@ def get_last_market_open(d: datetime) -> datetime:
     d = now(d)
 
     today_open = get_market_open_on_day(d.date())
-    if not today_open or today_open > d:  # weekend, or today's open has not happened yet
+    if (
+        not today_open or today_open > d
+    ):  # weekend, or today's open has not happened yet
         # open of previous trading day
         return get_market_open_on_day(previous_trading_day(d.date()))
     else:
@@ -91,7 +95,9 @@ def get_last_market_close(d: datetime) -> datetime:
     d = now(d)
 
     today_close = get_market_close_on_day(d.date())
-    if not today_close or today_close > d:  # weekend, or today's close has not happened yet
+    if (
+        not today_close or today_close > d
+    ):  # weekend, or today's close has not happened yet
         # close of previous trading day
         return get_market_close_on_day(previous_trading_day(d.date()))
     else:
