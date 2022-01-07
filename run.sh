@@ -123,16 +123,15 @@ case $action in
 
     "collector-nightly")
         ./run.sh prepare-cache
-        ./run.sh prepare-csvs
+        # preparing csvs costs lots of memory, so let's not do it on tiny droplet server
         ;;
     #
     # Client Operations (across environments/accounts)
     #
     "sync-data")
-        # TODO: sync cache once a trading day, skip syncing if already synced!
         ./scripts/deploy/sync-collector-data-back.sh collector
 
-        for e in paper prod td-cash intrac1; do
+        for e in collector paper prod td-cash intrac1; do
             # TODO: this
             echo
             echo Syncing $e...
@@ -146,8 +145,14 @@ case $action in
         ;;
 
     "build-drive-outputs")
-        echo "Getting data (including trade intentions and orders csvs) from server..."
+        echo "Getting data (including trade intentions, cache, and orders csvs) from server..."
         ./run.sh sync-data
+
+        echo
+        echo "Building backtesting csvs..."
+        ./run.sh prepare-csvs
+
+        echo
         echo "Analyzing performance..."
         ./run.sh analyze-performance
         ;;
