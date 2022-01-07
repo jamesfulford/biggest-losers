@@ -13,7 +13,7 @@ MARKET_TZ = ZoneInfo("America/New_York")
 
 
 def get_trades(environment_name):
-    path = get_paths(environment_name)['data']["outputs"]["filled_orders_csv"]
+    path = get_paths(environment_name)["data"]["outputs"]["filled_orders_csv"]
     trades = list(get_closed_trades_from_orders_csv(path))
 
     # enrich trade with intentions recorded at time of trade opening
@@ -21,9 +21,14 @@ def get_trades(environment_name):
 
         try:
             opening_day_intentions = get_intentions_by_day(
-                environment_name, trade["opened_at"].date())
-            open_intention = next(filter(
-                lambda intention: intention["symbol"] == trade["symbol"], opening_day_intentions))
+                environment_name, trade["opened_at"].date()
+            )
+            open_intention = next(
+                filter(
+                    lambda intention: intention["symbol"] == trade["symbol"],
+                    opening_day_intentions,
+                )
+            )
             trade["open_intention"] = open_intention
         except FileNotFoundError:
             pass
@@ -50,59 +55,8 @@ def get_backtest_theoretical_trades():
     # TODO: this will not have most recent data unless we rebuild cache
     # TODO: this only does biggest losers, we should evaluate more generically
     return get_lines_from_biggest_losers_csv(
-        get_paths()['data']["outputs"]["biggest_losers_csv"], date(2020, 1, 1))
-
-
-def print_order_summary(trades_by_closed_day):
-    total_change = 0
-    rois = []
-    today = datetime.now().date()
-    for day, trades_on_day in sorted(trades_by_closed_day.items()):
-        change = 0
-        used_cash = 0
-        for trade in trades_on_day:
-            change += trade["profit_loss"]
-            used_cash += trade["bought_cost"]
-
-        roi = change / used_cash
-        print(f"{day}: {round(change, 2)} ({round(100 * roi, 1)}%)")
-        # TODO: print backtest % roi, actual values, intentions (disparity, slippage)
-        # TODO: maybe read from output csv instead of during spreadsheet creation
-
-        total_change += change
-        rois.append(roi)
-
-        if today == trades_on_day[0]["closed_at"].date():
-            print()
-            print(f"Today's trading results:")
-            for trade in sorted(trades_on_day, key=lambda t: t["profit_loss"]):
-                profit_loss = round(trade["profit_loss"], 2)
-                profit_loss_str = str(profit_loss)
-                decimal_places = len(profit_loss_str.split(".")[-1])
-                profit_loss_str = profit_loss_str + "0" * (2 - decimal_places)
-
-                print(trade["symbol"].rjust(8),
-                      profit_loss_str.rjust(10), str(round(100 * trade["roi"], 1)).rjust(6) + "%")
-
-    print()
-
-    geo_roi = g_avg(list(map(lambda roi: 1 + roi, rois))) - 1
-    print(f"Total: {round(total_change, 2)}")
-    print(f"  days: {len(trades_by_closed_day)}")
-    print(f"  daily average: {round(100 * geo_roi, 1)}%")
-    annualized_roi = ((1 + geo_roi) ** 250) - 1
-    print(
-        f"  annual roi: {round(100 * annualized_roi, 1)}% ({round(annualized_roi + 1, 1)}x)")
-
-
-def g_avg(l):
-    if not l:
-        return 0
-    assert not any(map(lambda x: x <= 0, l)), "All elements must be positive"
-    m = 1
-    for i in l:
-        m *= i
-    return m ** (1/len(l))
+        get_paths()["data"]["outputs"]["biggest_losers_csv"]
+    )
 
 
 def merge_trades(backtest_trades, trades):
@@ -117,12 +71,24 @@ def merge_trades(backtest_trades, trades):
 
         for symbol in sorted(symbols):
             trade = next(
-                filter(lambda t: t["symbol"] == symbol and t["closed_at"].date().isoformat() == day_iso, trades), None)
+                filter(
+                    lambda t: t["symbol"] == symbol
+                    and t["closed_at"].date().isoformat() == day_iso,
+                    trades,
+                ),
+                None,
+            )
             # if not trade:
             #     print(f"missing trade for {day_iso} {symbol}")
 
             backtest_trade = next(
-                filter(lambda t: t["day_after"].isoformat() == day_iso and t["ticker"] == symbol, backtest_trades), None)
+                filter(
+                    lambda t: t["day_after"].isoformat() == day_iso
+                    and t["ticker"] == symbol,
+                    backtest_trades,
+                ),
+                None,
+            )
 
             yield {
                 "symbol": symbol,
@@ -134,7 +100,8 @@ def merge_trades(backtest_trades, trades):
 def write_performance_csv(environment):
     trades = get_trades(environment)
     path = get_paths()["data"]["outputs"]["performance_csv"].format(
-        environment=environment)
+        environment=environment
+    )
 
     def yield_trades():
         # TODO: include the biggest losers we would have bought in backtest so we can see difference
@@ -147,83 +114,85 @@ def write_performance_csv(environment):
 
             for key in trade.keys() - {"open_intention"}:
                 row[f"t_{key}"] = trade[key]
-            row["t_roi"] = (trade["sold_price"] -
-                            trade["bought_price"]) / trade["bought_price"]
+            row["t_roi"] = (trade["sold_price"] - trade["bought_price"]) / trade[
+                "bought_price"
+            ]
 
             if "open_intention" in trade:
                 for key in trade["open_intention"].keys() - {"symbol"}:
                     row[f"oi_{key}"] = trade["open_intention"][key]
-                row["entry_slippage"] = (
-                    row["t_bought_price"] - row["oi_price"]) / row["oi_price"]
+                row["entry_slippage"] = (row["t_bought_price"] - row["oi_price"]) / row[
+                    "oi_price"
+                ]
 
             if backtest_trade:
                 for key in backtest_trade.keys() - {"ticker"}:
                     row[f"b_{key}"] = backtest_trade[key]
                 row["b_overnight_strategy_is_win"] = bool(
-                    row["b_overnight_strategy_is_win"])
+                    row["b_overnight_strategy_is_win"]
+                )
                 row["entry_disparity"] = (
-                    row["t_bought_price"] - row["b_close_day_of_action"]) / row["b_close_day_of_action"]
+                    row["t_bought_price"] - row["b_close_day_of_action"]
+                ) / row["b_close_day_of_action"]
                 row["close_disparity"] = (
-                    row["b_open_day_after"] - row["t_sold_price"]) / row["b_open_day_after"]
+                    row["b_open_day_after"] - row["t_sold_price"]
+                ) / row["b_open_day_after"]
 
             yield row
 
-    write_csv(path, yield_trades(), headers=[
-        # opening
-        "t_opened_at",
-        "b_day_of_action",
-        "oi_datetime",
-        # ticker
-        "t_symbol",
-        # closing
-        "b_day_after",
-        "t_closed_at",
-
-        # timing extra fields
-        "b_day_of_action_month",
-        "b_day_of_action_weekday",
-        "b_days_overnight",
-        "b_overnight_has_holiday_bool",
-
-        # entrance
-        "/",
-        "t_bought_price",
-        "t_quantity",
-
-        "oi_price",
-        "oi_price",
-        "oi_quantity",
-
-        "b_close_day_of_action",
-        "b_volume_day_of_action",
-
-        # exit
-        "/",
-        "t_sold_price",
-        "b_open_day_after",
-
-        # results
-        "/",
-        "t_price_difference",
-        "t_profit_loss",
-        "t_roi",
-        "t_is_win",
-
-        "b_overnight_strategy_roi",
-        "b_overnight_strategy_is_win",
-
-        # computed fields
-        # TODO: add slippage %'s enter and exit
-        # - correlate close quantity/volume with slippage?
-        # - correlate close slippage with price?
-        # - correlate close slippage with high-low of day of selling
-        "|",
-    ])
+    write_csv(
+        path,
+        yield_trades(),
+        headers=[
+            # opening
+            "t_opened_at",
+            "b_day_of_action",
+            "oi_datetime",
+            # ticker
+            "t_symbol",
+            # closing
+            "b_day_after",
+            "t_closed_at",
+            # timing extra fields
+            "b_day_of_action_month",
+            "b_day_of_action_weekday",
+            "b_days_overnight",
+            "b_overnight_has_holiday_bool",
+            # entrance
+            "/",
+            "t_bought_price",
+            "t_quantity",
+            "oi_price",
+            "oi_price",
+            "oi_quantity",
+            "b_close_day_of_action",
+            "b_volume_day_of_action",
+            # exit
+            "/",
+            "t_sold_price",
+            "b_open_day_after",
+            # results
+            "/",
+            "t_price_difference",
+            "t_profit_loss",
+            "t_roi",
+            "t_is_win",
+            "b_overnight_strategy_roi",
+            "b_overnight_strategy_is_win",
+            # computed fields
+            # TODO: add slippage %'s enter and exit
+            # - correlate close quantity/volume with slippage?
+            # - correlate close slippage with price?
+            # - correlate close slippage with high-low of day of selling
+            "|",
+        ],
+    )
 
 
 if __name__ == "__main__":
 
     for environment in ["paper", "prod", "td-cash", "intrac1"]:
-        print(f"{environment} environment:")
+        print(f"Dumping performance csv for {environment}...")
         print()
         write_performance_csv(environment)
+        print()
