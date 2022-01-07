@@ -7,14 +7,14 @@ from src.pathing import get_paths
 
 
 def _get_cache_path(key: str) -> str:
-    return os.path.join(get_paths()["data"]["cache"]['dir'], key)
+    return os.path.join(get_paths()["data"]["cache"]["dir"], key)
 
 
 @lru_cache(maxsize=100)
 def read_json_cache(key: str):
     path = _get_cache_path(key)
     try:
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             return json.load(f)
     except Exception:
         return None
@@ -22,7 +22,7 @@ def read_json_cache(key: str):
 
 def write_json_cache(key: str, value) -> None:
     path = _get_cache_path(key)
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(value, f)
 
 
@@ -35,9 +35,11 @@ def delete_json_cache(key: str) -> None:
 
 
 def clear_json_cache(substring: str) -> None:
-    for key in os.listdir(get_paths()["data"]["cache"]['dir']):
+    for key in os.listdir(get_paths()["data"]["cache"]["dir"]):
         if substring in key:
             delete_json_cache(key)
+
+    read_json_cache.cache_clear()
 
 
 def get_entry_time(key: str) -> datetime:
@@ -46,4 +48,8 @@ def get_entry_time(key: str) -> datetime:
 
 
 def get_matching_entries(substring: str) -> list:
-    return [key for key in os.listdir(get_paths()["data"]["cache"]['dir']) if substring in key]
+    return [
+        key
+        for key in os.listdir(get_paths()["data"]["cache"]["dir"])
+        if substring in key
+    ]
