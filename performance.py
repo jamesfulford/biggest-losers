@@ -138,6 +138,7 @@ def write_performance_csv(environment):
 
     def yield_trades():
         # TODO: include the biggest losers we would have bought in backtest so we can see difference
+        # TODO: fill in some backtest values when values from csv are missing (less nulls!)
         for merged_trade in merge_trades(get_backtest_theoretical_trades(), trades):
             backtest_trade = merged_trade["backtest_trade"]
             trade = merged_trade["trade"]
@@ -152,7 +153,7 @@ def write_performance_csv(environment):
             if "open_intention" in trade:
                 for key in trade["open_intention"].keys() - {"symbol"}:
                     row[f"oi_{key}"] = trade["open_intention"][key]
-                row["entry_slippage%"] = (
+                row["entry_slippage"] = (
                     row["t_bought_price"] - row["oi_price"]) / row["oi_price"]
 
             if backtest_trade:
@@ -160,14 +161,10 @@ def write_performance_csv(environment):
                     row[f"b_{key}"] = backtest_trade[key]
                 row["b_overnight_strategy_is_win"] = bool(
                     row["b_overnight_strategy_is_win"])
-
-                # - TODO: correlate close quantity/volume with slippage?
-                # - TODO: correlate close slippage with price?
-                # - TODO: correlate close slippage with high-low of day of selling
-                row["entry_backtest_disparity%"] = (
+                row["entry_disparity"] = (
                     row["t_bought_price"] - row["b_close_day_of_action"]) / row["b_close_day_of_action"]
-                row["exit_backtest_disparity%"] = (
-                    row["t_sold_price"] - row["b_open_day_after"]) / row["b_open_day_after"]
+                row["close_disparity"] = (
+                    row["b_open_day_after"] - row["t_sold_price"]) / row["b_open_day_after"]
 
             yield row
 
@@ -227,13 +224,6 @@ def write_performance_csv(environment):
 if __name__ == "__main__":
 
     for environment in ["paper", "prod", "td-cash", "intrac1"]:
-        # print summaries of each
         print(f"{environment} environment:")
-        trades = get_trades(environment)
-        trades_by_day = group_trades_by_closed_day(trades)
-        print_order_summary(trades_by_day)
         print()
-
         write_performance_csv(environment)
-
-        print("=" * 80)
