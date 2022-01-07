@@ -135,8 +135,10 @@ case $action in
             # TODO: this
             echo
             echo Syncing $e...
-            echo TODO: do sleepy retries if rsyncs are failing
-            ./scripts/deploy/sync-data-back.sh $e || sleep 10
+            until ./scripts/deploy/sync-data-back.sh $e; do
+                echo "rsync failed, retrying in 30 seconds..."
+                sleep 30
+            done
         done
         ;;
 
