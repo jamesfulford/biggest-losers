@@ -144,7 +144,7 @@ def analyze_biggest_losers_csv(path):
     return criteria_results
 
 
-def evaluate_results(lines, waste_model=lambda l: 0.01):
+def evaluate_results(lines, waste_model=lambda l: 0.005):
     if not lines:
         return None
 
@@ -384,6 +384,7 @@ def build_criteria_set():
             # NOTE: this has GREAT results, but it would be hard to enter/exit
             # '* $vol': lambda _: True,
         },
+        # TODO: volume
         "close_day_of_action": {
             # "p > 0.1": lambda t: t["close_day_of_action"] > 0.1,
             # "p < 1": lambda t: t["close_day_of_action"] < 1,
@@ -429,9 +430,9 @@ def build_criteria_set():
         # "jan": {
         #     "jan": lambda t: t["day_of_action"].month == 1,
         # },
-        "2021": {
-            "2021": lambda t: t["day_of_action"].year == 2021,
-        },
+        # "2021": {
+        #     "2021": lambda t: t["day_of_action"].year == 2021,
+        # },
         # "doulikeq1": {
         #     "!q1": lambda t: (t["day_of_action"].month - 1) // 4 != 0,
         #     "*q1": lambda _: True,
