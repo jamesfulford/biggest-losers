@@ -1,6 +1,4 @@
-from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from copy import copy
 
 from backtest import get_lines_from_biggest_losers_csv
 from src.csv_dump import write_csv
@@ -138,53 +136,36 @@ def write_performance_csv(environment):
                     row["b_open_day_after"] - row["t_sold_price"]
                 ) / row["b_open_day_after"]
 
+                row["total_waste"] = row["b_overnight_strategy_roi"] - row["t_roi"]
+
             yield row
 
     write_csv(
         path,
         yield_trades(),
         headers=[
-            # opening
-            "t_opened_at",
+            # identifiers
             "b_day_of_action",
-            "oi_datetime",
-            # ticker
             "t_symbol",
-            # closing
             "b_day_after",
-            "t_closed_at",
-            # timing extra fields
-            "b_day_of_action_month",
-            "b_day_of_action_weekday",
-            "b_days_overnight",
-            "b_overnight_has_holiday_bool",
-            # entrance
-            "/",
-            "t_bought_price",
-            "t_quantity",
-            "oi_price",
-            "oi_price",
-            "oi_quantity",
-            "b_close_day_of_action",
-            "b_volume_day_of_action",
-            # exit
-            "/",
-            "t_sold_price",
-            "b_open_day_after",
             # results
-            "/",
-            "t_price_difference",
-            "t_profit_loss",
             "t_roi",
             "t_is_win",
             "b_overnight_strategy_roi",
             "b_overnight_strategy_is_win",
-            # computed fields
-            # TODO: add slippage %'s enter and exit
-            # - correlate close quantity/volume with slippage?
-            # - correlate close slippage with price?
-            # - correlate close slippage with high-low of day of selling
-            "|",
+            "entry_slippage",
+            "entry_disparity",
+            "close_disparity",
+            "total_waste",
+            # useful fields
+            "oi_price",
+            "t_bought_price",
+            "t_sold_price",
+            "b_close_day_of_action",
+            "b_open_day_after",
+            "t_quantity",
+            "oi_quantity",
+            "b_volume_day_of_action",
         ],
     )
 
