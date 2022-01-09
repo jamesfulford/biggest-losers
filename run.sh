@@ -83,6 +83,10 @@ case $action in
         $python_exec biggest_losers_stocks.py "sell" "$2"
         ;;
 
+    "bracketing")
+        $python_exec bracketing.py
+        ;;
+
     # Operations
     "rotate-logs")
         if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then

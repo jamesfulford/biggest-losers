@@ -139,12 +139,14 @@ def main():
     #
     # 1
     #
-
-    # Assume script triggered at 9:30am
-    # Get candles for today so we can set take_profit, stop_loss
     market_today = today_or_previous_trading_day(
         today()
     )  # previous trading day for weekend code testing
+
+    wait_until(get_market_open_on_day(market_today))
+    sleep(1)  # make sure Finnhub has some candles
+
+    # Get candles for today so we can set take_profit, stop_loss
     candles = get_candles(symbol, "D", market_today, market_today)
     current_price = candles[0]["close"]
     take_profit = current_price * (1 + take_profit_percentage)
