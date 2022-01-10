@@ -139,12 +139,16 @@ def main():
     #
     # 1
     #
+
+    # TODO: do market order early in morning, then get current_price from filled order
+    # and then place limit order to be like take_profit
+
     market_today = today_or_previous_trading_day(
         today()
     )  # previous trading day for weekend code testing
 
     wait_until(get_market_open_on_day(market_today))
-    sleep(1)  # make sure Finnhub has some candles
+    sleep(5)  # make sure Finnhub has some candles
 
     # Get candles for today so we can set take_profit, stop_loss
     candles = get_candles(symbol, "D", market_today, market_today)
@@ -170,10 +174,12 @@ def main():
 
     # Alpaca doesn't allow replacing OTO/Bracket orders (beyond changing stop/limit prices)
     # so, we need to cancel and create a new order
-    # TODO: do we need to close manually if stop loss already met?
 
     print("Cancelling order")
     cancel_order(first_order_leg_order_id)
+
+    # Confirmed with Alpaca:
+    # if stop is already passed, placing the OCO will cause the stop to trigger immediately.
 
     print("Placing OCO")
     try:
