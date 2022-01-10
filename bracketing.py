@@ -1,14 +1,15 @@
 from datetime import timedelta
 import json
-import logging
-from time import sleep
-from http.client import HTTPConnection  # py3
 
-import requests
 from requests.models import HTTPError
 
-from src.broker.alpaca import ALPACA_URL, APCA_HEADERS, sell_symbol_market
-from src.finnhub import get_candles
+from src.broker.alpaca import (
+    buy_symbol_market,
+    cancel_order,
+    place_oco,
+    sell_symbol_market,
+    wait_until_order_filled,
+)
 from src.trading_day import (
     get_market_close_on_day,
     get_market_open_on_day,
@@ -16,213 +17,124 @@ from src.trading_day import (
     today,
     today_or_previous_trading_day,
 )
-
-
-# detailed HTTP debug logging
-log = logging.getLogger("urllib3")  # works
-
-log.setLevel(logging.DEBUG)  # needed
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-log.addHandler(ch)
-HTTPConnection.debuglevel = 1
-
-#
-# Defining functions
-#
-
-
-def place_oto(
-    symbol: str,
-    quantity: int,
-    take_profit_limit: float,
-):
-    body = {
-        "side": "buy",
-        "symbol": symbol,
-        "type": "market",
-        "qty": str(quantity),
-        "time_in_force": "gtc",
-        "order_class": "oto",
-        "take_profit": {
-            "limit_price": str(take_profit_limit),
-        },
-    }
-
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json=body,
-        headers=APCA_HEADERS,
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def place_oco(
-    symbol: str,
-    quantity: int,
-    take_profit_limit: float,
-    stop_loss_stop: float,
-    stop_loss_limit: float = None,
-):
-    body = {
-        "side": "sell",
-        "symbol": symbol,
-        "type": "limit",
-        "qty": str(quantity),
-        "time_in_force": "gtc",
-        "order_class": "oco",
-        "take_profit": {"limit_price": str(take_profit_limit)},
-        "stop_loss": {
-            "stop_price": str(stop_loss_stop),
-        },
-    }
-    if stop_loss_limit:
-        body["stop_loss"]["limit_price"] = str(stop_loss_limit)
-
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json=body,
-        headers=APCA_HEADERS,
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def cancel_order(order_id: str) -> None:
-    response = requests.delete(
-        ALPACA_URL + f"/v2/orders/{order_id}",
-        headers=APCA_HEADERS,
-    )
-    response.raise_for_status()
-
-
-def cancel_all_orders() -> None:
-    response = requests.delete(
-        ALPACA_URL + f"/v2/orders",
-        headers=APCA_HEADERS,
-    )
-    response.raise_for_status()
-
-
-def wait_until(t):
-    while True:
-        market_time = now()
-
-        if market_time >= t:
-            print(f"{t} is here")
-            break
-
-        seconds_remaining = (
-            t - market_time
-        ).seconds + 1  # so no crazy loop in last few milliseconds
-        print(f"{market_time} is before {t}, waiting {seconds_remaining} seconds")
-
-        sleep(min(seconds_remaining, 60))
+from src.wait import wait_until
 
 
 def main():
     symbol = "NRGU"
-    # TODO: get quantity by checking account balance
-    quantity = 1
-    take_profit_percentage = 0.1
-    stop_loss_percentage = 0.005
 
-    # 1: place OTO (one triggers other) -> Buy at open, set take_profit (upper bound)
+    # 1: place market order pre-market
+    # 1.1: wait until market opens (if not already) (less polling to check order status)
+    # 1.2: wait until order is filled
 
-    # 2: cancel take_profit part of OTO
-    # 2.1: place OCO (one cancels other) -> stop_loss (lower bound), take_profit (upper bound)
+    # 2: place OCO order using percents of filled_avg_price (finish if position is closed)
+    # 2.1: wait until market_open + `until`
+    # 2.2: cancel current OCO order (if any)
+    # 2.3: re-run step 2 for next set of brackets, until no brackets left
 
-    # 3: cancel OCO
-    # 3.1: sell at market
-
-    #
-    # 1
-    #
-
-    # TODO: do market order early in morning, then get current_price from filled order
-    # and then place limit order to be like take_profit
+    # 3: cancel current OCO order
+    # 3.1: close position using market orders (if any)
 
     market_today = today_or_previous_trading_day(
         today()
     )  # previous trading day for weekend code testing
+    market_open = get_market_open_on_day(market_today)
+    market_close = get_market_close_on_day(market_today)
+
+    bracketing = [
+        {
+            "take_profit_percentage": 0.1,
+            "stop_loss_percentage": 0.25,  # unusually low please
+            "until": market_open + timedelta(minutes=30),
+        },
+        {
+            "take_profit_percentage": 0.1,
+            "stop_loss_percentage": 0.005,
+            "until": market_close - timedelta(minutes=1),
+        },
+    ]
+
+    #
+    # 1: market-order entry
+    #
+
+    # TODO: do nominal Alpaca order with percentage of current balance
+    # (for other brokers, use current_price from FinnHub and do nominal calculation on our side)
+    entry_order = buy_symbol_market(symbol, 1)
 
     wait_until(get_market_open_on_day(market_today))
-    sleep(5)  # make sure Finnhub has some candles
 
-    # Get candles for today so we can set take_profit, stop_loss
-    candles = get_candles(symbol, "D", market_today, market_today)
-    current_price = candles[0]["close"]
-    take_profit = current_price * (1 + take_profit_percentage)
-    stop_loss = current_price * (1 - stop_loss_percentage)
-
-    print("Placing order")
-    first_order = place_oto(
-        symbol,
-        quantity,
-        take_profit,
-    )
-    print(json.dumps(first_order, indent=2))
-    first_order_leg_order_id = first_order["legs"][0]["id"]
+    print("Waiting for filled order...")
+    filled_entry_order = wait_until_order_filled(entry_order["id"])
+    filled_price = float(filled_entry_order["filled_avg_price"])
+    quantity = int(filled_entry_order["filled_qty"])
+    print(f"Order filled. price={filled_price}, quantity={quantity}")
 
     #
-    # 2: Add on a stop_loss at 10am (if still in)
+    # 2: brackets
     #
-    wait_until(get_market_open_on_day(market_today) + timedelta(minutes=30))
 
-    # We want to add a stop loss.
+    previous_oco_order_id = None
+    for bracket in bracketing:
 
-    # Alpaca doesn't allow replacing OTO/Bracket orders (beyond changing stop/limit prices)
-    # so, we need to cancel and create a new order
+        # if we are starting mid-day, fast-forward to the current bracket
+        if bracket["until"] < now():
+            continue
 
-    print("Cancelling order")
-    cancel_order(first_order_leg_order_id)
+        take_profit_percentage = bracket["take_profit_percentage"]
+        stop_loss_percentage = bracket["stop_loss_percentage"]
 
-    # Confirmed with Alpaca:
-    # if stop is already passed, placing the OCO will cause the stop to trigger immediately.
+        take_profit = round(filled_price * (1 + take_profit_percentage), 2)
+        stop_loss = round(filled_price * (1 - stop_loss_percentage), 2)
+        print(f"Intended brackets: ({stop_loss}, {take_profit})")
 
-    print("Placing OCO")
-    try:
-        second_order = place_oco(
-            symbol,
-            quantity,
-            take_profit_limit=take_profit,
-            stop_loss_stop=stop_loss,
-        )
-        print(json.dumps(second_order, indent=2))
-        second_order_leg_order_id = second_order["legs"][0]["id"]
-    except HTTPError as e:
-        # 'account is not allowed to short' -> no shares present
-        # NOTE: account must be configured to not allow shorting, else we will short
-        if e.response.status_code == 403 and e.response.json()["code"] == 40310000:
-            print(
-                "Shares not available (probably either hit take_profit or was not filled originally), cannot place OCO order.",
-                e.response.json(),
+        if previous_oco_order_id:
+            print("Cancelling previous OCO order...")
+            cancel_order(previous_oco_order_id)
+
+        try:
+            order = place_oco(
+                symbol,
+                quantity,
+                take_profit_limit=take_profit,
+                stop_loss_stop=stop_loss,
             )
-            return
-        raise e
+            print(json.dumps(order, indent=2))
+            previous_oco_order_id = order["legs"][0]["id"]
+        except HTTPError as e:
+            # 'account is not allowed to short' -> no shares present
+            # NOTE: account must be configured to not allow shorting, else we may short
+            if e.response.status_code == 403 and e.response.json()["code"] == 40310000:
+                print(
+                    "Shares not available (likely hit take_profit or stop_loss or was not filled originally), cannot place OCO order.",
+                    e.response.json(),
+                )
+                return
+            raise e
+
+        until = bracket["until"]
+        wait_until(until)
 
     #
-    # 3: Close position near close (if still in)
+    # 3: timebox exit
     #
-    wait_until(get_market_close_on_day(market_today) - timedelta(minutes=1))
 
-    print("Cancelling brackets...")
-    cancel_order(second_order_leg_order_id)
+    if previous_oco_order_id:
+        print("Cancelling previous OCO order...")
+        cancel_order(previous_oco_order_id)
 
     print("Closing position...")
     try:
+        # TODO: if partial fills in any OCOs, we may have issues closing position
         sell_symbol_market(symbol, quantity)
     except HTTPError as e:
         if e.response.status_code == 403 and e.response.json()["code"] == 40310000:
             print(
-                "Shares not available (hit take_profit or stop_loss), cannot place OCO order.",
+                "Shares not available (likely hit take_profit or stop_loss or was not filled originally), cannot place OCO order.",
                 e.response.json(),
             )
             return
         raise e
-
-    wait_until(get_market_close_on_day(market_today))
 
 
 if __name__ == "__main__":
@@ -230,5 +142,3 @@ if __name__ == "__main__":
         main()
     except HTTPError as e:
         print("ERROR", e.response.status_code, e.response.json())
-    finally:
-        cancel_all_orders()

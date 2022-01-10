@@ -1,8 +1,22 @@
+import logging
 import os
-import requests
+from http.client import HTTPConnection  # py3
 from datetime import datetime, timedelta
+from time import sleep
+
+import requests
 
 from src.broker.dry_run import DRY_RUN
+
+
+# detailed HTTP debug logging
+log = logging.getLogger("urllib3")  # works
+
+log.setLevel(logging.DEBUG)  # needed
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+log.addHandler(ch)
+HTTPConnection.debuglevel = 1
 
 
 ALPACA_URL = os.environ["ALPACA_URL"]
@@ -17,6 +31,10 @@ APCA_HEADERS = {
 
 def _get_alpaca(url):
     response = requests.get(ALPACA_URL + url, headers=APCA_HEADERS)
+    if response.status_code == 429:
+        print("Rate limited, waiting...")
+        sleep(5)
+        return _get_alpaca(url)
     response.raise_for_status()
     return response.json()
 
@@ -113,6 +131,88 @@ def sell_symbol_at_open(symbol, quantity):
     )
     response.raise_for_status()
     return response.json()
+
+
+def wait_until_order_filled(order_id: str):
+    while True:
+        order = _get_alpaca(f"/v2/orders/{order_id}")
+        if order["status"] == "filled":
+            return order
+        print(f"{order_id} status: {order['status']}, waiting...")
+        sleep(1)
+
+
+def place_oto(
+    symbol: str,
+    quantity: int,
+    take_profit_limit: float,
+):
+    body = {
+        "side": "buy",
+        "symbol": symbol,
+        "type": "market",
+        "qty": str(quantity),
+        "time_in_force": "gtc",
+        "order_class": "oto",
+        "take_profit": {
+            "limit_price": str(take_profit_limit),
+        },
+    }
+
+    response = requests.post(
+        ALPACA_URL + "/v2/orders",
+        json=body,
+        headers=APCA_HEADERS,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def place_oco(
+    symbol: str,
+    quantity: int,
+    take_profit_limit: float,
+    stop_loss_stop: float,
+    stop_loss_limit: float = None,
+):
+    body = {
+        "side": "sell",
+        "symbol": symbol,
+        "type": "limit",
+        "qty": str(quantity),
+        "time_in_force": "gtc",
+        "order_class": "oco",
+        "take_profit": {"limit_price": str(take_profit_limit)},
+        "stop_loss": {
+            "stop_price": str(stop_loss_stop),
+        },
+    }
+    if stop_loss_limit:
+        body["stop_loss"]["limit_price"] = str(stop_loss_limit)
+
+    response = requests.post(
+        ALPACA_URL + "/v2/orders",
+        json=body,
+        headers=APCA_HEADERS,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def cancel_order(order_id: str) -> None:
+    response = requests.delete(
+        ALPACA_URL + f"/v2/orders/{order_id}",
+        headers=APCA_HEADERS,
+    )
+    response.raise_for_status()
+
+
+def cancel_all_orders() -> None:
+    response = requests.delete(
+        ALPACA_URL + f"/v2/orders",
+        headers=APCA_HEADERS,
+    )
+    response.raise_for_status()
 
 
 def get_positions():
