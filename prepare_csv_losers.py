@@ -1,32 +1,80 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 from src.csv_dump import write_csv
+from src.finnhub import extract_intraday_candle_at_or_after_time, get_candles
 from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 
 from src.mover_enrichers import enrich_mover
 from src.overnights import collect_overnights
 from src.losers import get_biggest_losers
-from src.trading_day import generate_trading_days, previous_trading_day
+from src.trading_day import (
+    generate_trading_days,
+    get_market_close_on_day,
+    get_market_open_on_day,
+    previous_trading_day,
+)
+from src.criteria import is_stock, is_warrant
 
 
 def get_all_biggest_losers_with_day_after(start_date: date, end_date: date):
-    movers = []
     for mover in collect_overnights(
         start_date, end_date, get_actions_on_day=lambda day: get_biggest_losers(day)
     ):
         enrich_mover(mover)
-        movers.append(mover)
-    return movers
+        yield mover
+
+
+def enrich_mover_with_day_after_intraday_exits(mover):
+    ticker = mover["mover_day_of_action"]["T"]
+    day_of_action = mover["day_of_action"]
+    day_after = mover["day_after"]
+
+    # finnhub intraday is unadjusted, cannot compare to other columns!
+    # however, ROI %'s can be compared
+    candles = get_candles(ticker, "1", day_of_action, day_after)
+    if not candles:
+        return
+
+    # TODO: add some bracketing logic columns
+    # TODO: add time of high of day for day_after (better exit)
+    # TODO: add time of low of day for day_of_action (better entry?)
+    # TODO: add some fixed times for entry for day_of_action
+
+    candle_day_of_action_close = extract_intraday_candle_at_or_after_time(
+        candles, get_market_close_on_day(day_of_action) - timedelta(minutes=1)
+    )
+    entry_price_finnhub = candle_day_of_action_close["close"]
+    market_open_day_after = get_market_open_on_day(day_after)
+
+    for fixed_exit_time in [
+        {
+            "time_after_open": timedelta(minutes=0),
+            "roi_name": "fn_close_to_09_30_roi",
+        },
+        {
+            "time_after_open": timedelta(minutes=30),
+            "roi_name": "fn_close_to_10_00_roi",
+        },
+    ]:
+        candle = extract_intraday_candle_at_or_after_time(
+            candles, market_open_day_after + fixed_exit_time["time_after_open"]
+        )
+        if not candle:
+            continue
+        mover[fixed_exit_time["roi_name"]] = (
+            candle["open"] - entry_price_finnhub
+        ) / entry_price_finnhub
 
 
 def prepare_biggest_losers_csv(path: str, start: date, end: date):
-    biggest_movers = get_all_biggest_losers_with_day_after(start, end)
-
     def yield_biggest_losers():
-        for mover in biggest_movers:
+        for mover in get_all_biggest_losers_with_day_after(start, end):
             day_of_action = mover["day_of_action"]
             day_after = mover["day_after"]
             mover_day_of_action = mover["mover_day_of_action"]
             mover_day_after = mover["mover_day_after"]
+
+            symbol = mover_day_of_action["T"]
+
             spy_day_of_action_percent_change = mover["spy_day_of_action_percent_change"]
             spy_day_of_action_intraday_percent_change = mover[
                 "spy_day_of_action_intraday_percent_change"
@@ -40,7 +88,16 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
                 mover_day_after["o"] - mover_day_of_action["c"]
             ) / mover_day_of_action["c"]
 
-            # keep in sync with headers
+            if (
+                is_stock(symbol)
+                and (day_of_action > date.today() - timedelta(days=365))
+                and mover_day_of_action["v"] > 100000
+            ):
+                # triggers finnhub requests, so want to do less often
+                # also fails for warrants, units, and some other non-common-stock tickers,
+                # so filtering those out too so we waste less rate limit quota
+                enrich_mover_with_day_after_intraday_exits(mover)
+
             yield {
                 "day_of_action": day_of_action,
                 "day_of_action_weekday": day_of_action.weekday(),
@@ -49,7 +106,8 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
                 "days_overnight": (day_after - day_of_action).days,
                 "overnight_has_holiday_bool": previous_trading_day(day_after)
                 != day_of_action,
-                "ticker": mover_day_of_action["T"],
+                "ticker": symbol,
+                "is_warrant": is_warrant(symbol),
                 # day_of_action stats
                 "open_day_of_action": mover_day_of_action["o"],
                 "high_day_of_action": mover_day_of_action["h"],
@@ -78,6 +136,8 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
                 # results
                 "overnight_strategy_roi": overnight_strategy_roi,
                 "overnight_strategy_is_win": overnight_strategy_roi > 0,
+                "fn_close_to_09_30_roi": mover.get("fn_close_to_09_30_roi"),
+                "fn_close_to_10_00_roi": mover.get("fn_close_to_10_00_roi"),
             }
 
     write_csv(

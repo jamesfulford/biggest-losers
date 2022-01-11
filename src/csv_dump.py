@@ -21,11 +21,13 @@ def serialize(v):
 
 
 def write_csv(path, lines, headers=None):
+    # TODO: handle `lines` as a generator
+    # so server doesn't run out of memory
     lines = list(lines)
     if not lines:
         print(f"WARNING: no lines to write to csv {path}")
 
-    f = open(path, 'w') if path else None
+    f = open(path, "w") if path else None
 
     # write provided headers first, in order, then rest of keys in alphabetical order
     existing_headers = set()
@@ -46,16 +48,15 @@ def write_csv(path, lines, headers=None):
 if __name__ == "__main__":
 
     def jam():
-        yield {'a': 1, 'b': 2, 'd': 3, 'c': 4}
-        yield {'a': 1, 'b': 2, 'd': 3, 'c': 5}
+        yield {"a": 1, "b": 2, "d": 3, "c": 4}
+        yield {"a": 1, "b": 2, "d": 3, "c": 5}
 
-    write_csv('/tmp/james.csv',
-              jam(), ['d', 'b'])
+    write_csv("/tmp/james.csv", jam(), ["d", "b"])
 
     expected_str = "d,b,a,c\n"
     expected_str += "3,2,1,4\n"
     expected_str += "3,2,1,5\n"
 
-    output_csv_content = open('/tmp/james.csv').read()
+    output_csv_content = open("/tmp/james.csv").read()
 
     assert expected_str == output_csv_content
