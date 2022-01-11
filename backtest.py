@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 import itertools
 from copy import deepcopy
 
-from src.criteria import is_warrant
+from src.criteria import is_stock, is_warrant
 
 
 def get_lines_from_biggest_losers_csv(path):
@@ -144,7 +144,13 @@ def analyze_biggest_losers_csv(path):
     return criteria_results
 
 
-def evaluate_results(lines, waste_model=lambda l: 0.005):
+def evaluate_results(
+    # fn_close_to_09_30_roi
+    # fn_close_to_10_00_roi
+    lines,
+    waste_model=lambda l: 0.005,
+    roi_column="overnight_strategy_roi",
+):
     if not lines:
         return None
 
@@ -153,18 +159,14 @@ def evaluate_results(lines, waste_model=lambda l: 0.005):
     if plays < 10:
         return None
 
-    total_roi = sum(
-        list(map(lambda l: l["overnight_strategy_roi"] - waste_model(l), lines))
-    )
+    total_roi = sum(list(map(lambda l: l[roi_column] - waste_model(l), lines)))
     average_roi = total_roi / plays
 
     win_rate = (
         sum(
             list(
                 map(
-                    lambda l: 1
-                    if (l["overnight_strategy_roi"] - waste_model(l)) > 0
-                    else 0,
+                    lambda l: 1 if (l[roi_column] - waste_model(l)) > 0 else 0,
                     lines,
                 )
             )
@@ -201,7 +203,7 @@ def evaluate_results(lines, waste_model=lambda l: 0.005):
         today_roi = 0
         for trade in trades:
             today_roi += get_weight(trade, trades) * (
-                trade["overnight_strategy_roi"] - waste_model(trade)
+                trade[roi_column] - waste_model(trade)
             )
 
         # just take returns, do not reinvest, only withdraw to replenish original capital
@@ -374,16 +376,21 @@ def build_criteria_set():
         # "<+1%spy": lambda t: t["spy_day_of_action_percent_change"] < 0.01,
         #     "* spy": lambda _: True,
         # },
-        "dollar_volume_day_of_action": {
-            # '$1M vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 1000000,
-            # '$500k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 500000,
-            # '$100k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 100000,
-            # '$50k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 50000,
-            "$10k vol": lambda t: t["close_day_of_action"] * t["volume_day_of_action"]
-            > 10000,
-            # NOTE: this has GREAT results, but it would be hard to enter/exit
-            # '* $vol': lambda _: True,
+        "volume_day_of_action": {
+            "100k vol": lambda t: t["volume_day_of_action"] > 100000,
+            "200k vol": lambda t: t["volume_day_of_action"] > 200000,
+            "500k vol": lambda t: t["volume_day_of_action"] > 500000,
         },
+        # "dollar_volume_day_of_action": {
+        #     # '$1M vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 1000000,
+        #     # '$500k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 500000,
+        #     # '$100k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 100000,
+        #     # '$50k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 50000,
+        #     "$10k vol": lambda t: t["close_day_of_action"] * t["volume_day_of_action"]
+        #     > 10000,
+        #     # NOTE: this has GREAT results, but it would be hard to enter/exit
+        #     # '* $vol': lambda _: True,
+        # },
         # TODO: volume
         "close_day_of_action": {
             # "p > 0.1": lambda t: t["close_day_of_action"] > 0.1,
@@ -396,10 +403,9 @@ def build_criteria_set():
             # tried a few >, but it was too restrictive
             "all $": lambda _: True,
         },
-        "ticker_is_warrant": {
-            "no w": lambda t: not is_warrant(t["ticker"]),
-            # "only w": lambda t: is_warrant(t["ticker"]),
-            # "*w": lambda _: True,
+        "ticker_class": {
+            "s": lambda t: is_stock(t["ticker"]),
+            "w": lambda t: is_warrant(t["ticker"]),
         },
         #
         # Days of the week
@@ -423,31 +429,6 @@ def build_criteria_set():
         # "doulikemonday": {
         #     "! monday": lambda t: t["day_of_action"].weekday() != 0,
         #     "* monday": lambda _: True,
-        # },
-        #
-        # Quarters of the year
-        #
-        # "jan": {
-        #     "jan": lambda t: t["day_of_action"].month == 1,
-        # },
-        # "2021": {
-        #     "2021": lambda t: t["day_of_action"].year == 2021,
-        # },
-        # "doulikeq1": {
-        #     "!q1": lambda t: (t["day_of_action"].month - 1) // 4 != 0,
-        #     "*q1": lambda _: True,
-        # },
-        # "doulikeq2": {
-        #     "!q2": lambda t: (t["day_of_action"].month - 1) // 4 != 1,
-        #     "*q2": lambda _: True,
-        # },
-        # "doulikeq3": {
-        #     "!q3": lambda t: (t["day_of_action"].month - 1) // 4 != 2,
-        #     "*q3": lambda _: True,
-        # },
-        # "doulikeq4": {
-        #     "!q4": lambda t: (t["day_of_action"].month - 1) // 4 != 3,
-        #     "*q4": lambda _: True,
         # },
         #
         # Holidays
