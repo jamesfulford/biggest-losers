@@ -136,7 +136,6 @@ case $action in
         ./scripts/deploy/sync-collector-data-back.sh collector
 
         for e in collector paper prod td-cash intrac1; do
-            # TODO: this
             echo
             echo Syncing $e...
             until ./scripts/deploy/sync-data-back.sh $e; do

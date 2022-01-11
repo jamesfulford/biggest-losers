@@ -37,7 +37,31 @@ def enrich_mover_with_day_after_intraday_exits(mover):
     # TODO: add some bracketing logic columns
     # TODO: add time of high of day for day_after (better exit)
     # TODO: add time of low of day for day_of_action (better entry?)
-    # TODO: add some fixed times for entry for day_of_action
+
+    candle_day_after_open = extract_intraday_candle_at_or_after_time(
+        candles, get_market_open_on_day(day_after)
+    )
+    exit_price_finnhub = candle_day_after_open["open"]
+    market_close_day_of_action = get_market_close_on_day(day_of_action)
+
+    for fixed_entry_time in [
+        {
+            "time_before_close": timedelta(minutes=1),
+            "roi_name": "fn_15_59_to_open_roi",
+        },
+        {
+            "time_before_close": timedelta(minutes=15),
+            "roi_name": "fn_15_45_to_open_roi",
+        },
+    ]:
+        candle = extract_intraday_candle_at_or_after_time(
+            candles, market_close_day_of_action - fixed_entry_time["time_before_close"]
+        )
+        if not candle:
+            continue
+        mover[fixed_entry_time["roi_name"]] = (
+            exit_price_finnhub - candle["open"]
+        ) / candle["open"]
 
     candle_day_of_action_close = extract_intraday_candle_at_or_after_time(
         candles, get_market_close_on_day(day_of_action) - timedelta(minutes=1)
@@ -90,6 +114,7 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
 
             if (
                 is_stock(symbol)
+                # TODO: only apply if we don't have it cached
                 and (day_of_action > date.today() - timedelta(days=365))
                 and mover_day_of_action["v"] > 100000
             ):
@@ -138,6 +163,8 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
                 "overnight_strategy_is_win": overnight_strategy_roi > 0,
                 "fn_close_to_09_30_roi": mover.get("fn_close_to_09_30_roi"),
                 "fn_close_to_10_00_roi": mover.get("fn_close_to_10_00_roi"),
+                "fn_15_59_to_open_roi": mover.get("fn_15_59_to_open_roi"),
+                "fn_15_45_to_open_roi": mover.get("fn_15_45_to_open_roi"),
             }
 
     write_csv(
