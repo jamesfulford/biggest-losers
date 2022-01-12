@@ -28,7 +28,6 @@ from src.trading_day import (
 
 
 API_KEY = os.environ["POLYGON_API_KEY"]
-HOME = os.environ["HOME"]
 
 
 def get_grouped_aggs_cache_key(day: date):
@@ -157,9 +156,12 @@ def fetch_grouped_aggs(day: date):
 
     while True:
         # TODO: adjusted=false, do the adjustments on our side (more cache hits)
-        # TODO: use the API key in headers so logs are cleaner
         response = requests.get(
-            f"https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{strftime}?adjusted=true&apiKey={API_KEY}"
+            f"https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{strftime}",
+            params={
+                "adjusted": "true",
+            },
+            headers={"Authorization": f"Bearer {API_KEY}"},
         )
         if response.status_code == 429:
             print("Rate limit exceeded, waiting...")

@@ -2,7 +2,6 @@ import time
 import os
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
-from functools import lru_cache
 
 import requests
 
@@ -14,12 +13,15 @@ FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
 
+# TODO: replace with Polygon API for more accurate data
+# TODO: then, pay for "Stocks Starter" to remove ratelimit
 def get_candles(symbol: str, resolution: str, start: date, end: date, skip_cache=False):
     """
     Fetches candles from Finnhub.io for `symbol` with `resolution`-sized candles (1 = 1m candles, 5 = 5m candles, D = daily, etc.)
     from `start` date to `end` date, including both days. (if both are same day, it fetches for that day)
     Returns None if there is no data for the given time range.
     API docs: https://finnhub.io/docs/api/stock-candles
+    Intra-day candles are unadjusted, daily candles are adjusted.
     """
 
     assert start > (

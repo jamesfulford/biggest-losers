@@ -1,6 +1,6 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from src.csv_dump import write_csv
-from src.finnhub import extract_intraday_candle_at_or_after_time, get_candles
+from src.get_candles import extract_intraday_candle_at_or_after_time, get_candles
 from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 
 from src.mover_enrichers import enrich_mover
@@ -47,11 +47,11 @@ def enrich_mover_with_day_after_intraday_exits(mover):
     for fixed_entry_time in [
         {
             "time_before_close": timedelta(minutes=1),
-            "roi_name": "fn_15_59_to_open_roi",
+            "roi_name": "15_59_to_open_roi",
         },
         {
             "time_before_close": timedelta(minutes=15),
-            "roi_name": "fn_15_45_to_open_roi",
+            "roi_name": "15_45_to_open_roi",
         },
     ]:
         candle = extract_intraday_candle_at_or_after_time(
@@ -72,11 +72,11 @@ def enrich_mover_with_day_after_intraday_exits(mover):
     for fixed_exit_time in [
         {
             "time_after_open": timedelta(minutes=0),
-            "roi_name": "fn_close_to_09_30_roi",
+            "roi_name": "close_to_09_30_roi",
         },
         {
             "time_after_open": timedelta(minutes=30),
-            "roi_name": "fn_close_to_10_00_roi",
+            "roi_name": "close_to_10_00_roi",
         },
     ]:
         candle = extract_intraday_candle_at_or_after_time(
@@ -89,83 +89,124 @@ def enrich_mover_with_day_after_intraday_exits(mover):
         ) / entry_price_finnhub
 
 
+def enhance_mover(mover):
+    day_of_action = mover["day_of_action"]
+    day_after = mover["day_after"]
+    mover_day_of_action = mover["mover_day_of_action"]
+    mover_day_after = mover["mover_day_after"]
+
+    symbol = mover_day_of_action["T"]
+
+    spy_day_of_action_percent_change = mover["spy_day_of_action_percent_change"]
+    spy_day_of_action_intraday_percent_change = mover[
+        "spy_day_of_action_intraday_percent_change"
+    ]
+
+    intraday_percent_change = (
+        mover_day_of_action["c"] - mover_day_of_action["o"]
+    ) / mover_day_of_action["o"]
+
+    overnight_strategy_roi = (
+        mover_day_after["o"] - mover_day_of_action["c"]
+    ) / mover_day_of_action["c"]
+
+    yield {
+        "day_of_action": day_of_action,
+        "day_of_action_weekday": day_of_action.weekday(),
+        "day_of_action_month": day_of_action.month,
+        "day_after": day_after,
+        "days_overnight": (day_after - day_of_action).days,
+        "overnight_has_holiday_bool": previous_trading_day(day_after) != day_of_action,
+        "ticker": symbol,
+        "is_warrant": is_warrant(symbol),
+        "is_stock": is_stock(symbol),
+        # day_of_action stats
+        "open_day_of_action": mover_day_of_action["o"],
+        "high_day_of_action": mover_day_of_action["h"],
+        "low_day_of_action": mover_day_of_action["l"],
+        "close_day_of_action": mover_day_of_action["c"],
+        "volume_day_of_action": mover_day_of_action["v"],
+        "close_to_close_percent_change_day_of_action": mover_day_of_action[
+            "percent_change"
+        ],
+        "intraday_percent_change_day_of_action": intraday_percent_change,
+        "rank_day_of_action": mover_day_of_action.get("rank", -1),
+        # day of loss indicators
+        "100sma": mover.get("100sma", ""),
+        "100ema": mover.get("100ema", ""),
+        "50ema": mover.get("50ema", ""),
+        "14atr": mover.get("14atr", ""),
+        # day_after stats
+        "open_day_after": mover_day_after["o"],
+        "high_day_after": mover_day_after["h"],
+        "low_day_after": mover_day_after["l"],
+        "close_day_after": mover_day_after["c"],
+        "volume_day_after": mover_day_after["v"],
+        # spy
+        "spy_day_of_action_percent_change": spy_day_of_action_percent_change,
+        "spy_day_of_action_intraday_percent_change": spy_day_of_action_intraday_percent_change,
+        # results
+        "overnight_strategy_roi": overnight_strategy_roi,
+        "overnight_strategy_is_win": overnight_strategy_roi > 0,
+        "close_to_09_30_roi": mover.get("close_to_09_30_roi"),
+        "close_to_10_00_roi": mover.get("close_to_10_00_roi"),
+        "15_59_to_open_roi": mover.get("15_59_to_open_roi"),
+        "15_45_to_open_roi": mover.get("15_45_to_open_roi"),
+    }
+
+
 def prepare_biggest_losers_csv(path: str, start: date, end: date):
     def yield_biggest_losers():
+        current_day = None
+        current_days_movers = []
         for mover in get_all_biggest_losers_with_day_after(start, end):
-            day_of_action = mover["day_of_action"]
-            day_after = mover["day_after"]
-            mover_day_of_action = mover["mover_day_of_action"]
-            mover_day_after = mover["mover_day_after"]
+            if not current_day:
+                current_day = mover["day_of_action"]
 
-            symbol = mover_day_of_action["T"]
+            if current_day != mover["day_of_action"]:
 
-            spy_day_of_action_percent_change = mover["spy_day_of_action_percent_change"]
-            spy_day_of_action_intraday_percent_change = mover[
-                "spy_day_of_action_intraday_percent_change"
-            ]
+                # selectively enrich
+                if current_day.year == 2021:
+                    # ARBITRARY DECISION ALERT:
+                    # only enriching movers that:
+                    # 1. have stock-like tickers (not warrants, rights, units, etc.)
+                    # 2. have a volume > 500k
+                    # 3. then only the first 10 of those on each day
+                    movers_to_enrich = list(
+                        filter(
+                            lambda m: is_stock(m["mover_day_of_action"]["T"]),
+                            current_days_movers,
+                        )
+                    )
+                    movers_to_enrich = list(
+                        filter(
+                            lambda m: m["mover_day_of_action"]["v"] > 500000,
+                            movers_to_enrich,
+                        )
+                    )
+                    movers_to_enrich = movers_to_enrich[:10]
+                    print(
+                        current_day,
+                        f"(days left: {(end - current_day).days}):",
+                        "enriching",
+                        list(
+                            map(
+                                lambda m: m["mover_day_of_action"]["T"],
+                                movers_to_enrich,
+                            )
+                        ),
+                    )
+                    for m in movers_to_enrich:
+                        # has side effects on m
+                        enrich_mover_with_day_after_intraday_exits(m)
 
-            intraday_percent_change = (
-                mover_day_of_action["c"] - mover_day_of_action["o"]
-            ) / mover_day_of_action["o"]
+                for m in current_days_movers:
+                    yield enhance_mover(m)
 
-            overnight_strategy_roi = (
-                mover_day_after["o"] - mover_day_of_action["c"]
-            ) / mover_day_of_action["c"]
+                current_day = mover["day_of_action"]
+                current_days_movers = []
 
-            if (
-                is_stock(symbol)
-                # TODO: only apply if we don't have it cached
-                and (day_of_action > date.today() - timedelta(days=365))
-                and mover_day_of_action["v"] > 100000
-            ):
-                # triggers finnhub requests, so want to do less often
-                # also fails for warrants, units, and some other non-common-stock tickers,
-                # so filtering those out too so we waste less rate limit quota
-                enrich_mover_with_day_after_intraday_exits(mover)
-
-            yield {
-                "day_of_action": day_of_action,
-                "day_of_action_weekday": day_of_action.weekday(),
-                "day_of_action_month": day_of_action.month,
-                "day_after": day_after,
-                "days_overnight": (day_after - day_of_action).days,
-                "overnight_has_holiday_bool": previous_trading_day(day_after)
-                != day_of_action,
-                "ticker": symbol,
-                "is_warrant": is_warrant(symbol),
-                # day_of_action stats
-                "open_day_of_action": mover_day_of_action["o"],
-                "high_day_of_action": mover_day_of_action["h"],
-                "low_day_of_action": mover_day_of_action["l"],
-                "close_day_of_action": mover_day_of_action["c"],
-                "volume_day_of_action": mover_day_of_action["v"],
-                "close_to_close_percent_change_day_of_action": mover_day_of_action[
-                    "percent_change"
-                ],
-                "intraday_percent_change_day_of_action": intraday_percent_change,
-                "rank_day_of_action": mover_day_of_action.get("rank", -1),
-                # day of loss indicators
-                "100sma": mover.get("100sma", ""),
-                "100ema": mover.get("100ema", ""),
-                "50ema": mover.get("50ema", ""),
-                "14atr": mover.get("14atr", ""),
-                # day_after stats
-                "open_day_after": mover_day_after["o"],
-                "high_day_after": mover_day_after["h"],
-                "low_day_after": mover_day_after["l"],
-                "close_day_after": mover_day_after["c"],
-                "volume_day_after": mover_day_after["v"],
-                # spy
-                "spy_day_of_action_percent_change": spy_day_of_action_percent_change,
-                "spy_day_of_action_intraday_percent_change": spy_day_of_action_intraday_percent_change,
-                # results
-                "overnight_strategy_roi": overnight_strategy_roi,
-                "overnight_strategy_is_win": overnight_strategy_roi > 0,
-                "fn_close_to_09_30_roi": mover.get("fn_close_to_09_30_roi"),
-                "fn_close_to_10_00_roi": mover.get("fn_close_to_10_00_roi"),
-                "fn_15_59_to_open_roi": mover.get("fn_15_59_to_open_roi"),
-                "fn_15_45_to_open_roi": mover.get("fn_15_45_to_open_roi"),
-            }
+            current_days_movers.append(mover)
 
     write_csv(
         path,
