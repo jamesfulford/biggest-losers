@@ -256,6 +256,7 @@ def main():
     path = get_paths()["data"]["outputs"]["biggest_losers_csv"]
 
     start, end = get_cache_prepared_date_range_with_leadup_days(1)
+    start = max(start, date(2021, 1, 1))
 
     print("start:", start)
     print("end:", end)
