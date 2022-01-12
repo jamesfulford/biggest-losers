@@ -1,22 +1,10 @@
-import logging
 import os
-from http.client import HTTPConnection  # py3
 from datetime import datetime, timedelta
 from time import sleep
 
 import requests
 
 from src.broker.dry_run import DRY_RUN
-
-
-# detailed HTTP debug logging
-log = logging.getLogger("urllib3")  # works
-
-log.setLevel(logging.DEBUG)  # needed
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-log.addHandler(ch)
-HTTPConnection.debuglevel = 1
 
 
 ALPACA_URL = os.environ["ALPACA_URL"]
