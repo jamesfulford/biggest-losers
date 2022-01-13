@@ -55,6 +55,19 @@ def get_lines_from_biggest_losers_csv(path):
             "volume_day_after": float(l["volume_day_after"]),
             "overnight_strategy_roi": float(l["overnight_strategy_roi"]),
             "overnight_strategy_is_win": int(l["overnight_strategy_is_win"]),
+            #
+            "fn_15_45_to_open_roi": float(l["fn_15_45_to_open_roi"])
+            if l["fn_15_45_to_open_roi"]
+            else None,
+            "fn_close_to_09_30_roi": float(l["fn_close_to_09_30_roi"])
+            if l["fn_close_to_09_30_roi"]
+            else None,
+            "fn_15_59_to_open_roi": float(l["fn_15_59_to_open_roi"])
+            if l["fn_15_59_to_open_roi"]
+            else None,
+            "fn_close_to_10_00_roi": float(l["fn_close_to_10_00_roi"])
+            if l["fn_close_to_10_00_roi"]
+            else None,
         }
         for l in raw_dict_lines
     ]
@@ -102,7 +115,11 @@ def analyze_biggest_losers_csv(path):
     evaluations = possible_pockets * line_count
     evaluations_per_second = 1.8e6  # found empirically on my computer
 
-    print("estimated time:", timedelta(seconds=evaluations / evaluations_per_second))
+    print(
+        "estimated time:",
+        timedelta(seconds=evaluations / evaluations_per_second),
+        f"{possible_pockets=}",
+    )
     start_time = datetime.now()
 
     #
@@ -125,7 +142,12 @@ def analyze_biggest_losers_csv(path):
         for n in [10]:
             # for n in [8, 10, 12, 15, 20]:
 
-            results = evaluate_results(take_top_n_daily(filtered_lines, n=n))
+            results = evaluate_results(
+                take_top_n_daily(filtered_lines, n=n),
+                # roi_column="fn_close_to_09_30_roi",
+                # roi_column="fn_close_to_10_00_roi",
+                roi_column="overnight_strategy_roi",
+            )
             if not results:
                 continue
 
