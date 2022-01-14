@@ -402,11 +402,11 @@ def build_criteria_set():
         # "<+1%spy": lambda t: t["spy_day_of_action_percent_change"] < 0.01,
         #     "* spy": lambda _: True,
         # },
-        "volume_day_of_action": {
-            "100k vol": lambda t: t["volume_day_of_action"] > 100000,
-            "200k vol": lambda t: t["volume_day_of_action"] > 200000,
-            "500k vol": lambda t: t["volume_day_of_action"] > 500000,
-        },
+        # "volume_day_of_action": {
+        #     "100k vol": lambda t: t["volume_day_of_action"] > 100000,
+        #     "200k vol": lambda t: t["volume_day_of_action"] > 200000,
+        #     "500k vol": lambda t: t["volume_day_of_action"] > 500000,
+        # },
         # "dollar_volume_day_of_action": {
         #     # '$1M vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 1000000,
         #     # '$500k vol': lambda t: t["close_day_of_action"] * t["volume_day_of_action"] > 500000,
@@ -417,22 +417,26 @@ def build_criteria_set():
         #     # NOTE: this has GREAT results, but it would be hard to enter/exit
         #     # '* $vol': lambda _: True,
         # },
-        # TODO: volume
-        "close_day_of_action": {
-            # "p > 0.1": lambda t: t["close_day_of_action"] > 0.1,
-            # "p < 1": lambda t: t["close_day_of_action"] < 1,
-            # "p < 3": lambda t: t["close_day_of_action"] < 3,
-            # "p > 3": lambda t: t["close_day_of_action"] > 3,
-            # "p < 5": lambda t: t["close_day_of_action"] < 5,
-            # "p < 10": lambda t: t["close_day_of_action"] < 10,
-            # "p < 20": lambda t: t["close_day_of_action"] < 20,
-            # tried a few >, but it was too restrictive
-            "all $": lambda _: True,
-        },
+        # "close_day_of_action": {
+        #     "p > 0.1": lambda t: t["close_day_of_action"] > 0.1,
+        #     "p < 1": lambda t: t["close_day_of_action"] < 1,
+        #     "p < 2": lambda t: t["close_day_of_action"] < 2,
+        #     "p < 3": lambda t: t["close_day_of_action"] < 3,
+        #     "p > 3": lambda t: t["close_day_of_action"] > 3,
+        #     "p < 5": lambda t: t["close_day_of_action"] < 5,
+        #     "p < 10": lambda t: t["close_day_of_action"] < 10,
+        #     "p < 20": lambda t: t["close_day_of_action"] < 20,
+        #     tried a few >, but it was too restrictive
+        #     "all $": lambda _: True,
+        # },
         "ticker_class": {
-            "s": lambda t: is_stock(t["ticker"]),
-            "w": lambda t: is_warrant(t["ticker"]),
+            # "s": lambda t: is_stock(t["ticker"]),
+            "!w": lambda t: not is_warrant(t["ticker"]),
+            # "w": lambda t: is_warrant(t["ticker"]),
         },
+        "2021": {
+            "2021": lambda t: t["day_of_action"].year == 2021
+        }
         #
         # Days of the week
         #
