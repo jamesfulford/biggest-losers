@@ -431,12 +431,13 @@ def build_criteria_set():
         # },
         "ticker_class": {
             # "s": lambda t: is_stock(t["ticker"]),
-            "!w": lambda t: not is_warrant(t["ticker"]),
+            # "!w": lambda t: not is_warrant(t["ticker"]),
             # "w": lambda t: is_warrant(t["ticker"]),
+            "*w": lambda _: True,
         },
         "2021": {
             "2021": lambda t: t["day_of_action"].year == 2021
-        }
+        },
         #
         # Days of the week
         #
