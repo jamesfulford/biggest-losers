@@ -117,8 +117,8 @@ def _convert_candles_format_logic(response_json, resolution):
             "close": raw_candle["c"],
             "volume": raw_candle["v"],
             # extra
-            "trades": raw_candle["n"],
-            "vwap": raw_candle["vw"],
+            "trades": raw_candle.get("n", 0),
+            "vwap": raw_candle.get("vw", None),
             #
             "t": seconds,
         }

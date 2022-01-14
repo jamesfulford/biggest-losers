@@ -17,7 +17,8 @@ from src.criteria import is_stock, is_warrant
 
 def get_all_biggest_losers_with_day_after(start_date: date, end_date: date):
     for mover in collect_overnights(
-        start_date, end_date, get_actions_on_day=lambda day: get_biggest_losers(day)
+        start_date, end_date, get_actions_on_day=lambda day: get_biggest_losers(
+            day)
     ):
         enrich_mover(mover)
         yield mover
@@ -55,7 +56,8 @@ def enrich_mover_with_day_after_intraday_exits(mover):
         },
     ]:
         candle = extract_intraday_candle_at_or_after_time(
-            candles, market_close_day_of_action - fixed_entry_time["time_before_close"]
+            candles, market_close_day_of_action -
+            fixed_entry_time["time_before_close"]
         )
         if not candle:
             continue
@@ -110,7 +112,7 @@ def enhance_mover(mover):
         mover_day_after["o"] - mover_day_of_action["c"]
     ) / mover_day_of_action["c"]
 
-    yield {
+    return {
         "day_of_action": day_of_action,
         "day_of_action_weekday": day_of_action.weekday(),
         "day_of_action_month": day_of_action.month,
@@ -181,6 +183,12 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
                     movers_to_enrich = list(
                         filter(
                             lambda m: m["mover_day_of_action"]["v"] > 500000,
+                            movers_to_enrich,
+                        )
+                    )
+                    movers_to_enrich = list(
+                        filter(
+                            lambda m: m["mover_day_of_action"]["c"] < 2,
                             movers_to_enrich,
                         )
                     )
@@ -260,7 +268,8 @@ def main():
 
     print("start:", start)
     print("end:", end)
-    print("estimated trading days:", len(list(generate_trading_days(start, end))))
+    print("estimated trading days:", len(
+        list(generate_trading_days(start, end))))
 
     prepare_biggest_losers_csv(path, start=start, end=end)
 

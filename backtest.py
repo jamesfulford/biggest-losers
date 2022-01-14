@@ -56,17 +56,17 @@ def get_lines_from_biggest_losers_csv(path):
             "overnight_strategy_roi": float(l["overnight_strategy_roi"]),
             "overnight_strategy_is_win": int(l["overnight_strategy_is_win"]),
             #
-            "fn_15_45_to_open_roi": float(l["fn_15_45_to_open_roi"])
-            if l["fn_15_45_to_open_roi"]
+            "15_45_to_open_roi": float(l["15_45_to_open_roi"])
+            if l["15_45_to_open_roi"]
             else None,
-            "fn_close_to_09_30_roi": float(l["fn_close_to_09_30_roi"])
-            if l["fn_close_to_09_30_roi"]
+            "close_to_09_30_roi": float(l["close_to_09_30_roi"])
+            if l["close_to_09_30_roi"]
             else None,
-            "fn_15_59_to_open_roi": float(l["fn_15_59_to_open_roi"])
-            if l["fn_15_59_to_open_roi"]
+            "15_59_to_open_roi": float(l["15_59_to_open_roi"])
+            if l["15_59_to_open_roi"]
             else None,
-            "fn_close_to_10_00_roi": float(l["fn_close_to_10_00_roi"])
-            if l["fn_close_to_10_00_roi"]
+            "close_to_10_00_roi": float(l["close_to_10_00_roi"])
+            if l["close_to_10_00_roi"]
             else None,
         }
         for l in raw_dict_lines
@@ -74,7 +74,8 @@ def get_lines_from_biggest_losers_csv(path):
 
     unmapped_fields_in_csv = set(headers) - set(lines[0].keys())
     if unmapped_fields_in_csv:
-        print("WARNING update code to include these fields:", unmapped_fields_in_csv)
+        print("WARNING update code to include these fields:",
+              unmapped_fields_in_csv)
         for unmapped_field in unmapped_fields_in_csv:
             print("\t", unmapped_field, raw_dict_lines[0][unmapped_field])
 
@@ -94,8 +95,10 @@ def take_top_n_daily(trades, n=10):
     return new_trades
 
 
-def analyze_biggest_losers_csv(path):
+def analyze_biggest_losers_csv(path, roi_column="overnight_strategy_roi"):
     lines = get_lines_from_biggest_losers_csv(path)
+    # roi_column *must* be present
+    lines = [l for l in lines if l[roi_column]]
 
     criteria_results = []
     criteria_groupings = build_criteria_set()
@@ -129,7 +132,8 @@ def analyze_biggest_losers_csv(path):
         *map(lambda d: d.items(), criteria_groups)
     ):
         criteria_set_names = list(map(lambda t: t[0], raw_criteria_set))
-        criteria_set_descriptor = dict(zip(criteria_group_names, criteria_set_names))
+        criteria_set_descriptor = dict(
+            zip(criteria_group_names, criteria_set_names))
 
         criterion = list(map(lambda t: t[1], raw_criteria_set))
 
@@ -144,9 +148,7 @@ def analyze_biggest_losers_csv(path):
 
             results = evaluate_results(
                 take_top_n_daily(filtered_lines, n=n),
-                # roi_column="fn_close_to_09_30_roi",
-                # roi_column="fn_close_to_10_00_roi",
-                roi_column="overnight_strategy_roi",
+                roi_column=roi_column,
             )
             if not results:
                 continue
@@ -243,16 +245,17 @@ def evaluate_results(
 
     results = {
         "avg_roi": round(average_roi, 3),
-        "win%": 100 * round(win_rate, 3),
+        "win%": round(100 * win_rate, 1),
         "plays": plays,
         # This right now is calculated exactly the same as avg_roi...
         # "day_avg_roi": round(arithmetic_roi / trading_days, 3),
-        "day_win%": 100 * round(green_days / trading_days, 3),
+        "day_win%": round(100 * green_days / trading_days, 1),
         "days": trading_days,
     }
 
     for coefficient in list(geometric_balances.keys()):
-        geometric_balances[coefficient] = round(geometric_balances[coefficient], 2)
+        geometric_balances[coefficient] = round(
+            geometric_balances[coefficient], 2)
         results[f"g_{int(100*coefficient)}%_x"] = geometric_balances[coefficient]
 
     return results
@@ -262,7 +265,8 @@ def print_out_interesting_results(pockets):
     widest_criteria = get_widest_criteria_with_results(pockets)
 
     baseline_results = widest_criteria["results"]
-    print("baseline names", "    ".join(sorted(widest_criteria["names"].values())))
+    print("baseline names", "    ".join(
+        sorted(widest_criteria["names"].values())))
     print("baseline results", baseline_results)
     print()
 
@@ -485,7 +489,12 @@ if __name__ == "__main__":
 
     path = get_paths()["data"]["outputs"]["biggest_losers_csv"]
 
-    pockets = analyze_biggest_losers_csv(path)
+    pockets = analyze_biggest_losers_csv(
+        path,
+        roi_column="overnight_strategy_roi",
+        # roi_column="close_to_09_30_roi",
+        # roi_column="close_to_10_00_roi",
+    )
     best_pockets = print_out_interesting_results(pockets)
     best_pocket = best_pockets[0]
     # TODO: get trades of best pocket and look at some more interesting stats
