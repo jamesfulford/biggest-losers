@@ -66,21 +66,21 @@ case $action in
     # Strategy: biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_stocks.py "buy" "$2"
+        $python_exec biggest_losers_stocks.py "buy"
         ;;
     "biggest-loser-stocks-sell")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_stocks.py "sell" "$2"
+        $python_exec biggest_losers_stocks.py "sell"
         ;;
 
     # Strategy: biggest loser warrants
     "biggest-loser-warrants-buy")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_warrants.py "buy" "$2"
+        $python_exec biggest_losers_warrants.py "buy"
         ;;
     "biggest-loser-warrants-sell")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_stocks.py "sell" "$2"
+        $python_exec biggest_losers_stocks.py "sell"
         ;;
 
     "bracketing")

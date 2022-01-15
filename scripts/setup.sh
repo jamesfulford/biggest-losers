@@ -91,11 +91,11 @@ assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
 #
 # assert that scripts still run, but don't execute any trades for this test
 #
-DRY_RUN=1 ./run.sh biggest-loser-stocks-buy "2021-12-17" || fail_script "failed to run biggest-loser-stocks-buy"
-DRY_RUN=1 ./run.sh biggest-loser-stocks-sell "2021-12-17" || fail_script "failed to run biggest-loser-stocks-sell"
+DRY_RUN=1 ./run.sh biggest-loser-stocks-buy || fail_script "failed to run biggest-loser-stocks-buy"
+DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run biggest-loser-stocks-sell"
 
-DRY_RUN=1 ./run.sh biggest-loser-warrants-buy "2021-12-17" || fail_script "failed to run biggest-loser-warrants-buy"
-DRY_RUN=1 ./run.sh biggest-loser-warrants-sell "2021-12-17" || fail_script "failed to run biggest-loser-warrants-sell"
+DRY_RUN=1 ./run.sh biggest-loser-warrants-buy || fail_script "failed to run biggest-loser-warrants-buy"
+DRY_RUN=1 ./run.sh biggest-loser-warrants-sell || fail_script "failed to run biggest-loser-warrants-sell"
 
 if [[ "$ENV_NAME" != "intrac1" ]]; then
     # TODO: intrac1 takes 5ever to do this from 2000 to date, re-enable when picks more reasonable date

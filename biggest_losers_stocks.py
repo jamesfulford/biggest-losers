@@ -5,33 +5,20 @@ from src.intention import record_intentions
 from src.criteria import is_warrant
 
 from src.biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
+from src.trading_day import today_or_previous_trading_day
 
 
 if __name__ == '__main__':
-    today = date.today()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", choices=("buy", "sell"))
+    parser.add_argument(
+        "--today", type=lambda s: datetime.strptime(s, "%Y-%m-%d").date())
 
-    import sys
+    args = parser.parse_args()
 
-    # buy or sell logic
-    action = sys.argv[1]
-    valid_actions = ['buy', 'sell']
-    if action not in valid_actions:
-        print(f"invalid action, must be one of {valid_actions}")
-        exit(1)
-
-    # allow reading `today` from CLI $2
-    datestr = ""
-    try:
-        datestr = sys.argv[2]
-    except:
-        pass
-
-    if datestr:
-        try:
-            today = datetime.strptime(datestr, '%Y-%m-%d').date()
-        except Exception as e:
-            print(
-                f"error occurred while parsing datetime, will continue with {today}", e)
+    action = args.action
+    today = today_or_previous_trading_day(args.today or date.today())
 
     print(f"running on date {today} with action {action}")
 
@@ -42,7 +29,8 @@ if __name__ == '__main__':
         closing_price_min = 0.0
         minimum_volume = 0
         top_n = 10
-        cash_percent_to_use = 0.9
+        cash_percent_to_use = float(
+            os.environ.get("CASH_PERCENT_TO_USE", ".33"))
 
         order_intentions = buy_biggest_losers(
             today,
