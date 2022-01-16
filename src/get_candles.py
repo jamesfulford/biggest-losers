@@ -200,6 +200,7 @@ def open_bracket_close(day: date):
     return roi
 
 
+# TODO: move this NRGU backtesting to separate script
 def main():
     rois = []
     balance = 1

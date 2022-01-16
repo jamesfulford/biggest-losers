@@ -33,7 +33,7 @@ def try_hybrid_model(pockets, path, baseline_start_date, is_quality_pocket):
             try:
                 criteria = criteria_set[dimension_name][segment_name]
             except KeyError:
-                # TODO: 'top_n' is not criteria but included in names
+                # TODO: make 'top_n' like all other criteria by having criteria apply in order
                 continue
             if not criteria(line):
                 return False
@@ -68,19 +68,24 @@ def build_pocket_quality_criteria(
     criterion = []
 
     if min_plays:
-        criterion.append(lambda pocket: pocket["results"]["plays"] >= min_plays)
+        criterion.append(
+            lambda pocket: pocket["results"]["plays"] >= min_plays)
 
     if min_avg_roi:
-        criterion.append(lambda pocket: pocket["results"]["avg_roi"] >= min_avg_roi)
+        criterion.append(
+            lambda pocket: pocket["results"]["avg_roi"] >= min_avg_roi)
 
     if min_win_percent:
-        criterion.append(lambda pocket: pocket["results"]["win%"] >= min_win_percent)
+        criterion.append(
+            lambda pocket: pocket["results"]["win%"] >= min_win_percent)
 
     if min_g_roi:
-        criterion.append(lambda pocket: pocket["results"]["g_roi"] >= min_g_roi)
+        criterion.append(
+            lambda pocket: pocket["results"]["g_roi"] >= min_g_roi)
 
     if min_a_roi:
-        criterion.append(lambda pocket: pocket["results"]["a_roi"] >= min_a_roi)
+        criterion.append(
+            lambda pocket: pocket["results"]["a_roi"] >= min_a_roi)
 
     def is_quality_pocket(pocket):
         return all((criteria(pocket) for criteria in criterion))

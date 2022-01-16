@@ -69,6 +69,8 @@ def main():
     #
     # 2: brackets
     #
+    # TODO: set lower brackets based off of VWAP or an EMA or something
+    # TODO: consider updating OCO regularly with new prices (based off of polling or websocket)
     position = execute_brackets(brackets, filled_price, symbol, quantity)
     if not position:
         return

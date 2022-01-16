@@ -97,7 +97,4 @@ DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run bigge
 DRY_RUN=1 ./run.sh biggest-loser-warrants-buy || fail_script "failed to run biggest-loser-warrants-buy"
 DRY_RUN=1 ./run.sh biggest-loser-warrants-sell || fail_script "failed to run biggest-loser-warrants-sell"
 
-if [[ "$ENV_NAME" != "intrac1" ]]; then
-    # TODO: intrac1 takes 5ever to do this from 2000 to date, re-enable when picks more reasonable date
-    ./run.sh dump-orders || fail_script "failed to run dump-orders"
-fi
+./run.sh dump-orders || fail_script "failed to run dump-orders"

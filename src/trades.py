@@ -3,8 +3,6 @@ from zoneinfo import ZoneInfo
 
 
 def build_trade(trade_orders):
-    # TODO: match backtest.py format
-
     # NOTE: this function assumes every buy has 1 sell and no overlapping trades for same symbol.
     symbol = trade_orders[0]["symbol"]
 
