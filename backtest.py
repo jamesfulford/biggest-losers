@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 import itertools
 from copy import deepcopy
 
-from src.criteria import is_stock, is_warrant
+from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 
 
 def get_lines_from_biggest_losers_csv(path):
@@ -430,10 +430,11 @@ def build_criteria_set():
         #     "all $": lambda _: True,
         # },
         "ticker_class": {
-            # "s": lambda t: is_stock(t["ticker"]),
-            # "!w": lambda t: not is_warrant(t["ticker"]),
-            # "w": lambda t: is_warrant(t["ticker"]),
-            "*w": lambda _: True,
+            "s": lambda t: is_stock(t["ticker"], day=t["day_of_action"]),
+            "e": lambda t: is_etf(t["ticker"], day=t["day_of_action"]),
+            "w": lambda t: is_warrant(t["ticker"], day=t["day_of_action"]),
+            "r": lambda t: is_right(t["ticker"], day=t["day_of_action"]),
+            "u": lambda t: is_unit(t["ticker"], day=t["day_of_action"]),
         },
         "2021": {
             "2021": lambda t: t["day_of_action"].year == 2021
