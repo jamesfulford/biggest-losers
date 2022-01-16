@@ -29,8 +29,8 @@ def enrich_mover_with_day_after_intraday_exits(mover):
     day_of_action = mover["day_of_action"]
     day_after = mover["day_after"]
 
-    # finnhub intraday is unadjusted, cannot compare to other columns!
-    # however, ROI %'s can be compared
+    # These candles are adjusted, but may be adjusted differently
+    # than grouped_aggs because fetched at different times.
     candles = get_candles(ticker, "1", day_of_action, day_after)
     if not candles:
         return
@@ -42,7 +42,7 @@ def enrich_mover_with_day_after_intraday_exits(mover):
     candle_day_after_open = extract_intraday_candle_at_or_after_time(
         candles, get_market_open_on_day(day_after)
     )
-    exit_price_finnhub = candle_day_after_open["open"]
+    exit_price_intraday = candle_day_after_open["open"]
     market_close_day_of_action = get_market_close_on_day(day_of_action)
 
     for fixed_entry_time in [
@@ -62,13 +62,13 @@ def enrich_mover_with_day_after_intraday_exits(mover):
         if not candle:
             continue
         mover[fixed_entry_time["roi_name"]] = (
-            exit_price_finnhub - candle["open"]
+            exit_price_intraday - candle["open"]
         ) / candle["open"]
 
     candle_day_of_action_close = extract_intraday_candle_at_or_after_time(
         candles, get_market_close_on_day(day_of_action) - timedelta(minutes=1)
     )
-    entry_price_finnhub = candle_day_of_action_close["close"]
+    entry_price_intraday = candle_day_of_action_close["close"]
     market_open_day_after = get_market_open_on_day(day_after)
 
     for fixed_exit_time in [
@@ -87,8 +87,8 @@ def enrich_mover_with_day_after_intraday_exits(mover):
         if not candle:
             continue
         mover[fixed_exit_time["roi_name"]] = (
-            candle["open"] - entry_price_finnhub
-        ) / entry_price_finnhub
+            candle["open"] - entry_price_intraday
+        ) / entry_price_intraday
 
 
 def enhance_mover(mover):
