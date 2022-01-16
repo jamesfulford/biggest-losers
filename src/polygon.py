@@ -1,6 +1,4 @@
-
-
-from datetime import date, datetime
+from datetime import date
 from functools import lru_cache
 import os
 from time import sleep
@@ -8,12 +6,14 @@ from time import sleep
 import requests
 from src.cache import read_json_cache, write_json_cache
 
-from src.trading_day import MARKET_TIMEZONE, today, today_or_previous_trading_day
+from src.trading_day import today, today_or_previous_trading_day
 
 
 API_KEY = os.environ["POLYGON_API_KEY"]
 
 
+# TODO: then, pay for "Stocks Starter" to remove ratelimit
+# TODO: refactor grouped_aggs, get_candles to use these helpers
 def _get_polygon(url: str, **kwargs):
     while True:
         response = requests.get(
@@ -44,8 +44,9 @@ def _get_polygon_with_next_url_pagination(url: str, **initial_kwargs):
 #
 # Tickers
 #
-@lru_cache
+@lru_cache(maxsize=100)
 def get_tickers_by_type(t: str, day: date):
+    # TODO: add to cache primer script
     should_cache = day < today()
     cache_key = f"tickers_{t}_{day}"
 
@@ -114,7 +115,7 @@ def is_ticker_type(ticker: str, t: str, day: date = None):
     return ticker in get_tickers_by_type(t, day=day)
 
 
-def is_ticker_one_of(ticker: str, types: list, day: date = None):
+def is_ticker_one_of(ticker: str, types: tuple, day: date = None):
     return any((
         is_ticker_type(ticker, stock_type, day=day)
         for stock_type in types

@@ -13,8 +13,6 @@ FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
 
-# TODO: replace with Polygon API for more accurate data
-# TODO: then, pay for "Stocks Starter" to remove ratelimit
 def get_candles(symbol: str, resolution: str, start: date, end: date, skip_cache=False):
     """
     Fetches candles from Finnhub.io for `symbol` with `resolution`-sized candles (1 = 1m candles, 5 = 5m candles, D = daily, etc.)
@@ -112,7 +110,8 @@ def _convert_candles_format_logic(response_json, resolution):
                 response_json["t"][i]
             ).astimezone(MARKET_TIMEZONE)
         else:
-            candle["date"] = datetime.fromtimestamp(response_json["t"][i]).date()
+            candle["date"] = datetime.fromtimestamp(
+                response_json["t"][i]).date()
         candles.append(candle)
 
     return candles

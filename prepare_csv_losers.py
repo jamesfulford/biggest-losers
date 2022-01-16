@@ -12,7 +12,7 @@ from src.trading_day import (
     get_market_open_on_day,
     previous_trading_day,
 )
-from src.criteria import is_stock, is_warrant
+from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 
 
 def get_all_biggest_losers_with_day_after(start_date: date, end_date: date):
@@ -99,6 +99,16 @@ def enhance_mover(mover):
 
     symbol = mover_day_of_action["T"]
 
+    t_is_stock = is_stock(symbol, day=day_of_action)
+    t_is_etf = is_etf(symbol, day=day_of_action)
+    t_is_warrant = is_warrant(symbol, day=day_of_action)
+    t_is_unit = is_unit(symbol, day=day_of_action)
+    t_is_right = is_right(symbol, day=day_of_action)
+
+    if not any((t_is_stock, t_is_etf, t_is_warrant, t_is_unit, t_is_right)):
+        # print(f"Ignoring {symbol}")
+        return
+
     spy_day_of_action_percent_change = mover["spy_day_of_action_percent_change"]
     spy_day_of_action_intraday_percent_change = mover[
         "spy_day_of_action_intraday_percent_change"
@@ -119,9 +129,15 @@ def enhance_mover(mover):
         "day_after": day_after,
         "days_overnight": (day_after - day_of_action).days,
         "overnight_has_holiday_bool": previous_trading_day(day_after) != day_of_action,
+
+        # ticker insights
         "ticker": symbol,
-        "is_warrant": is_warrant(symbol),
-        "is_stock": is_stock(symbol),
+        "is_stock": t_is_stock,
+        "is_etf": t_is_etf,
+        "is_warrant": t_is_warrant,
+        "is_unit": t_is_unit,
+        "is_right": t_is_right,
+
         # day_of_action stats
         "open_day_of_action": mover_day_of_action["o"],
         "high_day_of_action": mover_day_of_action["h"],
@@ -209,7 +225,9 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
                         enrich_mover_with_day_after_intraday_exits(m)
 
                 for m in current_days_movers:
-                    yield enhance_mover(m)
+                    enhanced_m = enhance_mover(m)
+                    if enhanced_m:
+                        yield enhanced_m
 
                 current_day = mover["day_of_action"]
                 current_days_movers = []

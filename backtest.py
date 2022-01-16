@@ -265,51 +265,73 @@ def print_out_interesting_results(pockets):
     widest_criteria = get_widest_criteria_with_results(pockets)
 
     baseline_results = widest_criteria["results"]
-    print("baseline names", "    ".join(
+    print("baseline names:", "    ".join(
         sorted(widest_criteria["names"].values())))
-    print("baseline results", baseline_results)
+    print("baseline results:", baseline_results)
     print()
 
-    widest_top_10_criteria = get_widest_criteria_with_results(
-        list(filter(lambda p: p["names"]["top_n"] == "top 10", pockets))
-    )
-    print(
-        "baseline top 10 names",
-        "    ".join(sorted(widest_top_10_criteria["names"].values())),
-    )
-    print("baseline top 10 results", widest_top_10_criteria["results"])
-    print()
+    # widest_top_10_criteria = get_widest_criteria_with_results(
+    #     list(filter(lambda p: p["names"]["top_n"] == "top 10", pockets))
+    # )
+    # print(
+    #     "baseline top 10 names",
+    #     "    ".join(sorted(widest_top_10_criteria["names"].values())),
+    # )
+    # print("baseline top 10 results", widest_top_10_criteria["results"])
+    # print()
 
     key_criteria = "g_85%_x"
+
+    if len(pockets) < 10:
+
+        for pocket in sorted(
+            pockets, key=lambda c: c["results"][key_criteria], reverse=True
+        ):
+            print(
+                "  ",
+                "  ".join(pocket["names"].values()).ljust(64),
+                "| "
+                + " ".join(
+                    list(
+                        map(
+                            lambda tup: f"{tup[0]}={round(tup[1], 3)}",
+                            pocket["results"].items(),
+                        )
+                    )
+                ),
+            )
+        print()
+
     passing_criterion_sets = list(
         filter(
             lambda r: r["results"][key_criteria] > baseline_results[key_criteria],
             pockets,
         )
     )
-
-    show_top = 10
-    print(
-        f"subsets which outperform baseline on {key_criteria}:",
-        len(passing_criterion_sets),
-    )
     best_criteria_sets = sorted(
         passing_criterion_sets, key=lambda c: c["results"][key_criteria], reverse=True
-    )[:show_top]
-    for criteria_set in best_criteria_sets:
+    )
+
+    if best_criteria_sets:
+        show_top = 10
         print(
-            "  ",
-            "  ".join(criteria_set["names"].values()).ljust(64),
-            "| "
-            + " ".join(
-                list(
-                    map(
-                        lambda tup: f"{tup[0]}={round(tup[1], 3)}",
-                        criteria_set["results"].items(),
-                    )
-                )
-            ),
+            f"subsets which outperform baseline on {key_criteria}:",
+            len(best_criteria_sets),
         )
+        for criteria_set in best_criteria_sets[:show_top]:
+            print(
+                "  ",
+                "  ".join(criteria_set["names"].values()).ljust(64),
+                "| "
+                + " ".join(
+                    list(
+                        map(
+                            lambda tup: f"{tup[0]}={round(tup[1], 3)}",
+                            criteria_set["results"].items(),
+                        )
+                    )
+                ),
+            )
 
     return best_criteria_sets
 
@@ -430,12 +452,17 @@ def build_criteria_set():
         #     "all $": lambda _: True,
         # },
         "ticker_class": {
-            "s": lambda t: is_stock(t["ticker"], day=t["day_of_action"]),
-            "e": lambda t: is_etf(t["ticker"], day=t["day_of_action"]),
-            "w": lambda t: is_warrant(t["ticker"], day=t["day_of_action"]),
-            "r": lambda t: is_right(t["ticker"], day=t["day_of_action"]),
-            "u": lambda t: is_unit(t["ticker"], day=t["day_of_action"]),
+            # TODO: pre-calculate is_stock, etf, warrant, right, unit, etc in CSV generators, exclude types we won't consider
+            "s 500k <2": lambda t: is_stock(t["ticker"], day=t["day_of_action"]) and t["volume_day_of_action"] > 500000 and t["close_day_of_action"] <= 2,
+            # "etfs": lambda t: is_etf(t["ticker"], day=t["day_of_action"]),
+            # "se": lambda t: is_stock(t["ticker"], day=t["day_of_action"]) or is_etf(t["ticker"], day=t["day_of_action"]),
+            # "w": lambda t: is_warrant(t["ticker"], day=t["day_of_action"]),
+            # "r": lambda t: is_right(t["ticker"], day=t["day_of_action"]),
+            # "u": lambda t: is_unit(t["ticker"], day=t["day_of_action"]),
+            # "*": lambda t: is_stock(t["ticker"], day=t["day_of_action"]) or is_etf(t["ticker"], day=t["day_of_action"]) or is_warrant(t["ticker"], day=t["day_of_action"]) or is_right(t["ticker"], day=t["day_of_action"]) or is_unit(t["ticker"], day=t["day_of_action"]),
         },
+        # TODO: dedup, don't play same stock twice on same day because PDT
+        # TODO: consider ADRC tickers, I saw NCTY show up in list once, some good ones are out there
         "2021": {
             "2021": lambda t: t["day_of_action"].year == 2021
         },
@@ -489,8 +516,6 @@ def build_criteria_set():
 
 
 if __name__ == "__main__":
-    # TODO: test based off of total loss / drawdown
-
     from src.pathing import get_paths
 
     path = get_paths()["data"]["outputs"]["biggest_losers_csv"]

@@ -105,9 +105,6 @@ def _convert_candles_format(response_json, resolution):
 
 
 def _convert_candles_format_logic(response_json, resolution):
-    """
-    Converting finnhub format to more useful format: array of candle dictionaries
-    """
     candles = []
 
     should_interpret_timezones = _is_intraday(resolution)
