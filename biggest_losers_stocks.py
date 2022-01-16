@@ -2,10 +2,44 @@ from datetime import date, datetime
 import os
 
 from src.intention import record_intentions
-from src.criteria import is_warrant
+from src.criteria import is_stock
 
 from src.biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
 from src.trading_day import today_or_previous_trading_day
+
+
+def get_env_var(name: str, default: str) -> str:
+    value = os.environ.get(name, default)
+    print(f"{name} = '{value}'")
+    return value
+
+
+def get_biggest_loser_filter_criteria_kwargs():
+    closing_price_min = float(get_env_var("CLOSING_PRICE_MIN", "0.0"))
+    assert closing_price_min >= 0
+
+    minimum_volume = int(get_env_var("MINIMUM_VOLUME", "0"))
+    assert minimum_volume >= 0
+
+    minimum_dollar_volume = int(
+        get_env_var("MINIMUM_DOLLAR_VOLUME", "10000"))  # differs from stock
+    assert minimum_dollar_volume >= 0
+
+    top_n = int(get_env_var("TOP_N", "10"))
+    assert top_n > 0
+
+    cash_percent_to_use = float(get_env_var("CASH_PERCENT_TO_USE", ".33"))
+    assert cash_percent_to_use <= 1
+    assert cash_percent_to_use > 0
+
+    return {
+        "minimum_loss_percent": .1,
+        "closing_price_min": closing_price_min,
+        "minimum_volume": minimum_volume,
+        "minimum_dollar_volume": minimum_dollar_volume,
+        "top_n": top_n,
+        "cash_percent_to_use": cash_percent_to_use,
+    }
 
 
 if __name__ == '__main__':
@@ -24,31 +58,16 @@ if __name__ == '__main__':
 
     if action == 'buy':
         strategy_name = "biggest_losers_stocks"
-        # TODO: read from config
-        minimum_loss_percent = 0.1
-        closing_price_min = 0.0
-        minimum_volume = 0
-        top_n = 10
-        cash_percent_to_use = float(
-            os.environ.get("CASH_PERCENT_TO_USE", ".33"))
+        filter_criteria_kwargs = get_biggest_loser_filter_criteria_kwargs()
 
         order_intentions = buy_biggest_losers(
             today,
-            minimum_loss_percent=minimum_loss_percent,
-            closing_price_min=closing_price_min,
-            minimum_volume=minimum_volume,
-            top_n=top_n,
-            warrant_criteria=lambda c: not is_warrant(c["T"]),
-            cash_percent_to_use=cash_percent_to_use,
+            **filter_criteria_kwargs,
+            warrant_criteria=lambda c: is_stock(c["T"], day=today),
         )
-        # write order intentions to file so we can evaluate slippage later
         record_intentions(today, order_intentions, metadata={
             "strategy_name": strategy_name,
-            "minimum_loss_percent": minimum_loss_percent,
-            "closing_price_min": closing_price_min,
-            "minimum_volume": minimum_volume,
-            "top_n": top_n,
-            "cash_percent_to_use": cash_percent_to_use,
+            **filter_criteria_kwargs,
             "git_commit": os.environ.get("GIT_COMMIT", ""),
         })
     elif action == 'sell':
