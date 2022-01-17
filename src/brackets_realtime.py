@@ -1,26 +1,11 @@
-from itertools import chain
 import json
 
 from requests.models import HTTPError
 
+from src.broker.alpaca import (cancel_order, get_positions,
+                               place_oco)
 from src.trading_day import now
 from src.wait import wait_until
-
-from src.broker.alpaca import (
-    buy_symbol_market,
-    cancel_order,
-    get_positions,
-    place_oco,
-    sell_symbol_market,
-    wait_until_order_filled,
-)
-from src.trading_day import (
-    get_market_close_on_day,
-    get_market_open_on_day,
-    now,
-    today,
-    today_or_previous_trading_day,
-)
 
 
 def execute_brackets(brackets: list, base_price: float, symbol: str, quantity: int):
@@ -76,46 +61,3 @@ def _execute_brackets(brackets: list, base_price: float, symbol: str, quantity: 
     if previous_oco_order_id:
         print("Cancelling previous OCO order...")
         cancel_order(previous_oco_order_id)
-
-#
-# Backtesting
-#
-
-
-def backtest_brackets(candles: list, brackets: list, base_price: float):
-    """
-    Returns sell_price, candle sold on, and bracket during which close occurred
-    If no sale occurred, returns None, last candle in brackets, and last bracket in candles
-
-    Caller must handle:
-    - timeframing/timeboxing (only pass candles in desired time frame)
-    - position entry (pass base_price for calculating percentage limits)
-    - timebox exit (if stops/limits not hit and run out of brackets/candles)
-    """
-    candles = chain(candles)
-    brackets = chain(brackets)
-
-    candle = next(candles)
-    bracket = next(brackets)
-
-    try:
-        while True:  # will escape because of `next` calls throwing StopIteration
-            if candle["datetime"] >= bracket["until"]:
-                bracket = next(brackets)
-
-            take_profit = (1 + bracket["take_profit_percentage"]) * base_price
-            stop_loss = (1 - bracket["stop_loss_percentage"]) * base_price
-
-            is_stop_loss = candle["low"] < stop_loss
-            is_take_profit = candle["high"] > take_profit
-
-            if is_stop_loss:
-                return stop_loss, candle, bracket
-            if is_take_profit:
-                return take_profit, candle, bracket
-
-            candle = next(candles)
-    except StopIteration:
-        pass
-
-    return None, candle, bracket

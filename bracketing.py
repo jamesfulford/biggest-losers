@@ -1,19 +1,16 @@
 from datetime import timedelta
 
 from requests.models import HTTPError
-from src.bracketing import execute_brackets
+from src.brackets_realtime import execute_brackets
 
 from src.broker.alpaca import (
     buy_symbol_market,
-    cancel_order,
-    place_oco,
     sell_symbol_market,
     wait_until_order_filled,
 )
 from src.trading_day import (
     get_market_close_on_day,
     get_market_open_on_day,
-    now,
     today,
     today_or_previous_trading_day,
 )
