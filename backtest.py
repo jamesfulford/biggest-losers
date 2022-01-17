@@ -1,8 +1,6 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 import itertools
 from copy import deepcopy
-
-from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 
 
 def get_lines_from_biggest_losers_csv(path):
@@ -23,9 +21,14 @@ def get_lines_from_biggest_losers_csv(path):
             "day_of_action_weekday": int(l["day_of_action_weekday"]),
             "day_of_action_month": int(l["day_of_action_month"]),
             "days_overnight": int(l["days_overnight"]),
-            "overnight_has_holiday_bool": l["overnight_has_holiday_bool"] == "True",
+            "overnight_has_holiday_bool": l["overnight_has_holiday_bool"] == "1",
             "day_after": datetime.strptime(l["day_after"], "%Y-%m-%d").date(),
             "ticker": l["ticker"],
+            "is_stock": l["is_stock"] == "1",
+            "is_right": l["is_right"] == "1",
+            "is_warrant": l["is_warrant"] == "1",
+            "is_unit": l["is_unit"] == "1",
+            "is_etf": l["is_etf"] == "1",
             "open_day_of_action": float(l["open_day_of_action"]),
             "close_day_of_action": float(l["close_day_of_action"]),
             "high_day_of_action": float(l["high_day_of_action"]),
@@ -452,14 +455,15 @@ def build_criteria_set():
         #     "all $": lambda _: True,
         # },
         "ticker_class": {
-            # TODO: pre-calculate is_stock, etf, warrant, right, unit, etc in CSV generators, exclude types we won't consider
-            "s 500k <2": lambda t: is_stock(t["ticker"], day=t["day_of_action"]) and t["volume_day_of_action"] > 500000 and t["close_day_of_action"] <= 2,
-            # "etfs": lambda t: is_etf(t["ticker"], day=t["day_of_action"]),
-            # "se": lambda t: is_stock(t["ticker"], day=t["day_of_action"]) or is_etf(t["ticker"], day=t["day_of_action"]),
-            # "w": lambda t: is_warrant(t["ticker"], day=t["day_of_action"]),
-            # "r": lambda t: is_right(t["ticker"], day=t["day_of_action"]),
-            # "u": lambda t: is_unit(t["ticker"], day=t["day_of_action"]),
-            # "*": lambda t: is_stock(t["ticker"], day=t["day_of_action"]) or is_etf(t["ticker"], day=t["day_of_action"]) or is_warrant(t["ticker"], day=t["day_of_action"]) or is_right(t["ticker"], day=t["day_of_action"]) or is_unit(t["ticker"], day=t["day_of_action"]),
+            "s 500k <2": lambda t: t["is_stock"] and t["volume_day_of_action"] > 500000 and t["close_day_of_action"] <= 2,
+            "s": lambda t: t["is_stock"],
+            "e": lambda t: t["is_etf"],
+            "se": lambda t: t["is_stock"] or t["is_etf"],
+            "w": lambda t: t["is_warrant"],
+            "r": lambda t: t["is_right"],
+            "u": lambda t: t["is_unit"],
+            "!w": lambda t: not t["is_warrant"],
+            "*": lambda _: True,
         },
         # TODO: dedup, don't play same stock twice on same day because PDT
         # TODO: consider ADRC tickers, I saw NCTY show up in list once, some good ones are out there

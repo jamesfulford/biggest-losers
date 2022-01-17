@@ -20,7 +20,7 @@ def _get_polygon(url: str, **kwargs):
             url, **kwargs, headers={"Authorization": f"Bearer {API_KEY}"})
         if response.status_code == 429:
             print(
-                f"Got 429 from {url.replace('https://api.polygon.io', '')}, waiting 10s...")
+                f"Rate limit exceeded, {url.replace('https://api.polygon.io', '')}, waiting 10s...")
             sleep(10)
             continue
 
@@ -116,6 +116,9 @@ def is_ticker_type(ticker: str, t: str, day: date = None):
 
 
 def is_ticker_one_of(ticker: str, types: tuple, day: date = None):
+    if not day:
+        # TODO: do logging levels
+        print("WARNING: 'day' not provided to `is_ticker_one_of`")
     return any((
         is_ticker_type(ticker, stock_type, day=day)
         for stock_type in types

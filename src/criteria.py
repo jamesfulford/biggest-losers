@@ -5,9 +5,8 @@ from src.polygon import is_ticker_one_of
 
 
 def is_stock(ticker, day: date = None) -> bool:
-    # "ADRC" -> sometimes don't clear or are supported by brokers
-    # also can be China
-    return is_ticker_one_of(ticker, ["CS", "PFD"], day=day)
+    # "ADRC" -> sometimes don't clear or are supported by brokers, also can be China
+    return is_ticker_one_of(ticker, ["CS", "PFD", "ADRC"], day=day)
 
 
 def is_etf(ticker, day: date = None) -> bool:
@@ -17,7 +16,7 @@ def is_etf(ticker, day: date = None) -> bool:
 
 def is_warrant(ticker, day: date = None) -> bool:
     # "ADRW" -> Polygon showed 0 on 2022-01-15, let's save a request
-    return is_ticker_one_of(ticker, ["WARRANT"], day=day)
+    return is_ticker_one_of(ticker, ["WARRANT", "ADRW"], day=day)
 
 
 def is_warrant_format(ticker: str) -> bool:
@@ -26,7 +25,7 @@ def is_warrant_format(ticker: str) -> bool:
 
 def is_right(ticker, day: date = None) -> bool:
     # "ADRR"
-    return is_ticker_one_of(ticker, ["RIGHT"], day=day)
+    return is_ticker_one_of(ticker, ["RIGHT", "ADRR"], day=day)
 
 
 def is_unit(ticker, day: date = None) -> bool:

@@ -192,7 +192,8 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
                     # 3. then only the first 10 of those on each day
                     movers_to_enrich = list(
                         filter(
-                            lambda m: is_stock(m["mover_day_of_action"]["T"]),
+                            lambda m: is_stock(
+                                m["mover_day_of_action"]["T"], day=m["day_of_action"]),
                             current_days_movers,
                         )
                     )

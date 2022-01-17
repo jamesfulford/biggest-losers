@@ -111,7 +111,8 @@ def get_cache_prepared_date_range_with_leadup_days(days: int):
     assert cache_range, "cache must be prepared"
     cache_start, cache_end = cache_range
 
-    backtestable_range = list(generate_trading_days(cache_start, cache_end))[days:]
+    backtestable_range = list(
+        generate_trading_days(cache_start, cache_end))[days:]
     start, end = backtestable_range[0], backtestable_range[-1]
     return start, end
 
@@ -198,7 +199,8 @@ def get_last_trading_day_grouped_aggs(today: date):
 
 @lru_cache(maxsize=130)
 def get_today_grouped_aggs(today: date, skip_cache=False):
-    today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(today, skip_cache=skip_cache)
+    today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(
+        today, skip_cache=skip_cache)
 
     # skip days where API returns no data (like trading holiday)
     if "results" not in today_raw_grouped_aggs:
