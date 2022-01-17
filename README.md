@@ -15,7 +15,7 @@ mkdir -p ~/biggest-losers-data/logs
 5. Reference `.env.sample` and set up `paper.env` folder. Set `BROKER=none`. Create finnhub.io and polygon.io accounts, get API keys and paste them into `paper.env`.
 6. Ask your best friend for a zip of their cache directory - it can take days to build that from scratch on Polygon Free tier (5 req / minute)
 7. Add VS Code extensions for VS Code. Use pep8 autoformatter.
-8. `pip install -r requirements.txt` to install python dependencies.
+8. `pip3 install -r requirements.txt` to install python dependencies.
 
 
 TODO: what to do about `~/biggest-loser-data/outputs` syncing with Google Drive?
