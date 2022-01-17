@@ -15,8 +15,8 @@ def is_etf(ticker, day: date = None) -> bool:
 
 
 def is_warrant(ticker, day: date = None) -> bool:
-    # "ADRW" -> Polygon showed 0 on 2022-01-15, let's save a request
-    return is_ticker_one_of(ticker, ["WARRANT", "ADRW"], day=day)
+    # TODO: "ADRW" -> Polygon showed 0 on 2022-01-15, let's save a request
+    return is_ticker_one_of(ticker, ["WARRANT"], day=day)
 
 
 def is_warrant_format(ticker: str) -> bool:
@@ -24,8 +24,8 @@ def is_warrant_format(ticker: str) -> bool:
 
 
 def is_right(ticker, day: date = None) -> bool:
-    # "ADRR"
-    return is_ticker_one_of(ticker, ["RIGHT", "ADRR"], day=day)
+    # TODO: "ADRR"
+    return is_ticker_one_of(ticker, ["RIGHT"], day=day)
 
 
 def is_unit(ticker, day: date = None) -> bool:
