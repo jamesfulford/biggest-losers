@@ -37,8 +37,9 @@ def get_volume_movers(today, skip_cache=False):
         filter(lambda t: t['rank'] <= 10, movers)
     )
 
-    return list(map(lambda mover: {
-        "day_of_action": today,
-        "mover_day_of_action": mover,
-        "mover_day_before": yesterday_grouped_aggs['tickermap'][mover['T']],
-    }, volume_movers))
+    return volume_movers
+    # return list(map(lambda mover: {
+    #     "day_of_action": today,
+    #     "mover_day_of_action": mover,
+    #     "mover_day_before": yesterday_grouped_aggs['tickermap'][mover['T']],
+    # }, volume_movers))
