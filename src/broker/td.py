@@ -366,6 +366,36 @@ def buy_symbol_market(symbol: str, quantity: int, account_id: str = None):
     response.raise_for_status()
 
 
+def sell_symbol_market(symbol: str, quantity: int, account_id: str = None):
+    if not account_id:
+        account_id = get_account_id()
+
+    symbol = normalize_symbol(symbol)
+
+    if DRY_RUN:
+        # print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
+        return
+
+    response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
+        "orderType": "MARKET",
+        "session": "NORMAL",
+        "duration": "DAY",
+        "orderStrategyType": "SINGLE",
+        "orderLegCollection": [
+            {
+                "instruction": "SELL",
+                "quantity": quantity,
+                "instrument": {
+                    "symbol": symbol,
+                    "assetType": "EQUITY"
+                }
+            }
+        ]
+    }, headers=_get_headers())
+
+    response.raise_for_status()
+
+
 def normalize_symbol(symbol: str):
     """
     TD API doesn't like ., replace with /
