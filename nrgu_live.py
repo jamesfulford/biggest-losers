@@ -50,6 +50,13 @@ def get_williamsr(candles):
     return value
 
 
+#
+# Differences between this and backtest
+#
+# 1. live does not execute trades in extended hours (requires limit orders)
+# 2. live calculation of RSI and WILLR will not consider previous trading day's candles early in the day
+# 3. live has sizing issues with the broker because of cash settling, cannot do all-in sizing (or in small margin accounts will have PDT issues)
+# 4. slippage (NRGU is fairly low volume)
 def loop(symbol: str):
     while True:
         # TODO: consider using 5m intervals instead of 1m
