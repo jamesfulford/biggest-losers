@@ -1,6 +1,6 @@
 from datetime import date
 import os
-from src.criteria import is_warrant
+from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 
 from src.overnights import collect_overnights
@@ -32,7 +32,6 @@ def get_all_supernovas(start: date, end: date):
 csv_headers = [
     "day_of_action",
     "ticker",
-    "is_warrant",
     "percent_change_high",
     "yesterday_close",
     "today_high",
@@ -46,12 +45,28 @@ def prepare_supernovas_csv(path: str, start, end):
 
     def yield_supernovas():
         for nova in novas:
+            day_of_action = nova["day_of_action"]
+            mover_day_of_action = nova["mover_day_of_action"]
+
+            is_s = is_stock(mover_day_of_action["T"], day=day_of_action)
+            is_e = is_etf(mover_day_of_action["T"], day=day_of_action)
+            is_w = is_warrant(mover_day_of_action["T"], day=day_of_action)
+            is_u = is_unit(mover_day_of_action["T"], day=day_of_action)
+            is_r = is_right(mover_day_of_action["T"], day=day_of_action)
+            if not any((is_s, is_e, is_w, is_u, is_r)):
+                continue
+
             # print(nova)
             # print(nova['mover_day_after'])
+
             yield {
-                "ticker": nova["mover_day_of_action"]["T"],
-                "is_warrant": is_warrant(nova["mover_day_of_action"]["T"]),
                 "day_of_action": nova["day_of_action"],
+                "ticker": nova["mover_day_of_action"]["T"],
+                "is_stock": is_s,
+                "is_etf": is_e,
+                "is_warrant": is_w,
+                "is_unit": is_u,
+                "is_right": is_r,
                 "percent_change_high": nova["mover_day_of_action"][
                     "percent_change_high"
                 ],
@@ -74,7 +89,8 @@ def main():
 
     print("start:", start)
     print("end:", end)
-    print("estimated trading days:", len(list(generate_trading_days(start, end))))
+    print("estimated trading days:", len(
+        list(generate_trading_days(start, end))))
 
     prepare_supernovas_csv(path, start, end)
 
