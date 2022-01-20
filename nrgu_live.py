@@ -74,7 +74,8 @@ def loop(symbol: str):
         print("position:", position)
 
         # 2. at each minute, gather new candle's data
-        wait_until(next_interval_start)
+        # wait 1s extra to ensure candle is built
+        wait_until(next_interval_start + timedelta(seconds=1))
         market_now = next_interval_start
 
         candles = get_candles(
