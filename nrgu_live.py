@@ -86,6 +86,7 @@ def loop(symbol: str):
         #
         # Execute strategy
         #
+
         buy_reason = rsi < 30 and williamsr < -80
         sell_reason = rsi > 70 and williamsr > -20
 
@@ -95,8 +96,9 @@ def loop(symbol: str):
             buy_symbol_market(symbol, target_quantity)
 
         elif position and sell_reason:
-            print(f"selling, {rsi=} {williamsr=}")
-            sell_symbol_market(symbol, position["qty"])
+            position_quantity = int(position["qty"])
+            print(f"selling, {rsi=} {williamsr=} {position_quantity=}")
+            sell_symbol_market(symbol, position_quantity)
 
         else:
             print(f"no action, {rsi=} {williamsr=}")
