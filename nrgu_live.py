@@ -87,9 +87,10 @@ def loop(symbol: str):
         #
         # Sizing
         #
-        target_account_usage = 0.2
-        target_quantity = (float(account["cash"]) *
-                           target_account_usage) / candles[-1]["close"]
+        target_account_usage = 0.95  # TODO: when limits implemented, this can be 1.0
+        _limit_price = candles[-1]["close"]
+        target_quantity = int((float(account["cash"]) *
+                               target_account_usage) // _limit_price)
 
         #
         # Execute strategy
