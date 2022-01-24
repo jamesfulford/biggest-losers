@@ -1,13 +1,11 @@
 import time
-import os
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
 
 import requests
 
 from src.cache import read_json_cache, write_json_cache
-
-API_KEY = os.environ["POLYGON_API_KEY"]
+from src.data.polygon.polygon import get_polygon_api_key
 
 
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
@@ -64,7 +62,7 @@ def _get_candles(symbol: str, resolution: str, start: date, end: date, adjusted=
             "adjusted": "true" if adjusted else "false",
             "sort": "asc",  # list will be from oldest to newest
         },
-        headers={"Authorization": f"Bearer {API_KEY}"},
+        headers={"Authorization": f"Bearer {get_polygon_api_key()}"},
     )
 
     if response.status_code == 429:

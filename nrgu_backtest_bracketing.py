@@ -2,7 +2,7 @@
 from datetime import date, timedelta
 from src.brackets_historical import backtest_brackets
 from src.trading_day import generate_trading_days, get_market_close_on_day, get_market_open_on_day, is_during_market_hours
-from src.get_candles import get_candles
+from src.data.polygon.get_candles import get_candles
 
 
 def open_bracket_close(day: date):

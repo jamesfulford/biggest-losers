@@ -1,7 +1,5 @@
-import os
 from datetime import date, datetime
 import time
-from zoneinfo import ZoneInfo
 import requests
 from functools import lru_cache
 
@@ -12,22 +10,16 @@ from src.cache import (
     read_json_cache,
     write_json_cache,
 )
+from src.data.polygon.polygon import get_polygon_api_key
 from src.trading_day import (
     generate_trading_days,
     get_last_market_close,
-    get_last_market_open,
-    get_market_close_on_day,
-    get_market_open_on_day,
     is_during_market_hours,
     next_trading_day,
     now,
     previous_trading_day,
     today_or_next_trading_day,
-    today_or_previous_trading_day,
 )
-
-
-API_KEY = os.environ["POLYGON_API_KEY"]
 
 
 def get_grouped_aggs_cache_key(day: date):
@@ -162,7 +154,7 @@ def fetch_grouped_aggs(day: date):
             params={
                 "adjusted": "true",
             },
-            headers={"Authorization": f"Bearer {API_KEY}"},
+            headers={"Authorization": f"Bearer {get_polygon_api_key()}"},
         )
         if response.status_code == 429:
             print("Rate limit exceeded, waiting...")
@@ -230,7 +222,7 @@ def get_today_grouped_aggs_from_cache(today: date):
     return True, _enrich_grouped_aggs(cache)
 
 
-def get_last_n_candles(today: date, ticker, n=14):
+def get_last_n_candles(today: date, ticker: str, n: int = 14) -> list[dict]:
     """
     returns last n candles for a given ticker, with entry [0] being the most recent.
     if returned None, indicates:
@@ -260,11 +252,16 @@ def get_last_n_candles(today: date, ticker, n=14):
 
 
 def get_last_2_candles(today: date, ticker: str):
-    candle, candle_yesterday = tuple(get_last_n_candles(today, ticker, n=2))
-
+    last_2_candles = get_last_n_candles(today, ticker, n=2)
+    if not last_2_candles:
+        return None
+    candle, candle_yesterday = tuple(last_2_candles)
     return candle, candle_yesterday
 
 
 def get_spy_change(today):
-    spy_candle, spy_candle_yesterday = get_last_2_candles(today, "SPY")
+    last_2_candles = get_last_2_candles(today, "SPY")
+    if not last_2_candles:
+        return None
+    spy_candle, spy_candle_yesterday = tuple(last_2_candles)
     return (spy_candle["c"] - spy_candle_yesterday["c"]) / spy_candle_yesterday["c"]

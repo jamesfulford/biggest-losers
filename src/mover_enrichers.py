@@ -1,5 +1,5 @@
 from datetime import date
-from src.grouped_aggs import get_last_2_candles, get_last_n_candles
+from src.data.polygon.grouped_aggs import get_last_2_candles, get_last_n_candles
 from src.indicators import atr_of, current_sma_of, ema_of
 
 

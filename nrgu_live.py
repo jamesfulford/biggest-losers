@@ -7,7 +7,7 @@ from talib.abstract import RSI, WILLR
 from datetime import datetime, timedelta
 from src.trading_day import now
 from src.wait import wait_until
-from src.finnhub import get_candles
+from src.data.finnhub.finnhub import get_candles
 
 from src.broker.generic import get_positions, get_account, buy_symbol_market, sell_symbol_market
 

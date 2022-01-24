@@ -9,7 +9,8 @@ from src.cache import read_json_cache, write_json_cache
 from src.trading_day import today, today_or_previous_trading_day
 
 
-API_KEY = os.environ["POLYGON_API_KEY"]
+def get_polygon_api_key():
+    return os.environ["POLYGON_API_KEY"]
 
 
 # TODO: then, pay for "Stocks Starter" to remove ratelimit
@@ -17,7 +18,7 @@ API_KEY = os.environ["POLYGON_API_KEY"]
 def _get_polygon(url: str, **kwargs):
     while True:
         response = requests.get(
-            url, **kwargs, headers={"Authorization": f"Bearer {API_KEY}"})
+            url, **kwargs, headers={"Authorization": f"Bearer {get_polygon_api_key()}"})
         if response.status_code == 429:
             print(
                 f"Rate limit exceeded, {url.replace('https://api.polygon.io', '')}, waiting 10s...")

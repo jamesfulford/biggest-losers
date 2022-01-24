@@ -1,7 +1,7 @@
 from datetime import date, datetime
 import os
 
-from src.polygon import is_ticker_one_of
+from src.data.polygon.polygon import is_ticker_one_of
 
 
 def is_stock(ticker, day: date = None) -> bool:
