@@ -5,7 +5,7 @@ from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 
 from src.mover_enrichers import enrich_mover
 from src.overnights import collect_overnights
-from src.losers import get_biggest_losers
+from src.scan.losers import get_biggest_losers
 from src.trading_day import (
     generate_trading_days,
     get_market_close_on_day,

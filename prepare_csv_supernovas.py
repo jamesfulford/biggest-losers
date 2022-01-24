@@ -4,7 +4,7 @@ from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 
 from src.overnights import collect_overnights
-from src.supernovas import get_supernovas
+from src.scan.supernovas import get_supernovas
 from src.csv_dump import write_csv
 from src.trading_day import generate_trading_days
 

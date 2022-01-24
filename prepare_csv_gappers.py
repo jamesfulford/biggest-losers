@@ -2,7 +2,7 @@ from datetime import date
 from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.csv_dump import write_csv
 from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
-from src.gappers import get_gappers
+from src.scan.gappers import get_gappers
 from src.trading_day import generate_trading_days
 
 

@@ -1,6 +1,6 @@
 from datetime import date
 from src.overnights import collect_overnights
-from src.volume_movers import get_volume_movers
+from src.scan.volume_movers import get_volume_movers
 from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.csv_dump import write_csv
 from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days

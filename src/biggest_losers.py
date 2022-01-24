@@ -2,7 +2,7 @@ from datetime import date, datetime
 import json
 
 from src.broker.generic import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
-from src.losers import get_biggest_losers
+from src.scan.losers import get_biggest_losers
 from src.criteria import is_skipped_day
 
 

@@ -4,14 +4,15 @@ from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 
 from src.mover_enrichers import enrich_mover
 from src.overnights import collect_overnights
-from src.winners import get_biggest_winners
+from src.scan.winners import get_biggest_winners
 from src.trading_day import generate_trading_days, previous_trading_day
 
 
 def get_all_biggest_winners_with_day_after(start_date: date, end_date: date):
     movers = []
     for mover in collect_overnights(
-        start_date, end_date, get_actions_on_day=lambda day: get_biggest_winners(day)
+        start_date, end_date, get_actions_on_day=lambda day: get_biggest_winners(
+            day)
     ):
         enrich_mover(mover)
         movers.append(mover)
@@ -131,7 +132,8 @@ def main():
 
     print("start:", start)
     print("end:", end)
-    print("estimated trading days:", len(list(generate_trading_days(start, end))))
+    print("estimated trading days:", len(
+        list(generate_trading_days(start, end))))
 
     prepare_biggest_winners_csv(path, start, end)
 
