@@ -110,13 +110,14 @@ case $action in
     #
     "prepare-csvs")
         for script in \
-            "prepare_csv_losers.py" \
-            "prepare_csv_winners.py" \
-            "prepare_csv_supernovas.py" \
-            "prepare_csv_gappers.py"
+            "losers" \
+            "winners" \
+            "supernovas" \
+            "gappers"
         do
             echo $script
-            $python_exec $script
+            # $python_exec $script
+            $python_exec -c "from src.scan.$script import prepare_csv; prepare_csv()"
             echo
         done
         ;;
