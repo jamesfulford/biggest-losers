@@ -111,15 +111,10 @@ case $action in
     # Backtesting Operations
     #
     "prepare-csvs")
-        for script in \
-            "losers" \
-            "winners" \
-            "supernovas" \
-            "gappers"
-        do
-            echo $script
-            # $python_exec $script
-            $python_exec -c "from src.scan.$script import prepare_csv; prepare_csv()"
+        for script in $(ls $APP_DIR/src/scan/*.py | grep -v __init__); do
+            module=`basename $script .py`
+            echo "# running $module"
+            $python_exec -c "from src.scan.$module import prepare_csv; prepare_csv()"
             echo
         done
         ;;
