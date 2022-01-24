@@ -8,7 +8,7 @@ from src.cache import read_json_cache, write_json_cache
 #
 
 from datetime import date
-from backtest import (
+from gridsearch_backtest_losers import (
     analyze_biggest_losers_csv,
     build_criteria_set,
     evaluate_results,

@@ -1,6 +1,6 @@
 from zoneinfo import ZoneInfo
 
-from backtest import get_lines_from_biggest_losers_csv
+from gridsearch_backtest_losers import get_lines_from_biggest_losers_csv
 from src.csv_dump import write_csv
 from src.intention import get_intentions_by_day
 from src.pathing import get_paths
