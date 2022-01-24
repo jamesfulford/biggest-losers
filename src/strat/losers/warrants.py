@@ -1,23 +1,23 @@
 from datetime import date, datetime
 import os
-from biggest_losers_stocks import get_biggest_loser_filter_criteria_kwargs
+from src.strat.losers.stocks import get_biggest_loser_filter_criteria_kwargs
 
 from src.intention import record_intentions
 from src.criteria import is_warrant
 from src.broker.generic import buy_symbol_market
 
-from src.biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
+from src.strat.losers.logic import buy_biggest_losers, sell_biggest_losers_at_open
 from src.trading_day import today_or_previous_trading_day
 
 
 #
 # NOTE:
-# this is nearly identical to biggest_losers_stocks.py with these changes:
+# this is nearly identical to src.strat.losers.stocks.py with these changes:
 # 1. only warrants are considered
 # 2. buy: market orders, not market_on_close orders
 # 3. minimum dollar volume requirement
 #
-if __name__ == '__main__':
+def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("buy", "sell"))

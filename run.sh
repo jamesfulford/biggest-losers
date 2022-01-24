@@ -66,25 +66,27 @@ case $action in
     # Strategy: biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_stocks.py "buy"
+        $python_exec -c 'from src.strat.losers.stocks import main; main()' "buy"
         ;;
     "biggest-loser-stocks-sell")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_stocks.py "sell"
+        $python_exec -c 'from src.strat.losers.stocks import main; main()' "sell"
         ;;
 
     # Strategy: biggest loser warrants
     "biggest-loser-warrants-buy")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_warrants.py "buy"
+        $python_exec -c 'from src.strat.losers.warrants import main; main()' "buy"
         ;;
     "biggest-loser-warrants-sell")
         refresh_tokens_if_needed
-        $python_exec biggest_losers_stocks.py "sell"
+        $python_exec -c 'from src.strat.losers.warrants import main; main()' "sell"
         ;;
 
+    # Strategy: daily bracketing on NRGU
     "bracketing")
-        $python_exec bracketing.py
+        # TODO: refresh TD tokens continuously when TD support added for bracketing
+        $python_exec -c 'from src.strat.bracketing.bracketing import main; main()'
         ;;
 
     # Operations

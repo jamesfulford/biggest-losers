@@ -2,7 +2,7 @@ from datetime import date, datetime
 import json
 
 from src.broker.generic import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
-from src.scan.losers import get_biggest_losers
+from src.scan.losers import get_all_candidates_on_day
 from src.criteria import is_skipped_day
 
 
@@ -39,8 +39,7 @@ def buy_biggest_losers(
     # Filter losers
     #
 
-    losers = get_biggest_losers(
-        today, max_percent_change=-minimum_loss_percent, skip_cache=True) or []
+    losers = get_all_candidates_on_day(today, skip_cache=True) or []
 
     # NOTE: if we ever need multi-day averages, we will start to need the cache to be filled
     # with enough days. If not careful, might use data with different adjustment base

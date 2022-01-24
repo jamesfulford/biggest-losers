@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from requests.models import HTTPError
-from src.brackets_realtime import execute_brackets
+from src.strat.brackets.brackets_realtime import execute_brackets
 
 from src.broker.alpaca import (
     buy_symbol_market,
@@ -76,10 +76,3 @@ def main():
     #
     print("Closing position...")
     sell_symbol_market(symbol, position["qty"])
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except HTTPError as e:
-        print("ERROR", e.response.status_code, e.response.json())

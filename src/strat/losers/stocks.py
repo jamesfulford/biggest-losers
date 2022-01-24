@@ -4,7 +4,7 @@ import os
 from src.intention import record_intentions
 from src.criteria import is_stock
 
-from src.biggest_losers import buy_biggest_losers, sell_biggest_losers_at_open
+from src.strat.losers.logic import buy_biggest_losers, sell_biggest_losers_at_open
 from src.trading_day import today_or_previous_trading_day
 
 
@@ -42,7 +42,7 @@ def get_biggest_loser_filter_criteria_kwargs():
     }
 
 
-if __name__ == '__main__':
+def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("buy", "sell"))
