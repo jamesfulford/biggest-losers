@@ -1,10 +1,10 @@
 from zoneinfo import ZoneInfo
 
-from gridsearch_backtest_losers import get_lines_from_biggest_losers_csv
+from src.strat.losers.gridsearch_backtest_losers import get_lines_from_biggest_losers_csv
 from src.csv_dump import write_csv
 from src.intention import get_intentions_by_day
 from src.pathing import get_paths
-from src.trades import get_closed_trades_from_orders_csv
+from src.reporting.trades import get_closed_trades_from_orders_csv
 
 
 MARKET_TZ = ZoneInfo("America/New_York")

@@ -103,7 +103,7 @@ case $action in
     # Performance
     "dump-orders")
         refresh_tokens_if_needed
-        $python_exec dump-orders.py
+        $python_exec -c "import src.reporting.dump_orders"
         echo "(return code was $?)"
         ;;
 
