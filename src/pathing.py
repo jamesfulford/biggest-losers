@@ -41,6 +41,8 @@ def get_paths(target_environment_name=None):
         paths['data']['outputs']['dir'], 'gappers.csv')
     paths['data']["outputs"]["volume_movers_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'volume_movers.csv')
+    paths['data']["outputs"]["daily_rsi_oversold_csv"] = os.path.join(
+        paths['data']['outputs']['dir'], 'daily_rsi_oversold.csv')
 
     paths['data']["outputs"]["filled_orders_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'filled_orders.csv')
