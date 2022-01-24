@@ -1,169 +1,137 @@
-from src.trading_day import generate_trading_days, previous_trading_day
-from src.overnights import collect_overnights
-from src.mover_enrichers import enrich_mover
-from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
-from src.csv_dump import write_csv
 from datetime import date
-from src.grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_aggs
+
+from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
+from src.trading_day import generate_trading_days
+from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days, get_last_2_candles
+from src.csv_dump import write_csv
+from src.data.polygon.grouped_aggs import get_today_grouped_aggs
 
 
-def get_biggest_winners(today, skip_cache=False):
+#
+# _on_day: used for LIVE and BACKTEST
+# - all filtering logic should be here
+# - all critical indicators should be enriched in here
+#
+# Some tips:
+# - try to filter on OHLCV first before getting daily candles or calculating indicators
+def get_all_candidates_on_day(today: date, skip_cache=False):
     today_grouped_aggs = get_today_grouped_aggs(today, skip_cache=skip_cache)
     if not today_grouped_aggs:
-        print(f'no data for {today}, cannot fetch biggest losers')
+        print(f'no data for {today}, cannot fetch candidates')
         return None
-    yesterday_grouped_aggs = get_last_trading_day_grouped_aggs(today)
 
-    #
-    # go find biggest losers for the next day
-    #
+    tickers = today_grouped_aggs['results']
+    tickers = list(filter(lambda t: t["v"] > 100000, tickers))
 
-    # skip if wasn't present yesterday
-    tickers_also_present_yesterday = list(filter(
-        lambda t: t['T'] in yesterday_grouped_aggs['tickermap'], today_grouped_aggs['results']))
+    # get yesterday's close
+    new_tickers = []
+    for ticker in tickers:
+        last_2_candles = get_last_2_candles(today, ticker["T"])
+        if not last_2_candles:
+            continue
+        today_candle, yesterday_candle = tuple(last_2_candles)
 
-    for ticker in tickers_also_present_yesterday:
-        previous_day_ticker = yesterday_grouped_aggs['tickermap'][ticker['T']]
+        ticker["yesterday_c"] = yesterday_candle["c"]
+        new_tickers.append(ticker)
+    tickers = new_tickers
 
+    for ticker in tickers:
         ticker['percent_change'] = (
-            ticker['c'] - previous_day_ticker['c']) / previous_day_ticker['c']
+            ticker['c'] - ticker['yesterday_c']) / ticker['yesterday_c']
 
-    biggest_losers = list(
-        filter(lambda t: t['percent_change'] > .08, tickers_also_present_yesterday))
-    biggest_losers = sorted(biggest_losers,
-                            key=lambda t: -t['percent_change'])
+    tickers = list(filter(lambda t: t["percent_change"] > .5, tickers))
 
-    for loser in biggest_losers:
-        loser['rank'] = biggest_losers.index(loser) + 1
+    # must be of acceptable type
+    new_tickers = []
+    for ticker in tickers:
+        ticker['is_stock'] = is_stock(ticker['T'], day=today)
+        ticker['is_etf'] = is_etf(ticker['T'], day=today)
+        ticker['is_warrant'] = is_warrant(ticker['T'], day=today)
+        ticker['is_unit'] = is_unit(ticker['T'], day=today)
+        ticker['is_right'] = is_right(ticker['T'], day=today)
 
-    return biggest_losers
+        if not any((ticker['is_stock'], ticker['is_etf'], ticker['is_warrant'], ticker['is_unit'], ticker['is_right'])):
+            continue
+        new_tickers.append(ticker)
+    tickers = new_tickers
+
+    # adding rank
+    tickers = sorted(tickers, key=lambda t: -t['percent_change'])
+    for ticker in tickers:
+        ticker['rank'] = tickers.index(ticker) + 1
+
+    return tickers
 
 
-def get_all_biggest_winners_with_day_after(start_date: date, end_date: date):
-    movers = []
-    for mover in collect_overnights(
-        start_date, end_date, get_actions_on_day=lambda day: get_biggest_winners(
-            day)
-    ):
-        enrich_mover(mover)
-        movers.append(mover)
-    return movers
+def get_all_candidates_between_days(start: date, end: date):
+    for day in generate_trading_days(start, end):
+        for candidate in get_all_candidates_on_day(day) or []:
+            candidate["day_of_action"] = day
+            yield candidate
 
 
-def prepare_biggest_winners_csv(path: str, start, end):
-    biggest_movers = get_all_biggest_winners_with_day_after(start, end)
+def build_row(candidate: dict):
+    return {
+        "day_of_action": candidate['day_of_action'],
+        # ticker insights
+        "T": candidate['T'],
+        "is_stock": candidate['is_stock'],
+        "is_etf": candidate['is_etf'],
+        "is_warrant": candidate['is_warrant'],
+        "is_unit": candidate['is_unit'],
+        "is_right": candidate['is_right'],
 
-    def yield_movers():
-        for mover in biggest_movers:
-            day_of_action = mover["day_of_action"]
-            day_after = mover["day_after"]
-            mover_day_of_action = mover["mover_day_of_action"]
-            mover_day_after = mover["mover_day_after"]
-            spy_day_of_action_percent_change = mover["spy_day_of_action_percent_change"]
-            spy_day_of_action_intraday_percent_change = mover[
-                "spy_day_of_action_intraday_percent_change"
-            ]
+        # day_of_action stats
+        "o": candidate["o"],
+        "h": candidate["h"],
+        "l": candidate["l"],
+        "c": candidate["c"],
+        "v": candidate["v"],
+        "n": candidate["n"],
 
-            intraday_percent_change = (
-                mover_day_of_action["c"] - mover_day_of_action["o"]
-            ) / mover_day_of_action["o"]
+        # rank
+        "rank": candidate["rank"],
 
-            overnight_strategy_roi = (
-                mover_day_after["o"] - mover_day_of_action["c"]
-            ) / mover_day_of_action["c"]
+        # indicators
+        "vw": candidate["vw"],
+        "yesterday_c": candidate["yesterday_c"],
+        "percent_change": candidate["percent_change"],
+    }
 
-            # keep in sync with headers
-            yield {
-                "day_of_action": day_of_action,
-                "day_of_action_weekday": day_of_action.weekday(),
-                "day_of_action_month": day_of_action.month,
-                "day_after": day_after,
-                "days_overnight": (day_after - day_of_action).days,
-                "overnight_has_holiday_bool": previous_trading_day(day_after)
-                != day_of_action,
-                "ticker": mover_day_of_action["T"],
-                # day_of_action stats
-                "open_day_of_action": mover_day_of_action["o"],
-                "high_day_of_action": mover_day_of_action["h"],
-                "low_day_of_action": mover_day_of_action["l"],
-                "close_day_of_action": mover_day_of_action["c"],
-                "volume_day_of_action": mover_day_of_action["v"],
-                "close_to_close_percent_change_day_of_action": mover_day_of_action[
-                    "percent_change"
-                ],
-                "intraday_percent_change_day_of_action": intraday_percent_change,
-                "rank_day_of_action": mover_day_of_action.get("rank", -1),
-                # day of loss indicators
-                "100sma": mover.get("100sma", ""),
-                "100ema": mover.get("100ema", ""),
-                "50ema": mover.get("50ema", ""),
-                "14atr": mover.get("14atr", ""),
-                # day_after stats
-                "open_day_after": mover_day_after["o"],
-                "high_day_after": mover_day_after["h"],
-                "low_day_after": mover_day_after["l"],
-                "close_day_after": mover_day_after["c"],
-                "volume_day_after": mover_day_after["v"],
-                # spy
-                "spy_day_of_action_percent_change": spy_day_of_action_percent_change,
-                "spy_day_of_action_intraday_percent_change": spy_day_of_action_intraday_percent_change,
-                # results
-                "overnight_strategy_roi": overnight_strategy_roi,
-                "overnight_strategy_is_win": overnight_strategy_roi > 0,
-            }
 
+def prepare_biggest_losers_csv(path: str, start: date, end: date):
     write_csv(
         path,
-        yield_movers(),
+        map(build_row, get_all_candidates_between_days(start, end)),
         headers=[
             "day_of_action",
-            "day_of_action_weekday",
-            "day_of_action_month",
-            "day_after",
-            "days_overnight",
-            "overnight_has_holiday_bool",
-            "ticker",
-            #
-            "open_day_of_action",
-            "high_day_of_action",
-            "low_day_of_action",
-            "close_day_of_action",
-            "volume_day_of_action",
-            #
-            "close_to_close_percent_change_day_of_action",
-            "intraday_percent_change_day_of_action",
-            "rank_day_of_action",
-            #
-            "100sma",
-            "100ema",
-            "50ema",
-            "14atr",
-            #
-            "open_day_after",
-            "high_day_after",
-            "low_day_after",
-            "close_day_after",
-            "volume_day_after",
-            #
-            "spy_day_of_action_percent_change",
-            "spy_day_of_action_intraday_percent_change",
-            #
-            "overnight_strategy_roi",
-            "overnight_strategy_is_win",
-        ],
+            "T",
+            "is_stock",
+            "is_etf",
+            "is_warrant",
+            "is_unit",
+            "is_right",
+            "o",
+            "h",
+            "l",
+            "c",
+            "v",
+        ]
     )
 
 
 def prepare_csv():
     from src.pathing import get_paths
 
-    path = get_paths()["data"]["outputs"]["biggest_winners_csv"]
+    path = get_paths()["data"]["outputs"]["winners_csv"]
 
-    start, end = get_cache_prepared_date_range_with_leadup_days(1)
+    start, end = get_cache_prepared_date_range_with_leadup_days(0)
+    start = max(start, date(2021, 1, 1))  # TODO: undo
+    end = min(end, date(2021, 12, 31))  # TODO: undo
 
     print("start:", start)
     print("end:", end)
     print("estimated trading days:", len(
         list(generate_trading_days(start, end))))
 
-    prepare_biggest_winners_csv(path, start, end)
+    prepare_biggest_losers_csv(path, start=start, end=end)

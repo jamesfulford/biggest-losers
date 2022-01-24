@@ -52,8 +52,10 @@ def get_atr(ticker: str, day_of_action: date, n: int):
 
 
 def get_ticker_changes(day_of_action: date, interesting_ticker: str):
-    ticker_day_of_action, ticker_day_before = get_last_2_candles(
-        day_of_action, interesting_ticker)
+    last_2_candles = get_last_2_candles(day_of_action, interesting_ticker)
+    if not last_2_candles:
+        return None
+    ticker_day_of_action, ticker_day_before = tuple(last_2_candles)
 
     return {
         "close_to_close_percent_change": (ticker_day_of_action['c'] - ticker_day_before['c']) / ticker_day_before['c'],

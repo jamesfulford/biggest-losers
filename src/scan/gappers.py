@@ -1,161 +1,120 @@
 from datetime import date
-from src.trading_day import generate_trading_days
-from src.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
-from src.csv_dump import write_csv
+
 from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
-from src.grouped_aggs import get_today_grouped_aggs, get_last_trading_day_grouped_aggs
+from src.trading_day import generate_trading_days
+from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days, get_last_2_candles
+from src.csv_dump import write_csv
+from src.data.polygon.grouped_aggs import get_today_grouped_aggs
 
 
-def get_gappers(today, skip_cache=False):
+#
+# _on_day: used for LIVE and BACKTEST
+# - all filtering logic should be here
+# - all critical indicators should be enriched in here
+#
+# Some tips:
+# - try to filter on OHLCV first before getting daily candles or calculating indicators
+def get_all_candidates_on_day(today: date, skip_cache=False):
     today_grouped_aggs = get_today_grouped_aggs(today, skip_cache=skip_cache)
     if not today_grouped_aggs:
-        print(f'no data for {today}, cannot fetch')
+        print(f'no data for {today}, cannot fetch candidates')
         return None
-    yesterday_grouped_aggs = get_last_trading_day_grouped_aggs(today)
 
-    # skip if wasn't present yesterday
-    tickers_also_present_yesterday = list(filter(
-        lambda t: t['T'] in yesterday_grouped_aggs['tickermap'], today_grouped_aggs['results']))
+    tickers = today_grouped_aggs['results']
 
-    for ticker in tickers_also_present_yesterday:
-        previous_day_ticker = yesterday_grouped_aggs['tickermap'][ticker['T']]
-
-        ticker['gap'] = (
-            ticker['o'] - previous_day_ticker['c']) / previous_day_ticker['c']
-        ticker['previous_day_ticker'] = previous_day_ticker
-
-    movers = list(
-        filter(lambda t: t['gap'] > .20, tickers_also_present_yesterday))
-
-    movers = sorted(movers, key=lambda t: -t['gap'])
-
-    for mover in movers:
-        mover['rank'] = movers.index(mover) + 1
-
-    return list(map(lambda mover: {
-        "day_of_action": today,
-        "mover_day_of_action": mover,
-        "mover_day_before": yesterday_grouped_aggs['tickermap'][mover['T']],
-    }, movers))
-
-
-def get_all_gappers_between(start: date, end: date):
-    gappers = []
-    for day in generate_trading_days(start, end):
-        today_gappers = get_gappers(day)
-        if not today_gappers:  # holidays
+    # add yesterday values
+    new_tickers = []
+    for ticker in tickers:
+        last_2_candles = get_last_2_candles(today, ticker["T"])
+        if not last_2_candles:
             continue
-        for gapper in today_gappers:
-            gappers.append(gapper)
-    return gappers
+        today_candle, yesterday_candle = tuple(last_2_candles)
+
+        ticker["yesterday_c"] = yesterday_candle["c"]
+        ticker["yesterday_v"] = yesterday_candle["v"]
+        ticker["gap"] = (today_candle['o'] -
+                         yesterday_candle['c']) / yesterday_candle['c']
+
+        new_tickers.append(ticker)
+    tickers = new_tickers
+
+    tickers = list(filter(lambda t: t["gap"] > .5, tickers))
+
+    # must be of acceptable type
+    new_tickers = []
+    for ticker in tickers:
+        ticker['is_stock'] = is_stock(ticker['T'], day=today)
+        ticker['is_etf'] = is_etf(ticker['T'], day=today)
+        ticker['is_warrant'] = is_warrant(ticker['T'], day=today)
+        ticker['is_unit'] = is_unit(ticker['T'], day=today)
+        ticker['is_right'] = is_right(ticker['T'], day=today)
+
+        if not any((ticker['is_stock'], ticker['is_etf'], ticker['is_warrant'], ticker['is_unit'], ticker['is_right'])):
+            continue
+        new_tickers.append(ticker)
+    tickers = new_tickers
+
+    # adding rank
+    tickers = sorted(tickers, key=lambda t: -t['gap'])
+    for ticker in tickers:
+        ticker['rank'] = tickers.index(ticker) + 1
+
+    return tickers
 
 
-def prepare_biggest_winners_csv(path: str, start: date, end: date):
-    biggest_movers = get_all_gappers_between(start, end)
+def get_all_candidates_between_days(start: date, end: date):
+    for day in generate_trading_days(start, end):
+        for candidate in get_all_candidates_on_day(day) or []:
+            candidate["day_of_action"] = day
+            yield candidate
 
-    def yield_movers():
-        for mover in biggest_movers:
-            day_of_action = mover["day_of_action"]
-            mover_day_of_action = mover["mover_day_of_action"]
-            mover_day_before = mover["mover_day_before"]
 
-            is_s = is_stock(mover_day_of_action["T"], day=day_of_action)
-            is_e = is_etf(mover_day_of_action["T"], day=day_of_action)
-            is_w = is_warrant(mover_day_of_action["T"], day=day_of_action)
-            is_u = is_unit(mover_day_of_action["T"], day=day_of_action)
-            is_r = is_right(mover_day_of_action["T"], day=day_of_action)
-            if not any((is_s, is_e, is_w, is_u, is_r)):
-                continue
+def build_row(candidate: dict):
+    return {
+        "day_of_action": candidate['day_of_action'],
+        # ticker insights
+        "T": candidate['T'],
+        "is_stock": candidate['is_stock'],
+        "is_etf": candidate['is_etf'],
+        "is_warrant": candidate['is_warrant'],
+        "is_unit": candidate['is_unit'],
+        "is_right": candidate['is_right'],
 
-            yield {
-                "day_of_action": day_of_action,
-                "ticker": mover_day_of_action["T"],
-                "is_stock": is_s,
-                "is_etf": is_e,
-                "is_warrant": is_w,
-                "is_unit": is_u,
-                "is_right": is_r,
-                # day_of_action stats
-                "open_day_of_action": mover_day_of_action["o"],
-                "high_day_of_action": mover_day_of_action["h"],
-                "low_day_of_action": mover_day_of_action["l"],
-                "close_day_of_action": mover_day_of_action["c"],
-                "volume_day_of_action": mover_day_of_action["v"],
-                # previous day stats
-                "open_day_before": mover_day_before["o"],
-                "high_day_before": mover_day_before["h"],
-                "low_day_before": mover_day_before["l"],
-                "close_day_before": mover_day_before["c"],
-                "volume_day_before": mover_day_before["v"],
-                "gap_close_to_open_percent_change_day_of_action": (
-                    mover_day_of_action["o"] - mover_day_before["c"]
-                )
-                / mover_day_before["c"],
-                "close_to_close_percent_change_day_of_action": (
-                    mover_day_of_action["c"] - mover_day_before["c"]
-                )
-                / mover_day_before["c"],
-                "intraday_open_to_close_percent_change_day_of_action": (
-                    mover_day_of_action["c"] - mover_day_of_action["o"]
-                )
-                / mover_day_of_action["o"],
-                "open_to_high_percent_change_day_of_action": (
-                    mover_day_of_action["h"] - mover_day_of_action["o"]
-                )
-                / mover_day_of_action["o"],
-                "open_to_low_percent_change_day_of_action": (
-                    mover_day_of_action["l"] - mover_day_of_action["o"]
-                )
-                / mover_day_of_action["o"],
-                "rank_day_of_action": mover_day_of_action.get("rank", -1),
-                # day of loss indicators
-                # "100sma": mover.get("100sma", ""),
-                # "100ema": mover.get("100ema", ""),
-                # "50ema": mover.get("50ema", ""),
-                # "14atr": mover.get("14atr", ""),
-                # day_after stats
-                # TODO: add, wonder if anything happens
-                # "open_day_after": mover_day_after['o'],
-                # "high_day_after": mover_day_after['h'],
-                # "low_day_after": mover_day_after['l'],
-                # "close_day_after": mover_day_after['c'],
-                # "volume_day_after": mover_day_after['v'],
-                # spy
-                # TODO: do enriching in this script instead of other file?
-                # "spy_day_of_action_percent_change": spy_day_of_action_percent_change,
-                # "spy_day_of_action_intraday_percent_change": spy_day_of_action_intraday_percent_change,
-                # results
-                # "overnight_strategy_roi": overnight_strategy_roi,
-                # "overnight_strategy_is_win": overnight_strategy_roi > 0,
-            }
+        # day_of_action stats
+        "o": candidate["o"],
+        "h": candidate["h"],
+        "l": candidate["l"],
+        "c": candidate["c"],
+        "v": candidate["v"],
+        "n": candidate["n"],
 
+        # rank
+        "rank": candidate["rank"],
+
+        # indicators
+        "vw": candidate["vw"],
+        "gap": candidate["gap"],
+    }
+
+
+def prepare_biggest_losers_csv(path: str, start: date, end: date):
     write_csv(
         path,
-        yield_movers(),
+        map(build_row, get_all_candidates_between_days(start, end)),
         headers=[
             "day_of_action",
-            "ticker",
+            "T",
+            "is_stock",
+            "is_etf",
             "is_warrant",
-            #
-            "open_day_before",
-            "high_day_before",
-            "low_day_before",
-            "close_day_before",
-            "volume_day_before",
-            #
-            "open_day_of_action",
-            "high_day_of_action",
-            "low_day_of_action",
-            "close_day_of_action",
-            "volume_day_of_action",
-            #
-            "gap_close_to_open_percent_change_day_of_action",
-            "close_to_close_percent_change_day_of_action",
-            "intraday_open_to_close_percent_change_day_of_action",
-            "open_to_high_percent_change_day_of_action",
-            "open_to_low_percent_change_day_of_action",
-            "rank_day_of_action",
-        ],
+            "is_unit",
+            "is_right",
+            "o",
+            "h",
+            "l",
+            "c",
+            "v",
+        ]
     )
 
 
@@ -164,11 +123,13 @@ def prepare_csv():
 
     path = get_paths()["data"]["outputs"]["gappers_csv"]
 
-    start, end = get_cache_prepared_date_range_with_leadup_days(1)
+    start, end = get_cache_prepared_date_range_with_leadup_days(0)
+    start = max(start, date(2021, 1, 1))  # TODO: undo
+    end = min(end, date(2021, 12, 31))  # TODO: undo
 
     print("start:", start)
     print("end:", end)
     print("estimated trading days:", len(
         list(generate_trading_days(start, end))))
 
-    prepare_biggest_winners_csv(path, start, end)
+    prepare_biggest_losers_csv(path, start=start, end=end)

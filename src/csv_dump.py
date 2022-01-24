@@ -27,6 +27,9 @@ def write_csv(path, lines, headers=None):
     if not lines:
         print(f"WARNING: no lines to write to csv {path}")
 
+    if not headers:
+        headers = []
+
     f = open(path, "w") if path else None
 
     # write provided headers first, in order, then rest of keys in alphabetical order
