@@ -1,6 +1,7 @@
 # `brew install ta-lib`, then `pip3 install TA-Lib`
 # To read ta-lib docs for a function (to see parameters like windows/timeperiods), do:
 #   >>> from talib import RSI; print(RSI.__doc__)
+import json
 import numpy as np
 from talib.abstract import RSI, WILLR
 from datetime import datetime, timedelta
@@ -66,12 +67,11 @@ def loop(symbol: str):
         wait_until(next_interval_start - timedelta(seconds=10))
 
         account = get_account()
-        print("account:", account)
         cash = float(account["cash"])
         print("cash:", cash)
 
         position = get_current_position(symbol)
-        print("position:", position)
+        print("position:", json.dumps(position))
 
         # 2. at each minute, gather new candle's data
         # wait 1s extra to ensure candle is built
