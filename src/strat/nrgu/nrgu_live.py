@@ -78,8 +78,9 @@ def loop(symbol: str):
         wait_until(next_interval_start + timedelta(seconds=1))
         market_now = next_interval_start
 
+        # NOTE: all values are unadjusted
         candles = get_candles(
-            "NRGU", "1", market_now.date(), market_now.date())
+            "NRGU", "1", (market_now - timedelta(days=4)).date(), market_now.date())
 
         rsi = get_rsi(candles)
         williamsr = get_williamsr(candles)
