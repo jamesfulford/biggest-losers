@@ -1,10 +1,13 @@
 from datetime import date
 
 from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
+from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
+from src.scan.utils.asset_class import enrich_tickers_with_asset_class
+from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle
+from src.scan.utils.rank import rank_candidates_by
 from src.trading_day import generate_trading_days
-from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days, get_last_2_candles
+from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 from src.csv_dump import write_csv
-from src.data.polygon.grouped_aggs import get_today_grouped_aggs
 
 
 #
@@ -15,25 +18,23 @@ from src.data.polygon.grouped_aggs import get_today_grouped_aggs
 # Some tips:
 # - try to filter on OHLCV first before getting daily candles or calculating indicators
 def get_all_candidates_on_day(today: date, skip_cache=False):
-    today_grouped_aggs = get_today_grouped_aggs(today, skip_cache=skip_cache)
-    if not today_grouped_aggs:
-        print(f'no data for {today}, cannot fetch candidates')
-        return None
-
-    tickers = today_grouped_aggs['results']
+    """
+    NOTE: this scanner would be hard to use intraday because volume is not complete
+    """
+    tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
     tickers = list(filter(lambda t: t["v"] > 100000, tickers))
 
-    # get yesterday's volume
-    new_tickers = []
-    for ticker in tickers:
-        last_2_candles = get_last_2_candles(today, ticker["T"])
-        if not last_2_candles:
-            continue
-        today_candle, yesterday_candle = tuple(last_2_candles)
+    tickers = list(enrich_tickers_with_asset_class(today, tickers, {
+        "is_etf": is_etf,
+        "is_right": is_right,
+        "is_stock": is_stock,
+        "is_unit": is_unit,
+        "is_warrant": is_warrant,
+    }))
 
-        ticker["yesterday_v"] = yesterday_candle["v"]
-        new_tickers.append(ticker)
-    tickers = new_tickers
+    tickers = list(enrich_tickers_with_indicators(today, tickers, {
+        "yesterday_v": from_yesterday_candle("v"),
+    }, n=2))
 
     tickers = list(filter(lambda t: t["yesterday_v"] > 100000, tickers))
 
@@ -43,24 +44,8 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
 
     tickers = list(filter(lambda t: t["volume_percent_change"] > .5, tickers))
 
-    # must be of acceptable type
-    new_tickers = []
-    for ticker in tickers:
-        ticker['is_stock'] = is_stock(ticker['T'], day=today)
-        ticker['is_etf'] = is_etf(ticker['T'], day=today)
-        ticker['is_warrant'] = is_warrant(ticker['T'], day=today)
-        ticker['is_unit'] = is_unit(ticker['T'], day=today)
-        ticker['is_right'] = is_right(ticker['T'], day=today)
-
-        if not any((ticker['is_stock'], ticker['is_etf'], ticker['is_warrant'], ticker['is_unit'], ticker['is_right'])):
-            continue
-        new_tickers.append(ticker)
-    tickers = new_tickers
-
-    # adding rank
-    tickers = sorted(tickers, key=lambda t: -t['volume_percent_change'])
-    for ticker in tickers:
-        ticker['rank'] = tickers.index(ticker) + 1
+    tickers = rank_candidates_by(
+        tickers, lambda t: -t['volume_percent_change'])
 
     return tickers
 
