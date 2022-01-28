@@ -111,8 +111,8 @@ def execute_phases(symbol: str):
     # Execute strategy
     #
 
-    buy_reason = rsi < 30 and williamsr < -80
-    sell_reason = rsi > 70 and williamsr > -20
+    buy_reason = rsi < 40 and williamsr < -70
+    sell_reason = rsi > 70 and williamsr > -30
 
     if not position and buy_reason:
         # TODO: support premarket, aftermarket
