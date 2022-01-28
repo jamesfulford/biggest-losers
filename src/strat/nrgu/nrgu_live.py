@@ -2,13 +2,15 @@
 # To read ta-lib docs for a function (to see parameters like windows/timeperiods), do:
 #   >>> from talib import RSI; print(RSI.__doc__)
 import json
+from datetime import datetime, timedelta
+import traceback
+
 import numpy as np
 from talib.abstract import RSI, WILLR
-from datetime import datetime, timedelta
+
 from src.trading_day import now
 from src.wait import wait_until
 from src.data.finnhub.finnhub import get_candles
-
 from src.broker.generic import get_positions, get_account, buy_symbol_market, sell_symbol_market
 
 
@@ -60,58 +62,70 @@ def get_williamsr(candles):
 # 4. slippage (NRGU is fairly low volume)
 def loop(symbol: str):
     while True:
-        # TODO: consider using 5m intervals instead of 1m
-        # 1. before each interval, fetch account/position state
-        market_now = now()
-        next_interval_start = next_minute_mark(market_now)
-        wait_until(next_interval_start - timedelta(seconds=10))
+        try:
+            execute_phases(symbol)
+        except Exception as e:
+            print(f"{traceback.format_exc(e)}")
 
-        account = get_account()
-        cash = float(account["cash"])
-        print("cash:", cash)
 
-        position = get_current_position(symbol)
-        print("position:", json.dumps(position))
+def execute_phases(symbol: str):
+    # TODO: consider using 5m intervals instead of 1m
 
-        # 2. at each minute, gather new candle's data
-        # wait 1s extra to ensure candle is built
-        wait_until(next_interval_start + timedelta(seconds=1))
-        market_now = next_interval_start
+    market_now = now()
+    next_interval_start = next_minute_mark(market_now)
 
-        # NOTE: all values are unadjusted
-        candles = get_candles(
-            "NRGU", "1", (market_now - timedelta(days=4)).date(), market_now.date())
+    stage_time = next_interval_start - timedelta(seconds=10)
+    # wait 1s extra to ensure candle is built
+    trade_time = next_interval_start + timedelta(seconds=1)
 
-        rsi = get_rsi(candles)
-        williamsr = get_williamsr(candles)
+    # 1. before each interval, fetch account/position state
+    wait_until(stage_time)
 
-        #
-        # Sizing
-        #
-        target_account_usage = 0.95  # TODO: when limits implemented, this can be 1.0
-        _limit_price = candles[-1]["close"]
-        target_quantity = int((float(account["cash"]) *
-                               target_account_usage) // _limit_price)
+    account = get_account()
+    cash = float(account["cash"])
+    print(f"{stage_time} {cash=}")
 
-        #
-        # Execute strategy
-        #
+    position = get_current_position(symbol)
+    print(f"{stage_time} position={json.dumps(position, indent=2)}")
 
-        buy_reason = rsi < 30 and williamsr < -80
-        sell_reason = rsi > 70 and williamsr > -20
+    # 2. at each minute, gather new candle's data
 
-        if not position and buy_reason:
-            # TODO: support premarket, aftermarket
-            print(f"buying, {rsi=} {williamsr=} {target_quantity=}")
-            buy_symbol_market(symbol, target_quantity)
+    wait_until(trade_time)
 
-        elif position and sell_reason:
-            position_quantity = float(position["qty"])
-            print(f"selling, {rsi=} {williamsr=} {position_quantity=}")
-            sell_symbol_market(symbol, position_quantity)
+    # NOTE: all values are unadjusted
+    candles = get_candles(
+        "NRGU", "1", (trade_time - timedelta(days=4)).date(), trade_time.date())
 
-        else:
-            print(f"no action, {rsi=} {williamsr=}")
+    rsi = get_rsi(candles)
+    williamsr = get_williamsr(candles)
+
+    #
+    # Sizing
+    #
+    target_account_usage = 0.95  # TODO: when limits implemented, this can be 1.0
+    _limit_price = candles[-1]["close"]
+    target_quantity = int((float(account["cash"]) *
+                           target_account_usage) // _limit_price)
+
+    #
+    # Execute strategy
+    #
+
+    buy_reason = rsi < 30 and williamsr < -80
+    sell_reason = rsi > 70 and williamsr > -20
+
+    if not position and buy_reason:
+        # TODO: support premarket, aftermarket
+        print(f"{trade_time} buying, {rsi=:.1f} {williamsr=:.1f} {target_quantity=}")
+        buy_symbol_market(symbol, target_quantity)
+
+    elif position and sell_reason:
+        position_quantity = float(position["qty"])
+        print(f"{trade_time} selling, {rsi=:.1f} {williamsr=:.1f} {position_quantity=}")
+        sell_symbol_market(symbol, position_quantity)
+
+    else:
+        print(f"{trade_time} no action, {rsi=:.1f} {williamsr=:.1f}")
 
 
 def main():
