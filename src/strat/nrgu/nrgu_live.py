@@ -2,7 +2,7 @@
 # To read ta-lib docs for a function (to see parameters like windows/timeperiods), do:
 #   >>> from talib import RSI; print(RSI.__doc__)
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import traceback
 
 import numpy as np
@@ -55,13 +55,10 @@ def get_williamsr(candles):
 
 #
 # Differences between this and backtest
-#
-# 1. live does not execute trades in extended hours (requires limit orders)
-# 2. live calculation of RSI and WILLR will not consider previous trading day's candles early in the day
 # 3. live has sizing issues with the broker because of cash settling, cannot do all-in sizing (or in small margin accounts will have PDT issues)
 # 4. slippage (NRGU is fairly low volume)
 def loop(symbol: str):
-    while True:
+    while now().time() < time(16, 1):
         try:
             execute_phases(symbol)
         except Exception as e:
