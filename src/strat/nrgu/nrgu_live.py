@@ -63,6 +63,7 @@ def loop(symbol: str):
             execute_phases(symbol)
         except Exception as e:
             print(f"{traceback.format_exc(e)}")
+    print("Loop is finished.")
 
 
 def execute_phases(symbol: str):

@@ -89,6 +89,12 @@ case $action in
         $python_exec -c 'from src.strat.bracketing.bracketing import main; main()'
         ;;
 
+    # TODO: refresh TD tokens continuously
+    # Strategy: Minion (NRGU 1m)
+    "minion")
+        $python_exec -c 'from src.strat.nrgu.nrgu_live import main; main()'
+        ;;
+
     # Operations
     "rotate-logs")
         if [[ -f $log_path.$(date +%Y-%m-%d) ]]; then
