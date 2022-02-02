@@ -128,6 +128,7 @@ def execute_phases(symbol: str):
 
 def main():
     symbol = "NRGU"
+    print(f"Starting {symbol} live trading")
     loop(symbol)
 
 
