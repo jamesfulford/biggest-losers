@@ -23,14 +23,6 @@ function fail_script() {
 }
 
 #
-# check things are installed
-#
-which python3 || fail_script "could not find 'python3'"
-which pip3 || fail_script "could not find 'pip3'"
-
-pip3 install -r requirements.txt || fail_script "failed to install requirements.txt"
-
-#
 # check creds exist
 #
 test -f $DATA_DIR/inputs/.env || fail_script "could not find $DATA_DIR/inputs/.env"

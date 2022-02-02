@@ -1,5 +1,12 @@
 #!/bin/bash
 
+
+current_dir=`pwd`
+ENV_NAME=`basename $current_dir`
+PARENT_DIR=`dirname $current_dir`
+DATA_DIR=$PARENT_DIR/$ENV_NAME-data
+
+
 function alpaca () {
     local verb="$1"
     local url_path="$2"
@@ -7,7 +14,7 @@ function alpaca () {
     echo "$verb $url_path"
     shift 2
 
-    curl --silent -X $verb \
+    . $DATA_DIR/inputs/.env && curl --silent -X $verb \
         -H "APCA-API-KEY-ID: $APCA_API_KEY_ID" \
         -H "APCA-API-SECRET-KEY: $APCA_API_SECRET_KEY" \
         ${ALPACA_URL}${url_path} \

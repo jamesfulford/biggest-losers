@@ -7,9 +7,14 @@ else
     suspend_trade="true"
 fi
 
+current_dir=`pwd`
+ENV_NAME=`basename $current_dir`
+PARENT_DIR=`dirname $current_dir`
+DATA_DIR=$PARENT_DIR/$ENV_NAME-data
+
 echo "suspend_trade: $suspend_trade"
 
-curl --silent --fail -X PATCH \
+. $DATA_DIR/inputs/.env && curl --silent --fail -X PATCH \
     -H "APCA-API-KEY-ID: $APCA_API_KEY_ID" \
     -H "APCA-API-SECRET-KEY: $APCA_API_SECRET_KEY" \
     ${ALPACA_URL}/v2/account/configurations \
