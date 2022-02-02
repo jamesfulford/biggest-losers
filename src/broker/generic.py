@@ -1,7 +1,7 @@
 import os
 
 
-broker_name = os.environ.get('BROKER', "td")
+broker_name = os.environ.get('BROKER')
 
 if broker_name == "alpaca":
     import src.broker.alpaca as alpaca
@@ -21,3 +21,6 @@ elif broker_name == "td":
     get_positions = td.get_positions
     get_account = td.get_account
     get_filled_orders = td.get_filled_orders
+else:
+    print(f"ERROR: BROKER '{broker_name}' not supported. Exiting...")
+    exit(1)
