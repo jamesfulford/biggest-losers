@@ -1,7 +1,7 @@
 import os
 
 
-DRY_RUN = 'DRY_RUN' in os.environ
+DRY_RUN = bool(os.environ.get("DRY_RUN", ""))
 if DRY_RUN:
     print('DRY RUN, will not execute any trades')
 else:
