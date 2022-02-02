@@ -5,10 +5,14 @@ def get_paths(target_environment_name=None):
     app_dir = os.path.abspath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), '..'))
 
-    current_environment_name = os.path.basename(app_dir)
-    environment_root_dir = os.path.abspath(os.path.join(app_dir, '..'))
-    data_dir = os.path.join(
-        environment_root_dir, current_environment_name + '-data')
+    if app_dir == "/app":
+        current_environment_name = "docker"
+        data_dir = "/data"
+    else:
+        current_environment_name = os.path.basename(app_dir)
+        environment_root_dir = os.path.abspath(os.path.join(app_dir, '..'))
+        data_dir = os.path.join(
+            environment_root_dir, current_environment_name + '-data')
 
     if target_environment_name is not None:
         data_dir = os.path.join(

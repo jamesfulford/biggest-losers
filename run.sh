@@ -9,25 +9,46 @@ DATA_DIR=$PARENT_DIR/$ENV_NAME-data
 
 log_path=$DATA_DIR/logs/run.log
 
+export GIT_COMMIT=`git rev-parse --short HEAD`
+
 env_file=${ENV_FILE:-"$DATA_DIR/inputs/.env"}
-source $env_file
 
-# select correct python command (python3.9 manually installed on server, python3 on my laptop)
-python_exec=python3
-py3_version=`$python_exec --version`
-if [[ $py3_version != *"3.9"* ]]; then
-    python_exec=python3.9
-fi
+# .env files are currently valid bash scripts, using `export` and quotes to set secrets.
+# we are switching to docker run --env-file, which does not want `export` and will use quotes literally.
+# TODO: stop rewriting .env files once all `export ` are removed
+sed "s/^export //" "$env_file" > "$env_file.tmp"
+mv "$env_file.tmp" "$env_file"
 
-# 
-# Execute action
-#
+sed "s/\"//g" "$env_file" > "$env_file.tmp"
+mv "$env_file.tmp" "$env_file"
+
+# run python inside container
+# 1. same local and on server
+# 2. easier to install ta-lib (royal pain due to C being awful)
+function run () {
+    test ! -z "$(docker images -q talib-py-runner)" || docker build -t talib-py-runner .
+    docker run -i --rm \
+        --env-file "$env_file" \
+        --env "GIT_COMMIT=$GIT_COMMIT" \
+        --env "DRY_RUN=$DRY_RUN" \
+        -v "$DATA_DIR":/data \
+        -v "$APP_DIR":/app \
+        talib-py-runner "$@"
+}
+
+function run_python () {
+    run python3 -u "$@"
+}
 
 function fail_script() {
     echo "ERROR $1"
     exit 1
 }
 
+
+#
+# TD tokens handling
+#
 function refresh_tokens() {
     container_name=$1
     current_dir=`pwd`
@@ -50,8 +71,6 @@ function refresh_tokens_if_needed() {
 
 action="$1"
 
-export GIT_COMMIT=`git rev-parse --short HEAD`
-
 case $action in
     #
     # Server actions
@@ -66,33 +85,33 @@ case $action in
     # Strategy: biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
-        $python_exec -c 'from src.strat.losers.stocks import main; main()' "buy"
+        run_python -c 'from src.strat.losers.stocks import main; main()' "buy"
         ;;
     "biggest-loser-stocks-sell")
         refresh_tokens_if_needed
-        $python_exec -c 'from src.strat.losers.stocks import main; main()' "sell"
+        run_python -c 'from src.strat.losers.stocks import main; main()' "sell"
         ;;
 
     # Strategy: biggest loser warrants
     "biggest-loser-warrants-buy")
         refresh_tokens_if_needed
-        $python_exec -c 'from src.strat.losers.warrants import main; main()' "buy"
+        run_python -c 'from src.strat.losers.warrants import main; main()' "buy"
         ;;
     "biggest-loser-warrants-sell")
         refresh_tokens_if_needed
-        $python_exec -c 'from src.strat.losers.warrants import main; main()' "sell"
+        run_python -c 'from src.strat.losers.warrants import main; main()' "sell"
         ;;
 
     # Strategy: daily bracketing on NRGU
     "bracketing")
         # TODO: refresh TD tokens continuously when TD support added for bracketing
-        $python_exec -c 'from src.strat.bracketing.bracketing import main; main()'
+        run_python -c 'from src.strat.bracketing.bracketing import main; main()'
         ;;
 
     # TODO: refresh TD tokens continuously
     # Strategy: Minion (NRGU 1m)
     "minion")
-        $python_exec -c 'from src.strat.nrgu.nrgu_live import main; main()'
+        run_python -c 'from src.strat.nrgu.nrgu_live import main; main()'
         ;;
 
     # Operations
@@ -109,7 +128,7 @@ case $action in
     # Performance
     "dump-orders")
         refresh_tokens_if_needed
-        $python_exec -c "import src.reporting.dump_orders"
+        run_python -c "import src.reporting.dump_orders"
         echo "(return code was $?)"
         ;;
 
@@ -120,13 +139,13 @@ case $action in
         for script in $(ls $APP_DIR/src/scan/*.py | grep -v __init__); do
             module=`basename $script .py`
             echo "# running $module"
-            $python_exec -c "from src.scan.$module import prepare_csv; prepare_csv()"
+            run_python -c "from src.scan.$module import prepare_csv; prepare_csv()"
             echo
         done
         ;;
 
     "prepare-cache")
-        $python_exec prepare_cache.py --end today --start end-2  # polygon free tier limits data to 2 years back
+        run_python prepare_cache.py --end today --start end-2  # polygon free tier limits data to 2 years back
         ;;
 
     "collector-nightly")
@@ -150,7 +169,7 @@ case $action in
         ;;
 
     "analyze-performance")
-        $python_exec performance.py
+        run_python performance.py
         ;;
 
     "build-drive-outputs")
