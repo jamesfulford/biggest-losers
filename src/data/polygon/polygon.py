@@ -48,7 +48,8 @@ def _get_polygon_with_next_url_pagination(url: str, **initial_kwargs):
 @lru_cache(maxsize=100)
 def get_tickers_by_type(t: str, day: date):
     # TODO: add to cache primer script
-    should_cache = day < today()
+    # assuming will not change intraday, would hate to rebuild this cache every time
+    should_cache = day <= today()
     cache_key = f"tickers_{t}_{day}"
 
     if should_cache:
