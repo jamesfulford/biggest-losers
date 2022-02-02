@@ -61,7 +61,7 @@ def buy_biggest_losers(
 
     account = get_account()
     effective_cash = float(account["cash"]) * cash_percent_to_use
-    nominal = effective_cash / len(losers)
+    nominal = effective_cash / len(losers) if losers else 0
 
     order_intentions = []
     for loser in losers:
