@@ -63,12 +63,9 @@ def loop(symbol: str):
         try:
             execute_phases(symbol)
         except HTTPError as e:
-            if e.response.status_code == 403:
-                print(f"{now()} HTTP 403 {e.response.text}")
-            else:
-                raise e
+            print(f"{now()} HTTP {e.response.status_code} {e.response.text}")
         except Exception as e:
-            print(e)
+            print(f"{now} {e}")
     print("Loop is finished.")
 
 
