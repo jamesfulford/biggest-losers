@@ -5,47 +5,66 @@ from functools import lru_cache
 
 from src.broker.dry_run import DRY_RUN
 from src.csv_dump import write_csv
+from src.jsonl_dump import append_jsonl
 from src.pathing import get_paths
 
 
 MARKET_TZ = ZoneInfo("America/New_York")
 
 
-def get_order_intentions_csv_path(today, environment_name=None):
-    return get_paths(target_environment_name=environment_name)['data']['outputs']['order_intentions_csv'].format(today=today)
+def get_order_intentions_csv_path(algo_name: str, environment_name=None):
+    return get_paths(target_environment_name=environment_name)['data']['outputs']['order_intentions_csv'].format(algo_name=algo_name)
 
 
-def record_intentions(today: date, order_intentions: list, metadata: dict = {}):
+def convert_intention_to_format(intention: dict, metadata: dict = {}):
+    now = intention['datetime'].astimezone(MARKET_TZ)
+    ticker = intention['symbol']
+    quantity = intention['quantity']
+    price = intention['price']
+    side = intention['side']
+
+    row = copy(intention)
+    del row["datetime"]
+    del row["symbol"]
+    del row["quantity"]
+    del row["price"]
+    del row["side"]
+
+    row["Date"] = now.strftime('%Y-%m-%d')
+    row["Time"] = now.strftime('%H:%M:%S')
+    row["Symbol"] = ticker
+    row["Quantity"] = quantity
+    row["Price"] = price
+    row["Side"] = side.upper()
+
+    row.update(metadata)
+    return row
+
+
+def log_intentions(algo_name: str, intentions: list[dict], metadata: dict = {}):
     path = None
     if DRY_RUN:
         print("DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
     else:
-        path = get_order_intentions_csv_path(today)
+        path = get_order_intentions_csv_path(algo_name)
+
+    metadata.update({"algo_name": algo_name})
+
+    append_jsonl(path, [convert_intention_to_format(
+        intention, metadata) for intention in intentions])
+
+
+def record_intentions(today: date, order_intentions: list, metadata: dict = {}):
+    # TODO: remove this, replace with log_intentions in losers script
+    path = None
+    if DRY_RUN:
+        print("DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
+    else:
+        path = get_order_intentions_csv_path(today.isoformat())
 
     def yield_lines(lines):
         for line in lines:
-            now = line['datetime'].astimezone(MARKET_TZ)
-            ticker = line['symbol']
-            quantity = line['quantity']
-            price = line['price']
-            side = line['side']
-
-            row = copy(line)
-            del row["datetime"]
-            del row["symbol"]
-            del row["quantity"]
-            del row["price"]
-            del row["side"]
-
-            row["Date"] = now.strftime('%Y-%m-%d')
-            row["Time"] = now.strftime('%H:%M:%S')
-            row["Symbol"] = ticker
-            row["Quantity"] = quantity
-            row["Price"] = price
-            row["Side"] = side.upper()
-
-            row.update(metadata)
-            yield row
+            yield convert_intention_to_format(line, metadata)
 
     write_csv(path, yield_lines(order_intentions), headers=[
               "Date", "Time", "Symbol", "Quantity", "Price", "Side"])

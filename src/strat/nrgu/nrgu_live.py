@@ -8,6 +8,7 @@ import traceback
 import numpy as np
 from talib.abstract import RSI, WILLR
 from requests.exceptions import HTTPError
+from src.intention import log_intentions
 
 from src.trading_day import now
 from src.wait import wait_until
@@ -108,25 +109,63 @@ def execute_phases(symbol: str):
     # Sizing
     #
     target_account_usage = 0.95  # TODO: when limits implemented, this can be 1.0
+    # TODO: sizing configurable
     _limit_price = candles[-1]["close"]
     target_quantity = int((float(account["cash"]) *
                            target_account_usage) // _limit_price)
+
+    rsi_buy_lt_threshold = 40
+    williamsr_buy_lt_threshold = -70
+    buy_reason = rsi < rsi_buy_lt_threshold and williamsr < williamsr_buy_lt_threshold
+
+    rsi_sell_gt_threshold = 70
+    williamsr_sell_gt_threshold = -30
+    sell_reason = rsi > rsi_sell_gt_threshold and williamsr > williamsr_sell_gt_threshold
+
+    intention = {
+        "datetime": now(),
+        "symbol": symbol,
+        "price": _limit_price,
+    }
+    metadata = {
+        # account state
+        "cash": cash,
+        "account": account,
+        "position": position,
+        # TODO: sizing configuration
+        # symbol current values
+        "last_candle": candles[-1],
+        "rsi": rsi,
+        "williamsr": williamsr,
+        # strategy configuration
+        "rsi_buy_lt_threshold": rsi_buy_lt_threshold,
+        "williamsr_buy_lt_threshold": williamsr_buy_lt_threshold,
+        "rsi_sell_gt_threshold": rsi_sell_gt_threshold,
+        "williamsr_sell_gt_threshold": williamsr_sell_gt_threshold,
+    }
 
     #
     # Execute strategy
     #
 
-    buy_reason = rsi < 40 and williamsr < -70
-    sell_reason = rsi > 70 and williamsr > -30
-
     if not position and buy_reason:
         # TODO: support premarket, aftermarket
         print(f"{trade_time} buying, {rsi=:.1f} {williamsr=:.1f} {target_quantity=}")
+
+        intention["side"] = "buy"
+        intention["quantity"] = target_quantity
+        log_intentions("minion", [intention], metadata)
+
         buy_symbol_market(symbol, target_quantity)
 
     elif position and sell_reason:
         position_quantity = float(position["qty"])
         print(f"{trade_time} selling, {rsi=:.1f} {williamsr=:.1f} {position_quantity=}")
+
+        intention["side"] = "sell"
+        intention["quantity"] = position_quantity
+        log_intentions("minion", [intention], metadata)
+
         sell_symbol_market(symbol, position_quantity)
 
     else:
