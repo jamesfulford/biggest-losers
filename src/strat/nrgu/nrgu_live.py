@@ -7,6 +7,7 @@ import traceback
 
 import numpy as np
 from talib.abstract import RSI, WILLR
+from requests.exceptions import HTTPError
 
 from src.trading_day import now
 from src.wait import wait_until
@@ -61,7 +62,13 @@ def loop(symbol: str):
     while now().time() < time(16, 1):
         try:
             execute_phases(symbol)
+        except HTTPError as e:
+            if e.response.status_code == 403:
+                print(f"{now()} HTTP 403 {e.response.text}")
+            else:
+                raise e
         except Exception as e:
+            print(e)
             print(f"{traceback.format_exc(e)}")
     print("Loop is finished.")
 
