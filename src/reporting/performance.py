@@ -172,7 +172,7 @@ def write_performance_csv(environment):
 
 if __name__ == "__main__":
 
-    for environment in ["paper", "prod", "td-cash", "intrac1"]:
+    for environment in ["paper", "prod", "td-cash", "cash1", "intrac1"]:
         print(f"Dumping performance csv for {environment}...")
         print()
         write_performance_csv(environment)

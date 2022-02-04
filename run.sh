@@ -158,7 +158,7 @@ case $action in
     "sync-data")
         ./scripts/deploy/sync-collector-data-back.sh collector
 
-        for e in collector paper prod td-cash intrac1; do
+        for e in collector paper prod td-cash cash1 intrac1; do
             echo
             echo Syncing $e...
             until ./scripts/deploy/sync-data-back.sh $e; do
@@ -192,7 +192,7 @@ case $action in
 
     "prod-deploy")
         echo "Deploying..."
-        for e in prod td-cash intrac1 collector; do
+        for e in prod td-cash cash1 intrac1 collector; do
             ./scripts/deploy/send-to-server.sh $e || fail_script "Failed to deploy $e"
         done
         ;;
