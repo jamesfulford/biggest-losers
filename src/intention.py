@@ -56,6 +56,7 @@ def log_intentions(algo_name: str, intentions: list[dict], metadata: dict = {}):
 
 def record_intentions(today: date, order_intentions: list, metadata: dict = {}):
     # TODO: remove this, replace with log_intentions in losers script
+    # TODO: to remove this, gotta update reporting scripts
     path = None
     if DRY_RUN:
         print("DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
