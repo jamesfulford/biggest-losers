@@ -75,10 +75,10 @@ esac
 #
 # check crontab entries (don't suggest doing locally and on server for same broker creds, can get confusing)
 #
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-sell >> $DATA_DIR/logs/run.log 2>&1"
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-buy >> $DATA_DIR/logs/run.log 2>&1"
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders >> $DATA_DIR/logs/run.log 2>&1"
-assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
+# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-sell >> $DATA_DIR/logs/run.log 2>&1"
+# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-buy >> $DATA_DIR/logs/run.log 2>&1"
+# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders >> $DATA_DIR/logs/run.log 2>&1"
+# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
 
 #
 # assert that scripts still run, but don't execute any trades for this test
@@ -86,7 +86,7 @@ assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
 DRY_RUN=1 ./run.sh biggest-loser-stocks-buy || fail_script "failed to run biggest-loser-stocks-buy"
 DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run biggest-loser-stocks-sell"
 
-DRY_RUN=1 ./run.sh biggest-loser-warrants-buy || fail_script "failed to run biggest-loser-warrants-buy"
-DRY_RUN=1 ./run.sh biggest-loser-warrants-sell || fail_script "failed to run biggest-loser-warrants-sell"
+# DRY_RUN=1 ./run.sh biggest-loser-warrants-buy || fail_script "failed to run biggest-loser-warrants-buy"
+# DRY_RUN=1 ./run.sh biggest-loser-warrants-sell || fail_script "failed to run biggest-loser-warrants-sell"
 
 ./run.sh dump-orders || fail_script "failed to run dump-orders"
