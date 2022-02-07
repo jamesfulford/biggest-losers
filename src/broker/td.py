@@ -2,21 +2,10 @@ from datetime import datetime
 import json
 import os
 import requests
-import logging
-from http.client import HTTPConnection  # py3
 
 
 from src.pathing import get_paths
 from src.broker.dry_run import DRY_RUN
-
-
-log = logging.getLogger('urllib3')  # works
-
-log.setLevel(logging.DEBUG)  # needed
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-log.addHandler(ch)
-HTTPConnection.debuglevel = 1
 
 
 def get_account_id():
