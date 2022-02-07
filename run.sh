@@ -111,7 +111,7 @@ case $action in
     # TODO: refresh TD tokens continuously
     # Strategy: Minion (NRGU 1m)
     "minion")
-        run_python -c 'from src.strat.nrgu.nrgu_live import main; main()'
+        run_python -c 'from src.strat.minion.live import main; main()'
         ;;
 
     # Operations
