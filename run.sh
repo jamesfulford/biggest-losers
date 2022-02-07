@@ -13,15 +13,6 @@ export GIT_COMMIT=`git rev-parse --short HEAD`
 
 env_file=${ENV_FILE:-"$DATA_DIR/inputs/.env"}
 
-# .env files are currently valid bash scripts, using `export` and quotes to set secrets.
-# we are switching to docker run --env-file, which does not want `export` and will use quotes literally.
-# TODO: stop rewriting .env files once all `export ` are removed
-sed "s/^export //" "$env_file" > "$env_file.tmp"
-mv "$env_file.tmp" "$env_file"
-
-sed "s/\"//g" "$env_file" > "$env_file.tmp"
-mv "$env_file.tmp" "$env_file"
-
 # run python inside container
 # 1. same local and on server
 # 2. easier to install ta-lib (royal pain due to C being awful)
