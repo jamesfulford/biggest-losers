@@ -44,7 +44,7 @@ function refresh_tokens() {
     container_name=$1
     current_dir=`pwd`
     exit_code=0
-    cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh "$container_name" > /dev/null 2>&1 || exit_code=1
+    cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh "$container_name" || exit_code=1
     if [[ $exit_code -eq 1 ]]; then
         echo "ERROR failed to refresh tokens on first try, trying again with log output enabled..."
         ./refresh-tokens.sh "$container_name" || fail_script "Failed to refresh tokens"
@@ -70,7 +70,7 @@ case $action in
     # - puts rules in file in codebase, stop editing crontab on server
     # - can fix timezone issue
     "refresh-tokens")
-        refresh_tokens_if_needed
+        refresh_tokens
         ;;
 
     # Strategy: biggest loser stocks
