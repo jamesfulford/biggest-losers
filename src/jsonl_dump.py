@@ -1,4 +1,5 @@
 
+import logging
 from typing import Union
 import json
 import datetime
@@ -14,7 +15,7 @@ class DateTimeEncoder(json.JSONEncoder):
 def append_jsonl(path: Union[str, None], lines: list[dict]):
     lines = list(lines)
     if not lines:
-        print(f"WARNING: no lines to write to csv {path}")
+        logging.warning(f"no lines to write to csv {path}")
 
     f = open(path, "a") if path else None
 

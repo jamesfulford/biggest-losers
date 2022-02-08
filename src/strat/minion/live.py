@@ -3,7 +3,7 @@
 #   >>> from talib import RSI; print(RSI.__doc__)
 import json
 from datetime import datetime, timedelta, time
-import traceback
+import logging
 
 
 import numpy as np
@@ -15,6 +15,10 @@ from src.trading_day import now
 from src.wait import wait_until
 from src.data.finnhub.finnhub import get_candles
 from src.broker.generic import get_positions, get_account, buy_symbol_market, sell_symbol_market
+
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)-25s %(levelname)-8s %(message)s")
 
 
 def next_minute_mark(dt: datetime) -> datetime:
@@ -65,11 +69,11 @@ def loop(symbol: str):
         try:
             execute_phases(symbol)
         except HTTPError as e:
-            print(f"{now()} HTTP {e.response.status_code} {e.response.text}")
+            logging.exception(
+                f"HTTP {e.response.status_code} {e.response.text}")
         except Exception as e:
-            track = traceback.format_exc()
-            print(f"{now()} {track}")
-    print("Loop is finished.")
+            logging.exception(f"Unexpected Exception")
+    logging.info("Loop is finished.")
 
 
 def get_target_quantity(cash: float, target_price: float) -> int:
@@ -95,10 +99,11 @@ def execute_phases(symbol: str):
 
     account = get_account()
     cash = float(account["cash"])
-    print(f"{stage_time} {cash=}")
+    logging.info(f"{stage_time} {cash=}")
 
     position = get_current_position(symbol)
-    print(f"{stage_time} position={json.dumps(position, indent=2)}")
+    logging.info(
+        f"{stage_time} position={json.dumps(position, sort_keys=True, indent=2)}")
 
     # 2. at each minute, gather new candle's data
 
@@ -150,7 +155,7 @@ def execute_phases(symbol: str):
 
     if not position and buy_reason:
         # TODO: support premarket, aftermarket
-        print(f"{now()} buying, {rsi=:.1f} {williamsr=:.1f} {target_quantity=}")
+        logging.info(f"buying, {rsi=:.1f} {williamsr=:.1f} {target_quantity=}")
 
         intention["side"] = "buy"
         intention["quantity"] = target_quantity
@@ -160,7 +165,8 @@ def execute_phases(symbol: str):
 
     elif position and sell_reason:
         position_quantity = float(position["qty"])
-        print(f"{now()} selling, {rsi=:.1f} {williamsr=:.1f} {position_quantity=}")
+        logging.info(
+            f"selling, {rsi=:.1f} {williamsr=:.1f} {position_quantity=}")
 
         intention["side"] = "sell"
         intention["quantity"] = position_quantity
@@ -169,12 +175,12 @@ def execute_phases(symbol: str):
         sell_symbol_market(symbol, position_quantity)
 
     else:
-        print(f"{now()} no action, {rsi=:.1f} {williamsr=:.1f}")
+        logging.info(f"no action, {rsi=:.1f} {williamsr=:.1f}")
 
 
 def main():
     symbol = "NRGU"
-    print(f"Starting {symbol} live trading")
+    logging.info(f"Starting {symbol} live trading")
     loop(symbol)
 
 

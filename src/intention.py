@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import logging
 from zoneinfo import ZoneInfo
 from copy import copy
 from functools import lru_cache
@@ -44,7 +45,8 @@ def convert_intention_to_format(intention: dict, metadata: dict = {}):
 def log_intentions(algo_name: str, intentions: list[dict], metadata: dict = {}):
     path = None
     if DRY_RUN:
-        print("DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
+        logging.warning(
+            "DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
     else:
         path = get_order_intentions_csv_path(algo_name)
 
@@ -59,7 +61,8 @@ def record_intentions(today: date, order_intentions: list, metadata: dict = {}):
     # TODO: to remove this, gotta update reporting scripts
     path = None
     if DRY_RUN:
-        print("DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
+        logging.warning(
+            "DRY_RUN: not writing order intentions (may overwrite), instead writing to stdout")
     else:
         path = get_order_intentions_csv_path(today.isoformat())
 
