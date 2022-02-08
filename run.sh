@@ -190,7 +190,7 @@ case $action in
 
     "prod-deploy")
         echo "Deploying..."
-        for e in prod td-cash cash1 intrac1 collector; do
+        for e in prod cash1 intrac1 collector; do
             until ./scripts/deploy/send-to-server.sh $e; do
                 echo "rsync failed, retrying in 30 seconds..."
                 sleep 30
