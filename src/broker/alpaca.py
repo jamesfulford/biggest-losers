@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta
 from time import sleep
@@ -20,7 +21,7 @@ APCA_HEADERS = {
 def _get_alpaca(url):
     response = requests.get(ALPACA_URL + url, headers=APCA_HEADERS)
     if response.status_code == 429:
-        print("Rate limited, waiting...")
+        logging.info("Rate limited, waiting...")
         sleep(5)
         return _get_alpaca(url)
     response.raise_for_status()
@@ -32,7 +33,7 @@ def buy_symbol_at_close(symbol, quantity):
     Buy a symbol at close
     """
     if DRY_RUN:
-        # print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
         return
 
     response = requests.post(
@@ -56,7 +57,7 @@ def buy_symbol_market(symbol, quantity):
     Buy a symbol now
     """
     if DRY_RUN:
-        # print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
         return
 
     response = requests.post(
@@ -79,7 +80,7 @@ def sell_symbol_market(symbol, quantity):
     Sell a symbol now
     """
     if DRY_RUN:
-        # print(f'DRY_RUN: sell_symbol_market({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: sell_symbol_market({symbol}, {quantity})')
         return
 
     response = requests.post(
@@ -102,7 +103,7 @@ def sell_symbol_at_open(symbol, quantity):
     Sell a symbol
     """
     if DRY_RUN:
-        # print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
         return
 
     response = requests.post(
@@ -126,7 +127,7 @@ def wait_until_order_filled(order_id: str):
         order = _get_alpaca(f"/v2/orders/{order_id}")
         if order["status"] == "filled":
             return order
-        print(f"{order_id} status: {order['status']}, waiting...")
+        logging.debug(f"{order_id} status: {order['status']}, waiting...")
         sleep(1)
 
 
@@ -218,7 +219,7 @@ def get_filled_orders(start: datetime, end: datetime):
     limit = 500
 
     def _fetch_closed_orders(after: datetime, until: datetime):
-        print(f"fetching up to {limit} closed orders after {after}")
+        logging.debug(f"fetching up to {limit} closed orders after {after}")
         results = _get_alpaca(
             f"/v2/orders?status=closed&after={after}&until={until}&direction=asc&limit={limit}"
         )
@@ -255,7 +256,8 @@ def get_filled_orders(start: datetime, end: datetime):
             id_set.add(result["id"])
 
     # filled orders are sorted from earliest to latest
-    deduped_results = list(filter(lambda x: x["status"] == "filled", deduped_results))
+    deduped_results = list(
+        filter(lambda x: x["status"] == "filled", deduped_results))
 
     # should already be sorted, but put this here to be safe
     deduped_results.sort(key=lambda x: x["submitted_at"])

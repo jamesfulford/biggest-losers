@@ -1,3 +1,4 @@
+import logging
 import os
 
 
@@ -22,5 +23,5 @@ elif broker_name == "td":
     get_account = td.get_account
     get_filled_orders = td.get_filled_orders
 else:
-    print(f"ERROR: BROKER '{broker_name}' not supported. Exiting...")
+    logging.fatal(f"BROKER '{broker_name}' not supported. Exiting...")
     exit(1)

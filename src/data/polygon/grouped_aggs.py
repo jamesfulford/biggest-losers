@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import logging
 import time
 import requests
 from functools import lru_cache
@@ -112,14 +113,15 @@ def get_cache_prepared_date_range_with_leadup_days(days: int):
 def prepare_cache_grouped_aggs(start: date, end: date) -> None:
     if _cache_is_missing_days(start, end):
         if not _should_skip_clearing_cache(start, end):
-            print("cache is not complete and must be cleared")
+            logging.warning("cache is not complete and must be cleared")
             clear_json_cache("grouped_aggs_")
         else:
-            print("cache is not complete, but we can continue building it")
+            logging.info(
+                "cache is not complete, but we can continue building it")
 
         _refetch_cache(start, end)
     else:
-        print("cache is all present, will not refetch")
+        logging.info("cache is all present, will not refetch")
 
 
 @lru_cache(maxsize=30)
@@ -145,7 +147,7 @@ def fetch_grouped_aggs_with_cache(day: date, skip_cache=False):
 
 def fetch_grouped_aggs(day: date):
     strftime = day.strftime("%Y-%m-%d")
-    print(f"fetching grouped aggs for {strftime}")
+    logging.info(f"fetching grouped aggs for {strftime}")
 
     while True:
         # TODO: adjusted=false, do the adjustments on our side (more cache hits)
@@ -157,7 +159,7 @@ def fetch_grouped_aggs(day: date):
             headers={"Authorization": f"Bearer {get_polygon_api_key()}"},
         )
         if response.status_code == 429:
-            print("Rate limit exceeded, waiting...")
+            logging.info("Rate limit exceeded, waiting...")
             time.sleep(10)
             continue
         response.raise_for_status()

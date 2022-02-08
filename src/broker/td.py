@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import logging
 import os
 import requests
 
@@ -216,14 +217,14 @@ def _build_order(order):
     }
     """
     if len(order.get('orderLegCollection', [])) != 1:
-        print(f"WARNING: {order['orderId']} has multiple legs, skipping")
+        logging.warning(f"{order['orderId']} has multiple legs, skipping")
         return None
 
     instruction = order['orderLegCollection'][0]
 
     if "orderActivityCollection" not in order:
-        print(
-            f"WARNING: {order['orderId']} has no orderActivityCollection, skipping")
+        logging.warning(
+            f"{order['orderId']} has no orderActivityCollection, skipping")
         return None
 
     average_fill_price = _get_average_fill_price(order)
@@ -302,7 +303,7 @@ def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
     symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
-        # print(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
         return
 
     response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
@@ -332,7 +333,7 @@ def buy_symbol_market(symbol: str, quantity: int, account_id: str = None):
     symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
-        # print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
         return
 
     response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
@@ -362,7 +363,7 @@ def sell_symbol_market(symbol: str, quantity: int, account_id: str = None):
     symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
-        # print(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
         return
 
     response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
@@ -399,7 +400,7 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
     symbol = normalize_symbol(symbol)
 
     if DRY_RUN:
-        # print(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
+        # logging.warning(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
         return
 
     response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
@@ -431,14 +432,15 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
 
 def print_accounts_summary():
     for account in get_accounts():
-        print(
+        logging.info(
             f"  '{account['id']}' (has ${round(account['cash'], 2)} in cash)")
 
 
 try:
     get_account_id()
 except KeyError as e:
-    print(f"ERROR: cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
+    logging.fatal(
+        f"cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
     print_accounts_summary()
     exit(1)
 

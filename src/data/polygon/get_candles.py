@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
@@ -41,7 +42,7 @@ def get_candles(
         if cached:
             return _convert_candles_format(cached, resolution)
 
-    print(
+    logging.info(
         f"fetching resolution={resolution} candles for {symbol} from {start} to {end}"
     )
     data = _get_candles(symbol, resolution, start, end, adjusted=adjusted)
@@ -66,7 +67,7 @@ def _get_candles(symbol: str, resolution: str, start: date, end: date, adjusted=
     )
 
     if response.status_code == 429:
-        print("Got 429, rate limiting, waiting 10s before retrying")
+        logging.info("Got 429, rate limiting, waiting 10s before retrying")
         time.sleep(10)
         return _get_candles(symbol, resolution, start, end, adjusted=adjusted)
 

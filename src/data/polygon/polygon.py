@@ -1,5 +1,6 @@
 from datetime import date
 from functools import lru_cache
+import logging
 import os
 from time import sleep
 
@@ -20,7 +21,7 @@ def _get_polygon(url: str, **kwargs):
         response = requests.get(
             url, **kwargs, headers={"Authorization": f"Bearer {get_polygon_api_key()}"})
         if response.status_code == 429:
-            print(
+            logging.info(
                 f"Rate limit exceeded, {url.replace('https://api.polygon.io', '')}, waiting 10s...")
             sleep(10)
             continue
@@ -57,7 +58,7 @@ def get_tickers_by_type(t: str, day: date):
         if cached:
             return _format_tickers_by_type_response(cached)
 
-    print(f"Fetching tickers with type={t} active on {day}")
+    logging.info(f"Fetching tickers with type={t} active on {day}")
     data = _get_tickers_by_type_raw(t, day)
 
     if should_cache:
@@ -83,8 +84,6 @@ def _format_tickers_by_type_response(tickers: list):
             "share_class_figi": "BBG005P7Q907",
             "last_updated_utc": "2022-01-14T00:00:00Z"
         }"""
-        if "ticker" not in ticker:
-            print(ticker)
         symbol_to_ticker_map[ticker["ticker"]] = ticker
     return symbol_to_ticker_map
 
@@ -119,8 +118,7 @@ def is_ticker_type(ticker: str, t: str, day: date = None):
 
 def is_ticker_one_of(ticker: str, types: tuple, day: date = None):
     if not day:
-        # TODO: do logging levels
-        print("WARNING: 'day' not provided to `is_ticker_one_of`")
+        logging.warning("WARNING: 'day' not provided to `is_ticker_one_of`")
     return any((
         is_ticker_type(ticker, stock_type, day=day)
         for stock_type in types

@@ -78,33 +78,33 @@ case $action in
     # Strategy: biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
-        run_python -c 'from src.strat.losers.stocks import main; main()' "buy"
+        run_python -c 'import src.log; from src.strat.losers.stocks import main; main()' "buy"
         ;;
     "biggest-loser-stocks-sell")
         refresh_tokens_if_needed
-        run_python -c 'from src.strat.losers.stocks import main; main()' "sell"
+        run_python -c 'import src.log; from src.strat.losers.stocks import main; main()' "sell"
         ;;
 
     # Strategy: biggest loser warrants
     "biggest-loser-warrants-buy")
         refresh_tokens_if_needed
-        run_python -c 'from src.strat.losers.warrants import main; main()' "buy"
+        run_python -c 'import src.log; from src.strat.losers.warrants import main; main()' "buy"
         ;;
     "biggest-loser-warrants-sell")
         refresh_tokens_if_needed
-        run_python -c 'from src.strat.losers.warrants import main; main()' "sell"
+        run_python -c 'import src.log; from src.strat.losers.warrants import main; main()' "sell"
         ;;
 
     # Strategy: daily bracketing on NRGU
     "bracketing")
         # TODO: refresh TD tokens continuously when TD support added for bracketing
-        run_python -c 'from src.strat.bracketing.bracketing import main; main()'
+        run_python -c 'import src.log; from src.strat.bracketing.bracketing import main; main()'
         ;;
 
     # TODO: refresh TD tokens continuously
     # Strategy: Minion (NRGU 1m)
     "minion")
-        run_python -c 'from src.strat.minion.live import main; main()'
+        run_python -c 'import src.log; from src.strat.minion.live import main; main()'
         ;;
 
     # Operations
@@ -121,7 +121,7 @@ case $action in
     # Performance
     "dump-orders")
         refresh_tokens_if_needed
-        run_python -c "import src.reporting.dump_orders"
+        run_python -c "import src.log; import src.reporting.dump_orders"
         echo "(return code was $?)"
         ;;
 
@@ -132,7 +132,7 @@ case $action in
         for script in $(ls $APP_DIR/src/scan/*.py | grep -v __init__); do
             module=`basename $script .py`
             echo "# running $module"
-            run_python -c "from src.scan.$module import prepare_csv; prepare_csv()"
+            run_python -c "import src.log; from src.scan.$module import prepare_csv; prepare_csv()"
             echo
         done
         ;;

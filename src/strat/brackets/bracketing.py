@@ -1,4 +1,5 @@
 from datetime import timedelta
+import logging
 
 from requests.models import HTTPError
 from src.strat.brackets.brackets_realtime import execute_brackets
@@ -57,11 +58,11 @@ def main():
 
     wait_until(get_market_open_on_day(market_today))
 
-    print("Waiting for filled order...")
+    logging.info("Waiting for filled order...")
     filled_entry_order = wait_until_order_filled(entry_order["id"])
     filled_price = float(filled_entry_order["filled_avg_price"])
     quantity = int(filled_entry_order["filled_qty"])
-    print(f"Order filled. {filled_price=:.2f}, {quantity=}")
+    logging.info(f"Order filled. {filled_price=:.2f}, {quantity=}")
 
     #
     # 2: brackets
@@ -74,5 +75,5 @@ def main():
     #
     # 3: timebox exit
     #
-    print("Closing position...")
+    logging.info("Closing position...")
     sell_symbol_market(symbol, position["qty"])

@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import json
+import logging
 
 from src.broker.generic import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
 from src.scan.losers import get_all_candidates_on_day
@@ -33,7 +34,7 @@ def buy_biggest_losers(
     cash_percent_to_use = 1.0
     """
     if is_skipped_day(today):
-        print("skipping day")
+        logging.warning("skipping day")
         return
     #
     # Filter losers

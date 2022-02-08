@@ -1,4 +1,5 @@
 from datetime import date
+import logging
 
 from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
@@ -97,9 +98,9 @@ def prepare_csv():
     start = max(start, date(2021, 1, 1))  # TODO: undo
     end = min(end, date(2021, 12, 31))  # TODO: undo
 
-    print("start:", start)
-    print("end:", end)
-    print("estimated trading days:", len(
-        list(generate_trading_days(start, end))))
+    logging.info(f"start: {start}")
+    logging.info(f"end: {end}")
+    logging.info(
+        f"estimated trading days: {len(list(generate_trading_days(start, end)))}")
 
     prepare_biggest_losers_csv(path, start=start, end=end)

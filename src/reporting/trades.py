@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 from zoneinfo import ZoneInfo
 
 
@@ -9,21 +10,21 @@ def build_trade(trade_orders):
     # assume all orders are for same symbol
     # this logic assumes first order is buy and last order is sell and no other orders occured for this symbol in this time
     if len(trade_orders) > 2:
-        print(
-            f'WARNING: more than 2 orders for symbol {symbol} detected, skipping')
+        logging.warning(
+            f'more than 2 orders for symbol {symbol} detected, skipping')
         return
 
     buy_order = trade_orders[0]
     sell_order = trade_orders[-1]
 
     if buy_order["side"] != 'buy':
-        print(
-            f'WARNING: first order for {symbol} is not a buy, skipping')
+        logging.warning(
+            f'first order for {symbol} is not a buy, skipping')
         return
 
     if sell_order["side"] != 'sell':
-        print(
-            f'WARNING: last order for {symbol} is not a sell, skipping')
+        logging.warning(
+            f'last order for {symbol} is not a sell, skipping')
         return
 
     quantity = float(buy_order["quantity"])

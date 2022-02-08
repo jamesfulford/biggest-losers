@@ -5,7 +5,6 @@ import json
 from datetime import datetime, timedelta, time
 import logging
 
-
 import numpy as np
 from talib.abstract import RSI, WILLR
 from requests.exceptions import HTTPError
@@ -15,10 +14,6 @@ from src.trading_day import now
 from src.wait import wait_until
 from src.data.finnhub.finnhub import get_candles
 from src.broker.generic import get_positions, get_account, buy_symbol_market, sell_symbol_market
-
-
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)-25s %(levelname)-8s %(message)s")
 
 
 def next_minute_mark(dt: datetime) -> datetime:

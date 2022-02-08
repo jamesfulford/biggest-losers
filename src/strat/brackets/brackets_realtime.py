@@ -1,4 +1,5 @@
 import json
+import logging
 
 from requests.models import HTTPError
 
@@ -29,10 +30,10 @@ def _execute_brackets(brackets: list, base_price: float, symbol: str, quantity: 
 
         take_profit = round(base_price * (1 + take_profit_percentage), 2)
         stop_loss = round(base_price * (1 - stop_loss_percentage), 2)
-        print(f"Intended brackets: ({stop_loss}, {take_profit})")
+        logging.info(f"Intended brackets: ({stop_loss}, {take_profit})")
 
         if previous_oco_order_id:
-            print("Cancelling previous OCO order...")
+            logging.info("Cancelling previous OCO order...")
             cancel_order(previous_oco_order_id)
 
         try:
@@ -42,15 +43,14 @@ def _execute_brackets(brackets: list, base_price: float, symbol: str, quantity: 
                 take_profit_limit=take_profit,
                 stop_loss_stop=stop_loss,
             )
-            print(json.dumps(order, indent=2))
+            logging.info(f"order={json.dumps(order, indent=2)}")
             previous_oco_order_id = order["legs"][0]["id"]
         except HTTPError as e:
             # 'account is not allowed to short' -> no shares present
             # NOTE: account must be configured to not allow shorting, else we may short
             if e.response.status_code == 403 and e.response.json()["code"] == 40310000:
-                print(
-                    "Shares not available (likely hit take_profit or stop_loss or was not filled originally), cannot place OCO order.",
-                    e.response.json(),
+                logging.warning(
+                    f"Shares not available (likely hit take_profit or stop_loss or was not filled originally), cannot place OCO order. {e.response.json()}"
                 )
                 return
             raise e
@@ -59,5 +59,5 @@ def _execute_brackets(brackets: list, base_price: float, symbol: str, quantity: 
         wait_until(until)
 
     if previous_oco_order_id:
-        print("Cancelling previous OCO order...")
+        logging.info("Cancelling previous OCO order...")
         cancel_order(previous_oco_order_id)

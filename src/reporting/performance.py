@@ -1,3 +1,4 @@
+import logging
 from zoneinfo import ZoneInfo
 
 from src.strat.losers.gridsearch_backtest_losers import get_lines_from_biggest_losers_csv
@@ -31,10 +32,8 @@ def get_trades(environment_name):
         except FileNotFoundError:
             pass
         except Exception as e:
-            pass
-            # print(
-            #     f"failed to get open intention for {trade['symbol']} on {trade['opened_at'].date()}", type(e), e)
-            # raise e
+            logging.exception(
+                f"Unexpected failure to get open intention for {trade['symbol']} on {trade['opened_at'].date()}")
     return trades
 
 
@@ -76,8 +75,6 @@ def merge_trades(backtest_trades, trades):
                 ),
                 None,
             )
-            # if not trade:
-            #     print(f"missing trade for {day_iso} {symbol}")
 
             backtest_trade = next(
                 filter(
@@ -173,7 +170,7 @@ def write_performance_csv(environment):
 if __name__ == "__main__":
 
     for environment in ["paper", "prod", "td-cash", "cash1", "intrac1"]:
-        print(f"Dumping performance csv for {environment}...")
+        logging.info(f"Dumping performance csv for {environment}...")
         print()
         write_performance_csv(environment)
         print()

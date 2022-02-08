@@ -1,4 +1,5 @@
 from datetime import datetime, date
+import logging
 
 
 def serialize(v):
@@ -16,7 +17,7 @@ def serialize(v):
     elif t == datetime or t == date:
         return v.isoformat()
     else:
-        print("WARNING: unknown type", t, "for", v)
+        logging.warning(f"WARNING: unknown type {t} for {v}")
         return str(v)
 
 
@@ -25,7 +26,7 @@ def write_csv(path, lines, headers=None):
     # so server doesn't run out of memory
     lines = list(lines)
     if not lines:
-        print(f"WARNING: no lines to write to csv {path}")
+        logging.warning(f"WARNING: no lines to write to csv {path}")
 
     if not headers:
         headers = []
