@@ -54,10 +54,12 @@ function refresh_tokens() {
 }
 
 function refresh_tokens_if_needed() {
-    if [ "$BROKER" == "td" ]; then
-        echo "Refreshing tokens..."
-        refresh_tokens "td-token-$TD_ACCOUNT_ID" || fail_script "Failed to refresh tokens"
+    if [ ! -f $DATA_DIR/inputs/td-token/output/token.json ]; then
+        echo "(no need to refresh tokens)"
+        return
     fi
+    echo "Refreshing tokens..."
+    refresh_tokens "td-token-$TD_ACCOUNT_ID" || fail_script "Failed to refresh tokens"
 }
 
 action="$1"
