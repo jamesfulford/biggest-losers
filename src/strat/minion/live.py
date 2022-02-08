@@ -3,6 +3,8 @@
 #   >>> from talib import RSI; print(RSI.__doc__)
 import json
 from datetime import datetime, timedelta, time
+import traceback
+
 
 import numpy as np
 from talib.abstract import RSI, WILLR
@@ -65,7 +67,8 @@ def loop(symbol: str):
         except HTTPError as e:
             print(f"{now()} HTTP {e.response.status_code} {e.response.text}")
         except Exception as e:
-            print(f"{now} {e}")
+            track = traceback.format_exc()
+            print(f"{now()} {track}")
     print("Loop is finished.")
 
 
