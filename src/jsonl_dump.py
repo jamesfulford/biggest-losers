@@ -20,7 +20,7 @@ def append_jsonl(path: Union[str, None], lines: list[dict]):
     f = open(path, "a") if path else None
 
     for line in lines:
-        print(json.dumps(line, cls=DateTimeEncoder), file=f)
+        print(json.dumps(line, sort_keys=True, cls=DateTimeEncoder), file=f)
 
     if f:
         f.close()
