@@ -29,6 +29,12 @@ test -f $DATA_DIR/inputs/.env || fail_script "could not find $DATA_DIR/inputs/.e
 source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourceable"
 
 
+#
+# Build container (if already built, will hit cache)
+#
+docker build -t "talib-py-runner-$ENV_NAME" . || fail_script "Failed to build docker container"
+
+
 # TODO: account for time and timezones in crontab entries
 # - cls orders (buy) needs to happen before 3:50pm Market Time
 # - sell orders need to happen day after for avoiding Pattern Day Trader limitations
