@@ -64,7 +64,7 @@ function refresh_tokens_if_needed() {
         return
     fi
     echo "Refreshing tokens..."
-    refresh_tokens "td-token-$TD_ACCOUNT_ID" || fail_script "Failed to refresh tokens"
+    refresh_tokens "td-token-$RANDOM" || fail_script "Failed to refresh tokens"
 }
 
 action="$1"
