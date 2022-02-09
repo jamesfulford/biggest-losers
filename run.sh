@@ -17,12 +17,17 @@ env_file=${ENV_FILE:-"$DATA_DIR/inputs/.env"}
 # 1. same local and on server
 # 2. easier to install ta-lib (royal pain due to C being awful)
 function run () {
+    local daemon=""
+    if [ "$RUN_DAEMON" != "" ]; then
+        daemon="-d"
+    fi
     docker run -i --rm \
         --env-file "$env_file" \
         --env "GIT_COMMIT=$GIT_COMMIT" \
         --env "DRY_RUN=$DRY_RUN" \
         -v "$DATA_DIR":/data \
         -v "$APP_DIR":/app \
+        $daemon \
         --name $ENV_NAME-$RANDOM \
         "talib-py-runner-$ENV_NAME" "$@"
 }
