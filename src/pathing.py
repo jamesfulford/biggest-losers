@@ -51,7 +51,7 @@ def get_paths(target_environment_name=None):
     paths['data']["outputs"]["filled_orders_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'filled_orders.csv')
     paths['data']["outputs"]["order_intentions_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'order_intentions_{today}.csv')
+        paths['data']['outputs']['dir'], 'order_intentions_{algo_name}.csv')
     paths['data']["outputs"]["performance_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'performance-{environment}.csv')
 
