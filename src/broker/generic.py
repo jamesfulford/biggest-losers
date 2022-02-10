@@ -25,3 +25,16 @@ elif broker_name == "td":
 else:
     logging.fatal(f"BROKER '{broker_name}' not supported. Exiting...")
     exit(1)
+
+
+def main():
+    import src.broker.alpaca as alpaca
+    import src.broker.td as td
+    import json
+
+    import logging
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    print(json.dumps(td.get_account(), indent=2, sort_keys=True))
+    print(json.dumps(alpaca.get_account(), indent=2, sort_keys=True))
+    print()

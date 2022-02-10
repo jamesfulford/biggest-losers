@@ -1,3 +1,4 @@
+from copy import copy
 import logging
 import os
 from datetime import datetime, timedelta
@@ -208,8 +209,54 @@ def get_positions():
     return _get_alpaca("/v2/positions")
 
 
+def _build_account(account):
+    """
+    {
+        "account_blocked": false,
+        "account_number": "PA36YT3M6YH7",
+        "accrued_fees": "0",
+        "buying_power": "106894.62",
+        "cash": "106894.62",
+        "created_at": "2022-02-04T18:36:11.527497Z",
+        "crypto_status": "ACTIVE",
+        "currency": "USD",
+        "daytrade_count": 2,
+        "daytrading_buying_power": "0",
+        "equity": "106894.62",
+        "id": "27a4a8a0-ac20-46ac-9896-38e1c15a9217",
+        "initial_margin": "0",
+        "last_equity": "101977.71",
+        "last_maintenance_margin": "29083.48",
+        "long_market_value": "0",
+        "maintenance_margin": "0",
+        "multiplier": "1",
+        "non_marginable_buying_power": "106894.62",
+        "pattern_day_trader": false,
+        "pending_transfer_in": "0",
+        "portfolio_value": "106894.62",
+        "regt_buying_power": "106894.62",
+        "short_market_value": "0",
+        "shorting_enabled": false,
+        "sma": "100105.49",
+        "status": "ACTIVE",
+        "trade_suspended_by_user": false,
+        "trading_blocked": false,
+        "transfers_blocked": false
+    }
+    """
+    return {
+        "id": account['account_number'],
+        # on alpaca, all are margin account type. CASH | MARGIN
+        "type": "MARGIN",
+        # less than just cash, it's only cash we can use right now.
+        "cash": float(account['cash']),
+        "equity": float(account['equity']),
+        "long_market_value": float(account['long_market_value']),
+    }
+
+
 def get_account():
-    return _get_alpaca("/v2/account")
+    return _build_account(_get_alpaca("/v2/account"))
 
 
 def get_filled_orders(start: datetime, end: datetime):

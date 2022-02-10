@@ -94,14 +94,21 @@ def _build_account(account):
     """
     account_type = account['securitiesAccount']["type"]
 
+    cash_available_for_trading = account['securitiesAccount']['currentBalances']['cashAvailableForTrading']
+    equity = account['securitiesAccount']['currentBalances']['liquidationValue']
+
+    # TODO: this might behave differently in margin accounts
+    # long_market_value = account['securitiesAccount']['currentBalances']['longMarketValue']
+    long_market_value = equity - cash_available_for_trading
+
     return {
         "id": account['securitiesAccount']["accountId"],
         # on alpaca, all are margin account type. CASH | MARGIN
         "type": account_type,
         # less than just cash, it's only cash we can use right now.
-        "cash": account['securitiesAccount']['currentBalances']['cashBalance'],
-        "equity": account['securitiesAccount']['currentBalances']['liquidationValue'],
-        "long_market_value": account['securitiesAccount']['currentBalances']['longMarketValue'],
+        "cash": cash_available_for_trading,
+        "equity": equity,
+        "long_market_value": long_market_value,
         # cash accounts only, not on Alpaca
         "unsettled_cash": account['securitiesAccount']['currentBalances']['unsettledCash'] if account_type == 'CASH' else 0,
     }
@@ -113,6 +120,7 @@ def get_account(account_id: str = None):
 
     response = requests.get(
         f"https://api.tdameritrade.com/v1/accounts/{account_id}", headers=_get_headers())
+    logging.debug(f"TD: /v1/accounts/{account_id} => {response.text}")
 
     response.raise_for_status()
     return _build_account(response.json())
@@ -433,7 +441,7 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
 def print_accounts_summary():
     for account in get_accounts():
         logging.info(
-            f"  '{account['id']}' (has ${round(account['cash'], 2)} in cash)")
+            f"  '{account['id']}' (has ${round(account['equity'], 2)} in equity)")
 
 
 try:
@@ -443,10 +451,3 @@ except KeyError as e:
         f"cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
     print_accounts_summary()
     exit(1)
-
-
-def main():
-    import json
-    print(json.dumps(get_positions(), indent=2))
-
-    sell_symbol_at_open("AAPL", 1)
