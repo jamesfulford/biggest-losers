@@ -219,8 +219,16 @@ def cancel_all_orders() -> None:
     response.raise_for_status()
 
 
+def _build_position(raw_position):
+    return {
+        "symbol": raw_position["symbol"],
+        "qty": float(raw_position["qty"]),
+        "avg_entry_price": float(raw_position["avg_entry_price"]),
+    }
+
+
 def get_positions():
-    return _get_alpaca("/v2/positions")
+    return list(map(_build_position, _get_alpaca("/v2/positions")))
 
 
 def _build_account(account):

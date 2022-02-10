@@ -35,6 +35,6 @@ def main():
     import logging
     logging.getLogger().setLevel(logging.DEBUG)
 
-    print(json.dumps(td.get_account(), indent=2, sort_keys=True))
-    print(json.dumps(alpaca.get_account(), indent=2, sort_keys=True))
+    print(json.dumps(td.get_positions(), indent=2, sort_keys=True))
+    print(json.dumps(alpaca.get_positions(), indent=2, sort_keys=True))
     print()
