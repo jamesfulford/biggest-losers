@@ -305,7 +305,15 @@ def get_positions(account_id: str = None):
     raw_account = response.json()
     positions = raw_account['securitiesAccount'].get(
         'positions', [])  # if no positions, no 'positions' key
-    return list(map(_build_position, positions))
+
+    final_positions = []
+    for position in positions:
+        new_position = _build_position(position)
+        asset_type = position.get("instrument", {}).get("assetType", "")
+        # ignore money markets, not an actual position
+        if asset_type not in ["CASH_EQUIVALENT"]:
+            final_positions.append(new_position)
+    return final_positions
 
 #
 # Placing orders
