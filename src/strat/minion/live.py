@@ -106,7 +106,7 @@ def execute_phases(symbol: str):
     # Sizing
     latest_price = candles[-1]["close"]
     # backtesting found usually 4 buys per 2-day period
-    account_percentage_per_trade = 0.25
+    account_percentage_per_trade = 0.2  # TODO: 5 shares... maybe means 5 times?
     target_quantity = size_buy(
         account,
         account_percentage_per_trade,
