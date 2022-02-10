@@ -9,4 +9,4 @@ fi
 module=`echo $1 | sed "s@/@.@g" | sed "s@.py@@g"`
 echo $module
 
-nodemon -e py -x "python3 -c 'from $module import main; main()'"
+nodemon -e py -x "DRY_RUN=1 python3 -c 'import src.log; from $module import main; main()'"

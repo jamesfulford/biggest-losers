@@ -1,6 +1,7 @@
 # `brew install ta-lib`, then `pip3 install TA-Lib`
 # To read ta-lib docs for a function (to see parameters like windows/timeperiods), do:
 #   >>> from talib import RSI; print(RSI.__doc__)
+from src.sizing import size_buy
 import json
 from datetime import datetime, timedelta, time
 import logging
@@ -71,14 +72,6 @@ def loop(symbol: str):
     logging.info("Loop is finished.")
 
 
-def get_target_quantity(cash: float, target_price: float) -> int:
-    # TODO: read sizing from some configuration file
-    return 1
-    # TODO: when limits implemented, this can be 1.0
-    usage = 0.95
-    return int((cash * usage) // target_price)
-
-
 def execute_phases(symbol: str):
     # TODO: consider using 5m intervals instead of 1m
 
@@ -104,15 +97,22 @@ def execute_phases(symbol: str):
 
     wait_until(trade_time)
 
+    # Get price action data
     candles = get_candles(  # NOTE: all values are unadjusted
         symbol, "1", (trade_time - timedelta(days=4)).date(), trade_time.date())
-
-    # Sizing
-    _limit_price = candles[-1]["close"]
-    target_quantity = get_target_quantity(cash, _limit_price)
-
     rsi = get_rsi(candles)
     williamsr = get_williamsr(candles)
+
+    # Sizing
+    latest_price = candles[-1]["close"]
+    # backtesting found usually 4 buys per 2-day period
+    account_percentage_per_trade = 0.25
+    target_quantity = size_buy(
+        account,
+        account_percentage_per_trade,
+        # TODO: when switch to limit order, remove 1% slippage buffer
+        latest_price * 1.01,
+        single_share=False)
 
     # Logic
     rsi_buy_lt_threshold = 40
@@ -127,7 +127,7 @@ def execute_phases(symbol: str):
     intention = {
         "datetime": now(),
         "symbol": symbol,
-        "price": _limit_price,
+        "price": latest_price,
     }
     metadata = {
         # account state
