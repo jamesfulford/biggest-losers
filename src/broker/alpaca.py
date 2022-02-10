@@ -19,8 +19,14 @@ APCA_HEADERS = {
 }
 
 
+def _log_response(response: requests.Response):
+    logging.debug(
+        f"ALPACA: {response.status_code} {response.url} => {response.text}")
+
+
 def _get_alpaca(url):
     response = requests.get(ALPACA_URL + url, headers=APCA_HEADERS)
+    _log_response(response)
     if response.status_code == 429:
         logging.info("Rate limited, waiting...")
         sleep(5)
@@ -49,6 +55,7 @@ def buy_symbol_at_close(symbol, quantity):
         },
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
     return response.json()
 
@@ -72,6 +79,7 @@ def buy_symbol_market(symbol, quantity):
         },
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
     return response.json()
 
@@ -95,6 +103,7 @@ def sell_symbol_market(symbol, quantity):
         },
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
     return response.json()
 
@@ -119,6 +128,7 @@ def sell_symbol_at_open(symbol, quantity):
         },
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
     return response.json()
 
@@ -154,6 +164,7 @@ def place_oto(
         json=body,
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
     return response.json()
 
@@ -185,6 +196,7 @@ def place_oco(
         json=body,
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
     return response.json()
 
@@ -194,6 +206,7 @@ def cancel_order(order_id: str) -> None:
         ALPACA_URL + f"/v2/orders/{order_id}",
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
 
 
@@ -202,6 +215,7 @@ def cancel_all_orders() -> None:
         ALPACA_URL + f"/v2/orders",
         headers=APCA_HEADERS,
     )
+    _log_response(response)
     response.raise_for_status()
 
 
