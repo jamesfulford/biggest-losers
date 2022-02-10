@@ -28,6 +28,11 @@ def _get_headers():
         'Authorization': f"Bearer {_get_access_token()}",
     }
 
+
+def _log_response(response: requests.Response):
+    logging.debug(
+        f"TD: {response.status_code} {response.url} => {response.text}")
+
 #
 # Accounts
 #
@@ -120,17 +125,18 @@ def get_account(account_id: str = None):
 
     response = requests.get(
         f"https://api.tdameritrade.com/v1/accounts/{account_id}", headers=_get_headers())
-    logging.debug(f"TD: /v1/accounts/{account_id} => {response.text}")
-
+    _log_response(response)
     response.raise_for_status()
+
     return _build_account(response.json())
 
 
 def get_accounts():
     response = requests.get(
         f"https://api.tdameritrade.com/v1/accounts", headers=_get_headers())
-
+    _log_response(response)
     response.raise_for_status()
+
     return list(map(_build_account, response.json()))
 
 
@@ -147,8 +153,9 @@ def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
             'fromEnteredTime': start.date().isoformat(),
             'toEnteredTime': end.date().isoformat(),
         })
-
+    _log_response(response)
     response.raise_for_status()
+
     filled_orders = list(
         filter(bool, list(map(_build_order, response.json()))))
     filled_orders.sort(key=lambda x: x['filled_at'])
@@ -292,8 +299,9 @@ def get_positions(account_id: str = None):
         f"https://api.tdameritrade.com/v1/accounts/{account_id}", params={
             'fields': 'positions'
         }, headers=_get_headers())
-
+    _log_response(response)
     response.raise_for_status()
+
     raw_account = response.json()
     positions = raw_account['securitiesAccount'].get(
         'positions', [])  # if no positions, no 'positions' key
@@ -330,7 +338,7 @@ def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
             }
         ]
     }, headers=_get_headers())
-
+    _log_response(response)
     response.raise_for_status()
 
 
@@ -360,7 +368,7 @@ def buy_symbol_market(symbol: str, quantity: int, account_id: str = None):
             }
         ]
     }, headers=_get_headers())
-
+    _log_response(response)
     response.raise_for_status()
 
 
@@ -390,7 +398,7 @@ def sell_symbol_market(symbol: str, quantity: int, account_id: str = None):
             }
         ]
     }, headers=_get_headers())
-
+    _log_response(response)
     response.raise_for_status()
 
 
@@ -429,7 +437,7 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
             }
         ]
     }, headers=_get_headers())
-
+    _log_response(response)
     response.raise_for_status()
 
     return {
