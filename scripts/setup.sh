@@ -89,8 +89,8 @@ esac
 #
 # assert that scripts still run, but don't execute any trades for this test
 #
-DRY_RUN=1 ./run.sh biggest-loser-stocks-buy || fail_script "failed to run biggest-loser-stocks-buy"
-DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run biggest-loser-stocks-sell"
+# DRY_RUN=1 ./run.sh biggest-loser-stocks-buy || fail_script "failed to run biggest-loser-stocks-buy"
+# DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run biggest-loser-stocks-sell"
 
 # DRY_RUN=1 ./run.sh biggest-loser-warrants-buy || fail_script "failed to run biggest-loser-warrants-buy"
 # DRY_RUN=1 ./run.sh biggest-loser-warrants-sell || fail_script "failed to run biggest-loser-warrants-sell"
