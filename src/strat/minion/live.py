@@ -103,19 +103,6 @@ def execute_phases(symbol: str):
     rsi = get_rsi(candles)
     williamsr = get_williamsr(candles)
 
-    # Sizing
-    latest_price = candles[-1]["close"]
-    # backtesting found usually 4 buys per 2-day period
-    equity_percentage = 0.2  # TODO: 5 shares... maybe means 5 times?
-    target_quantity = size_buy(
-        account,
-        equity_percentage,
-        # TODO: when switch to limit order, remove 1% slippage buffer
-        asset_price=latest_price * 1.01,
-        at_most_shares=5,  # TODO: 5 shares... maybe means at most 5 shares?
-        # so we buy at least 1 share in small accounts
-        at_least_shares=1)
-
     # Logic
     rsi_buy_lt_threshold = 40
     williamsr_buy_lt_threshold = -70
@@ -150,7 +137,19 @@ def execute_phases(symbol: str):
 
     # Execute strategy
 
+    # backtesting found usually 4 buys per 2-day period
+    equity_percentage = 0.2  # TODO: 5 shares... maybe means 5 times?
+
     if not position and buy_reason:
+        latest_price = candles[-1]["close"]
+        target_quantity = size_buy(
+            account,
+            equity_percentage,
+            # TODO: when switch to limit order, remove 1% slippage buffer
+            asset_price=latest_price * 1.01,
+            at_most_shares=5,  # TODO: 5 shares... maybe means at most 5 shares?
+            # so we buy at least 1 share in small accounts
+            at_least_shares=1)
         # TODO: support premarket, aftermarket
         logging.info(f"buying, {rsi=:.1f} {williamsr=:.1f} {target_quantity=}")
 
