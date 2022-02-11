@@ -17,6 +17,9 @@ from src.data.finnhub.finnhub import get_candles
 from src.broker.generic import get_positions, get_account, buy_symbol_market, sell_symbol_market
 
 
+ALGO_NAME = "minion"
+
+
 def next_minute_mark(dt: datetime) -> datetime:
     return dt - timedelta(microseconds=dt.microsecond, seconds=dt.second) + timedelta(minutes=1)
 
@@ -168,9 +171,9 @@ def execute_phases(symbol: str):
 
         intention["side"] = "buy"
         intention["quantity"] = target_quantity
-        log_intentions("minion", [intention], metadata)
+        log_intentions(ALGO_NAME, [intention], metadata)
 
-        buy_symbol_market(symbol, target_quantity)
+        buy_symbol_market(symbol, target_quantity, algo_name=ALGO_NAME)
 
     elif position and should_sell:
         position_quantity = float(position["qty"])
@@ -179,9 +182,9 @@ def execute_phases(symbol: str):
 
         intention["side"] = "sell"
         intention["quantity"] = position_quantity
-        log_intentions("minion", [intention], metadata)
+        log_intentions(ALGO_NAME, [intention], metadata)
 
-        sell_symbol_market(symbol, position_quantity)
+        sell_symbol_market(symbol, position_quantity, algo_name=ALGO_NAME)
 
     else:
         logging.info(

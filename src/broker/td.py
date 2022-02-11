@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import logging
 import os
+from typing import Union
 import requests
 
 
@@ -32,6 +33,13 @@ def _get_headers():
 def _log_response(response: requests.Response):
     logging.debug(
         f"TD: {response.status_code} {response.url} => {response.text}")
+
+
+def _warn_for_fractional_shares(quantity: float):
+    if round(quantity) != quantity:
+        logging.warning(
+            f"quantity {quantity} is not an integer, broker will use fractional shares")
+
 
 #
 # Accounts
@@ -320,17 +328,34 @@ def get_positions(account_id: str = None):
 #
 
 
-def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
+def _place_order(body: dict, account_id: Union[str, None] = None):
     if not account_id:
         account_id = get_account_id()
 
-    symbol = normalize_symbol(symbol)
+    logging.debug(f"_place_order: {json.dumps(body, sort_keys=True)}")
 
     if DRY_RUN:
-        # logging.warning(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
+        logging.info(f"DRY_RUN: _place_order({body=})")
         return
 
-    response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
+    response = requests.post(
+        f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json=body, headers=_get_headers())
+    _log_response(response)
+    response.raise_for_status()
+    return response
+
+
+def normalize_symbol(symbol: str):
+    """
+    TD API doesn't like ., replace with /
+    """
+    return symbol.replace('.', '/')
+
+
+def buy_symbol_at_close(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
+    symbol = normalize_symbol(symbol)
+    _warn_for_fractional_shares(quantity)
+    _place_order({
         "orderType": "MARKET_ON_CLOSE",
         "session": "NORMAL",
         "duration": "DAY",
@@ -345,22 +370,13 @@ def buy_symbol_at_close(symbol: str, quantity: int, account_id: str = None):
                 }
             }
         ]
-    }, headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
+    }, account_id=account_id)
 
 
-def buy_symbol_market(symbol: str, quantity: int, account_id: str = None):
-    if not account_id:
-        account_id = get_account_id()
-
+def buy_symbol_market(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
     symbol = normalize_symbol(symbol)
-
-    if DRY_RUN:
-        # logging.warning(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
-        return
-
-    response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
+    _warn_for_fractional_shares(quantity)
+    _place_order({
         "orderType": "MARKET",
         "session": "NORMAL",
         "duration": "DAY",
@@ -375,22 +391,14 @@ def buy_symbol_market(symbol: str, quantity: int, account_id: str = None):
                 }
             }
         ]
-    }, headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
+    }, account_id=account_id)
 
 
-def sell_symbol_market(symbol: str, quantity: int, account_id: str = None):
-    if not account_id:
-        account_id = get_account_id()
-
+def sell_symbol_market(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
     symbol = normalize_symbol(symbol)
+    _warn_for_fractional_shares(quantity)
 
-    if DRY_RUN:
-        # logging.warning(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
-        return
-
-    response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
+    _place_order({
         "orderType": "MARKET",
         "session": "NORMAL",
         "duration": "DAY",
@@ -405,31 +413,15 @@ def sell_symbol_market(symbol: str, quantity: int, account_id: str = None):
                 }
             }
         ]
-    }, headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
+    }, account_id=account_id)
 
 
-def normalize_symbol(symbol: str):
-    """
-    TD API doesn't like ., replace with /
-    """
-    return symbol.replace('.', '/')
-
-
-def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
-    if not account_id:
-        account_id = get_account_id()
-
+def sell_symbol_at_open(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
     symbol = normalize_symbol(symbol)
+    _warn_for_fractional_shares(quantity)
 
-    if DRY_RUN:
-        # logging.warning(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
-        return
-
-    response = requests.post(f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json={
+    response = _place_order({
         # There is no MARKET_ON_OPEN order type
-        # TODO: evaluate whether this acts like Alpaca's "opg" order with duration "DAY"
         "orderType": "MARKET",
         "session": "NORMAL",
         "duration": "DAY",
@@ -444,13 +436,17 @@ def sell_symbol_at_open(symbol: str, quantity: int, account_id: str = None):
                 }
             }
         ]
-    }, headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
+    }, account_id=account_id)
+
+    if not response:
+        return {
+            "status_code": 200,
+            "body": b"DRY_RUN",
+        }
 
     return {
         "status_code": response.status_code,
-        "body": response.raw.read(),
+        "body": response.text,
     }
 
 

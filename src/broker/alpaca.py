@@ -1,8 +1,10 @@
-from copy import copy
+import json
 import logging
 import os
 from datetime import datetime, timedelta
 from time import sleep
+from typing import Union
+import uuid
 
 import requests
 
@@ -35,102 +37,96 @@ def _get_alpaca(url):
     return response.json()
 
 
-def buy_symbol_at_close(symbol, quantity):
+def _add_feather_finance_algo_label(order: dict, algo_name: Union[str, None] = None):
+    if algo_name:
+        order["client_order_id"] = f"{algo_name}_FF_{uuid.uuid4()}"
+    return order
+
+
+def _warn_for_fractional_shares(quantity: float):
+    if round(quantity) != quantity:
+        logging.warning(
+            f"quantity {quantity} is not an integer, broker will use fractional shares")
+
+
+def _place_order(body: dict, algo_name: Union[str, None] = None) -> requests.Response:
+    body = _add_feather_finance_algo_label(body, algo_name=algo_name)
+    logging.debug(f"_place_order: {json.dumps(body, sort_keys=True)}")
+
+    if DRY_RUN:
+        logging.info(f'DRY_RUN: _place_order({body=})')
+        return
+
+    response = requests.post(
+        ALPACA_URL + "/v2/orders",
+        json=body,
+        headers=APCA_HEADERS,
+    )
+    _log_response(response)
+    response.raise_for_status()
+    return response.json()
+
+
+def buy_symbol_at_close(symbol: str, quantity: float, algo_name: Union[str, None] = None):
     """
     Buy a symbol at close
     """
-    if DRY_RUN:
-        # logging.warning(f'DRY_RUN: buy_symbol_at_close({symbol}, {quantity})')
-        return
+    _warn_for_fractional_shares(quantity)
 
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json={
-            "symbol": symbol,
-            "qty": quantity,
-            "side": "buy",
-            "type": "market",
-            # buy at close
-            "time_in_force": "cls",
-        },
-        headers=APCA_HEADERS,
-    )
-    _log_response(response)
-    response.raise_for_status()
-    return response.json()
+    return _place_order({
+        "symbol": symbol,
+        "qty": quantity,
+        "side": "buy",
+        "type": "market",
+        # buy at close
+        "time_in_force": "cls",
+    }, algo_name=algo_name)
 
 
-def buy_symbol_market(symbol, quantity):
+def buy_symbol_market(symbol: str, quantity: float, algo_name: Union[str, None] = None):
     """
     Buy a symbol now
     """
-    if DRY_RUN:
-        # logging.warning(f'DRY_RUN: buy_symbol_market({symbol}, {quantity})')
-        return
+    _warn_for_fractional_shares(quantity)
 
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json={
-            "symbol": symbol,
-            "qty": quantity,
-            "side": "buy",
-            "type": "market",
-            "time_in_force": "day",
-        },
-        headers=APCA_HEADERS,
-    )
-    _log_response(response)
-    response.raise_for_status()
-    return response.json()
+    return _place_order({
+        "symbol": symbol,
+        "qty": quantity,
+        "side": "buy",
+        "type": "market",
+        "time_in_force": "day",
+    }, algo_name=algo_name)
 
 
-def sell_symbol_market(symbol, quantity):
+def sell_symbol_market(symbol: str, quantity: float, algo_name: Union[str, None] = None):
     """
     Sell a symbol now
     """
-    if DRY_RUN:
-        # logging.warning(f'DRY_RUN: sell_symbol_market({symbol}, {quantity})')
-        return
+    _warn_for_fractional_shares(quantity)
 
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json={
-            "symbol": symbol,
-            "qty": quantity,
-            "side": "sell",
-            "type": "market",
-            "time_in_force": "day",
-        },
-        headers=APCA_HEADERS,
-    )
-    _log_response(response)
-    response.raise_for_status()
-    return response.json()
+    return _place_order({
+        "symbol": symbol,
+        "qty": quantity,
+        "side": "sell",
+        "type": "market",
+        "time_in_force": "day",
+    }, algo_name=algo_name)
 
 
-def sell_symbol_at_open(symbol, quantity):
+def sell_symbol_at_open(symbol: str, quantity: float, algo_name: Union[str, None] = None):
     """
     Sell a symbol
     """
-    if DRY_RUN:
-        # logging.warning(f'DRY_RUN: sell_symbol_at_open({symbol}, {quantity})')
-        return
+    _warn_for_fractional_shares(quantity)
 
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json={
-            "symbol": symbol,
-            "qty": quantity,
-            "side": "sell",
-            "type": "market",
-            # sell at open
-            "time_in_force": "opg",
-        },
-        headers=APCA_HEADERS,
-    )
-    _log_response(response)
-    response.raise_for_status()
-    return response.json()
+    return _place_order({
+        "symbol": symbol,
+        "qty": quantity,
+        "side": "sell",
+        "type": "market",
+        # sell at open
+        "time_in_force": "opg",
+    }, algo_name=algo_name)
 
 
 def wait_until_order_filled(order_id: str):
@@ -144,10 +140,13 @@ def wait_until_order_filled(order_id: str):
 
 def place_oto(
     symbol: str,
-    quantity: int,
+    quantity: float,
     take_profit_limit: float,
+    algo_name: Union[str, None] = None
 ):
-    body = {
+    _warn_for_fractional_shares(quantity)
+
+    return _place_order({
         "side": "buy",
         "symbol": symbol,
         "type": "market",
@@ -157,25 +156,19 @@ def place_oto(
         "take_profit": {
             "limit_price": str(take_profit_limit),
         },
-    }
-
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json=body,
-        headers=APCA_HEADERS,
-    )
-    _log_response(response)
-    response.raise_for_status()
-    return response.json()
+    }, algo_name=algo_name)
 
 
 def place_oco(
     symbol: str,
-    quantity: int,
+    quantity: float,
     take_profit_limit: float,
     stop_loss_stop: float,
     stop_loss_limit: float = None,
+    algo_name: Union[str, None] = None
 ):
+    _warn_for_fractional_shares(quantity)
+
     body = {
         "side": "sell",
         "symbol": symbol,
@@ -191,14 +184,7 @@ def place_oco(
     if stop_loss_limit:
         body["stop_loss"]["limit_price"] = str(stop_loss_limit)
 
-    response = requests.post(
-        ALPACA_URL + "/v2/orders",
-        json=body,
-        headers=APCA_HEADERS,
-    )
-    _log_response(response)
-    response.raise_for_status()
-    return response.json()
+    return _place_order(body, algo_name=algo_name)
 
 
 def cancel_order(order_id: str) -> None:
@@ -332,3 +318,8 @@ def get_filled_orders(start: datetime, end: datetime):
     deduped_results.sort(key=lambda x: x["submitted_at"])
 
     return deduped_results
+
+
+def main():
+    logging.getLogger().setLevel(logging.DEBUG)
+    buy_symbol_market("AAPL", 1.1, algo_name=None)
