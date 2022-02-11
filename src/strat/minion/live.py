@@ -30,7 +30,7 @@ def get_current_position(symbol: str):
     return next(filter(lambda p: p["symbol"] == symbol, positions), None)
 
 
-def get_rsi(candles):
+def get_rsi(candles, timeperiod=14):
     inputs = {
         "open": np.array(list(map(lambda c: float(c["open"]), candles))),
         "high": np.array(list(map(lambda c: float(c["high"]), candles))),
@@ -38,12 +38,12 @@ def get_rsi(candles):
         "close": np.array(list(map(lambda c: float(c["close"]), candles))),
         "volume": np.array(list(map(lambda c: float(c["volume"]), candles))),
     }
-    values = RSI(inputs, timeperiod=14)
+    values = RSI(inputs, timeperiod=timeperiod)
     value = float(values[-1])
     return value
 
 
-def get_williamsr(candles):
+def get_williamsr(candles, timeperiod=20):
     inputs = {
         "open": np.array(list(map(lambda c: float(c["open"]), candles))),
         "high": np.array(list(map(lambda c: float(c["high"]), candles))),
@@ -51,7 +51,7 @@ def get_williamsr(candles):
         "close": np.array(list(map(lambda c: float(c["close"]), candles))),
         "volume": np.array(list(map(lambda c: float(c["volume"]), candles))),
     }
-    values = WILLR(inputs, timeperiod=20)
+    values = WILLR(inputs, timeperiod=timeperiod)
     value = float(values[-1])
     return value
 
@@ -73,8 +73,24 @@ def loop(symbol: str):
 
 
 def execute_phases(symbol: str):
-    # TODO: consider using 5m intervals instead of 1m
+    #
+    # parameters
+    #
+    rsiperiod = 14
+    williamsrperiod = 20
+    slow_williamsrperiod = 200
+    rsi_sell_bound = 70
+    rsi_buy_bound = 40
+    williamsr_sell_bound = -1
+    williamsr_buy_bound = -80
+    slow_williamsr_buy_bound = -70
 
+    # backtesting found usually 4 buys per 2-day period, but doing 5 as advised on Feb 10, 2022
+    equity_percentage = 0.2
+
+    #
+    # script
+    #
     market_now = now()
     next_interval_start = next_minute_mark(market_now)
 
@@ -100,21 +116,15 @@ def execute_phases(symbol: str):
     # Get price action data
     candles = get_candles(  # NOTE: all values are unadjusted
         symbol, "1", (trade_time - timedelta(days=4)).date(), trade_time.date())
-    rsi = get_rsi(candles)
-    williamsr = get_williamsr(candles)
+    rsi = get_rsi(candles, timeperiod=rsiperiod)
+    williamsr = get_williamsr(candles, timeperiod=williamsrperiod)
+    slow_williamsr = get_williamsr(candles, timeperiod=slow_williamsrperiod)
+
     latest_price = candles[-1]["close"]
 
     # Logic
-    rsi_buy_lt_threshold = 40
-    williamsr_buy_lt_threshold = -70
-    buy_reason = rsi < rsi_buy_lt_threshold and williamsr < williamsr_buy_lt_threshold
-
-    rsi_sell_gt_threshold = 70
-    williamsr_sell_gt_threshold = -30
-    sell_reason = rsi > rsi_sell_gt_threshold and williamsr > williamsr_sell_gt_threshold
-
-    # backtesting found usually 4 buys per 2-day period, but doing 5 as advised on Feb 10, 2022
-    equity_percentage = 0.2
+    should_buy = rsi < rsi_buy_bound and williamsr < williamsr_buy_bound and slow_williamsr > slow_williamsr_buy_bound
+    should_sell = rsi > rsi_sell_bound and williamsr > williamsr_sell_bound
 
     # Logging intentions
     intention = {
@@ -127,23 +137,24 @@ def execute_phases(symbol: str):
         "cash": cash,
         "account": account,
         "position": position,
-        # TODO: sizing configuration
         # symbol current values
         "last_candle": candles[-1],
         "rsi": rsi,
         "williamsr": williamsr,
+        "slow_williamsr": slow_williamsr,
         # strategy configuration
-        "rsi_buy_lt_threshold": rsi_buy_lt_threshold,
-        "williamsr_buy_lt_threshold": williamsr_buy_lt_threshold,
-        "rsi_sell_gt_threshold": rsi_sell_gt_threshold,
-        "williamsr_sell_gt_threshold": williamsr_sell_gt_threshold,
+        "rsi_buy_bound": rsi_buy_bound,
+        "williamsr_buy_bound": williamsr_buy_bound,
+        "rsi_sell_bound": rsi_sell_bound,
+        "williamsr_sell_bound": williamsr_sell_bound,
+        "slow_williamsr_buy_bound": slow_williamsr_buy_bound,
         # sizing configuration
         "equity_percentage": equity_percentage,
     }
 
     # Execute strategy
 
-    if not position and buy_reason:
+    if not position and should_buy:
         target_quantity = size_buy(
             account,
             equity_percentage,
@@ -152,7 +163,8 @@ def execute_phases(symbol: str):
             # so we buy at least 1 share in small accounts
             at_least_shares=1)
         # TODO: support premarket, aftermarket
-        logging.info(f"buying, {rsi=:.1f} {williamsr=:.1f} {target_quantity=}")
+        logging.info(
+            f"buying, {rsi=:.1f} {williamsr=:.1f} {slow_williamsr=:.1f} {target_quantity=}")
 
         intention["side"] = "buy"
         intention["quantity"] = target_quantity
@@ -160,10 +172,10 @@ def execute_phases(symbol: str):
 
         buy_symbol_market(symbol, target_quantity)
 
-    elif position and sell_reason:
+    elif position and should_sell:
         position_quantity = float(position["qty"])
         logging.info(
-            f"selling, {rsi=:.1f} {williamsr=:.1f} {position_quantity=}")
+            f"selling, {rsi=:.1f} {williamsr=:.1f} {slow_williamsr=:.1f} {position_quantity=}")
 
         intention["side"] = "sell"
         intention["quantity"] = position_quantity
@@ -172,7 +184,8 @@ def execute_phases(symbol: str):
         sell_symbol_market(symbol, position_quantity)
 
     else:
-        logging.info(f"no action, {rsi=:.1f} {williamsr=:.1f}")
+        logging.info(
+            f"no action, {rsi=:.1f} {williamsr=:.1f} {slow_williamsr=:.1f}")
 
 
 def main():
