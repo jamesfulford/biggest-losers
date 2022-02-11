@@ -16,7 +16,9 @@ from math import floor
 # - this is a hard limit, so no other logic should override this
 
 
-def size_buy(account, equity_percentage: float, asset_price: float, at_most_shares: int = None, at_least_shares: int = None) -> int:
+def size_buy(account: dict, cash_equity_percentage: float, asset_price: float, at_most_shares: int = None, at_least_shares: int = None) -> int:
+    equity_percentage = 1.0 if account["type"] == "MARGIN" else cash_equity_percentage
+
     equity_shares = account["equity"] / asset_price
     target_shares = floor(equity_shares * equity_percentage)
 

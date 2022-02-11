@@ -11,7 +11,7 @@ from talib.abstract import RSI, WILLR
 from requests.exceptions import HTTPError
 from src.intention import log_intentions
 
-from src.trading_day import now
+from src.trading_day import now, today
 from src.wait import wait_until
 from src.data.finnhub.finnhub import get_candles
 from src.broker.generic import get_positions, get_account, buy_symbol_market, sell_symbol_market
@@ -60,9 +60,9 @@ def get_williamsr(candles, timeperiod=20):
 
 
 #
-# Differences between this and backtest
-# 3. live has sizing issues with the broker because of cash settling, cannot do all-in sizing (or in small margin accounts will have PDT issues)
-# 4. slippage (NRGU is fairly low volume)
+# Differences between this and backtest:
+# 3. live has sizing considerations (cash settling or PDT)
+# 4. slippage (NRGU is fairly low volume) (not likely, considering NRGU is an ETF)
 def loop(symbol: str):
     while now().time() < time(16, 1):
         try:
@@ -89,36 +89,33 @@ def execute_phases(symbol: str):
     slow_williamsr_buy_bound = -70
 
     # backtesting found usually 4 buys per 2-day period, but doing 5 as advised on Feb 10, 2022
-    equity_percentage = 0.2
+    cash_equity_percentage = 0.2
 
     #
     # script
     #
-    market_now = now()
-    next_interval_start = next_minute_mark(market_now)
+    next_interval_start = next_minute_mark(now())
 
-    stage_time = next_interval_start - timedelta(seconds=10)
-    # wait 1s extra to ensure candle is built
-    trade_time = next_interval_start + timedelta(seconds=1)
-
-    # 1. before each interval, fetch account/position state
-    wait_until(stage_time)
+    #
+    # Preparation Phase (-10s)
+    #
+    wait_until(next_interval_start - timedelta(seconds=10))
 
     account = get_account()
     cash = float(account["cash"])
-    logging.info(f"{stage_time} {cash=}")
 
     position = get_current_position(symbol)
     logging.info(
-        f"{stage_time} position={json.dumps(position, sort_keys=True, indent=2)}")
+        f"{cash=} position={json.dumps(position, sort_keys=True, indent=2)}")
 
-    # 2. at each minute, gather new candle's data
-
-    wait_until(trade_time)
+    #
+    # Execution Phase
+    #
+    wait_until(next_interval_start)
 
     # Get price action data
     candles = get_candles(  # NOTE: all values are unadjusted
-        symbol, "1", (trade_time - timedelta(days=4)).date(), trade_time.date())
+        symbol, "1", (today() - timedelta(days=4)), today())
     rsi = get_rsi(candles, timeperiod=rsiperiod)
     williamsr = get_williamsr(candles, timeperiod=williamsrperiod)
     slow_williamsr = get_williamsr(candles, timeperiod=slow_williamsrperiod)
@@ -152,7 +149,7 @@ def execute_phases(symbol: str):
         "williamsr_sell_bound": williamsr_sell_bound,
         "slow_williamsr_buy_bound": slow_williamsr_buy_bound,
         # sizing configuration
-        "equity_percentage": equity_percentage,
+        "cash_equity_percentage": cash_equity_percentage,
     }
 
     # Execute strategy
@@ -160,7 +157,7 @@ def execute_phases(symbol: str):
     if not position and should_buy:
         target_quantity = size_buy(
             account,
-            equity_percentage,
+            cash_equity_percentage,
             # TODO: when switch to limit order, remove 1% slippage buffer
             asset_price=latest_price * 1.01,
             # so we buy at least 1 share in small accounts
@@ -192,6 +189,11 @@ def execute_phases(symbol: str):
 
 
 def main():
+    logging.info(f"Checking algo can be run in this account...")
+    account = get_account()
+    assert account["type"] == "CASH" or account["equity"] > 25000, "Either use a cash account or fund margin account with $25k+ equity to avoid PDT violations."
+    logging.info(f"Account is OK.")
+
     symbol = "NRGU"
     logging.info(f"Starting {symbol} live trading")
     loop(symbol)
