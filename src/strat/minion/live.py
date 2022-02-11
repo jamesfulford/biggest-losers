@@ -102,6 +102,7 @@ def execute_phases(symbol: str):
         symbol, "1", (trade_time - timedelta(days=4)).date(), trade_time.date())
     rsi = get_rsi(candles)
     williamsr = get_williamsr(candles)
+    latest_price = candles[-1]["close"]
 
     # Logic
     rsi_buy_lt_threshold = 40
@@ -111,6 +112,9 @@ def execute_phases(symbol: str):
     rsi_sell_gt_threshold = 70
     williamsr_sell_gt_threshold = -30
     sell_reason = rsi > rsi_sell_gt_threshold and williamsr > williamsr_sell_gt_threshold
+
+    # backtesting found usually 4 buys per 2-day period, but doing 5 as advised on Feb 10, 2022
+    equity_percentage = 0.2
 
     # Logging intentions
     intention = {
@@ -133,21 +137,18 @@ def execute_phases(symbol: str):
         "williamsr_buy_lt_threshold": williamsr_buy_lt_threshold,
         "rsi_sell_gt_threshold": rsi_sell_gt_threshold,
         "williamsr_sell_gt_threshold": williamsr_sell_gt_threshold,
+        # sizing configuration
+        "equity_percentage": equity_percentage,
     }
 
     # Execute strategy
 
-    # backtesting found usually 4 buys per 2-day period
-    equity_percentage = 0.2  # TODO: 5 shares... maybe means 5 times?
-
     if not position and buy_reason:
-        latest_price = candles[-1]["close"]
         target_quantity = size_buy(
             account,
             equity_percentage,
             # TODO: when switch to limit order, remove 1% slippage buffer
             asset_price=latest_price * 1.01,
-            at_most_shares=5,  # TODO: 5 shares... maybe means at most 5 shares?
             # so we buy at least 1 share in small accounts
             at_least_shares=1)
         # TODO: support premarket, aftermarket
