@@ -1,6 +1,25 @@
-from src.broker.alpaca import _get_alpaca
-import json
+from src.data.finnhub.finnhub import get_candles
+from datetime import date
+import ta
+import pandas as pd
 
+
+def get_dpo(candles, window=20):
+    closes = pd.Series(list(map(lambda c: float(c["close"]), candles)))
+    values = ta.trend.dpo(closes, window=window)
+    value = float(values.values[-1])
+    return value
+
+
+candles = get_candles("NRGU", "D", date(2021, 2, 20), date(2022, 1, 1))
+get_dpo(candles)
+print(ta.trend.dpo.__doc__)
+exit()
+
+
+print(json.dumps(_get_alpaca("/v2/account"), indent=4))
+
+exit()
 
 orders = _get_alpaca("/v2/orders?status=closed")
 
