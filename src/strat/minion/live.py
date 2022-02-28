@@ -59,12 +59,13 @@ def get_williamsr(candles, timeperiod=20):
     return value
 
 
-#
-# Differences between this and backtest:
-# 3. live has sizing considerations (cash settling or PDT)
-# 4. slippage (NRGU is fairly low volume) (not likely, considering NRGU is an ETF)
+def should_continue():
+    # return True
+    return now().time() < time(16, 1)
+
+
 def loop(symbol: str):
-    while now().time() < time(16, 1):
+    while should_continue():
         try:
             execute_phases(symbol)
         except HTTPError as e:
@@ -75,6 +76,10 @@ def loop(symbol: str):
     logging.info("Loop is finished.")
 
 
+#
+# Differences between this and backtest:
+# 3. live has sizing considerations (cash settling or PDT)
+# 4. slippage (NRGU is fairly low volume) (not likely, considering NRGU is an ETF)
 def execute_phases(symbol: str):
     #
     # parameters
@@ -166,8 +171,10 @@ def execute_phases(symbol: str):
         logging.info(
             f"buying, {rsi=:.1f} {williamsr=:.1f} {slow_williamsr=:.1f} {target_quantity=}")
 
-        intention["side"] = "buy"
-        intention["quantity"] = target_quantity
+        intention.update({
+            "side": "buy",
+            "quantity": target_quantity,
+        })
         log_intentions(ALGO_NAME, [intention], metadata)
 
         buy_symbol_market(symbol, target_quantity, algo_name=ALGO_NAME)
@@ -177,8 +184,10 @@ def execute_phases(symbol: str):
         logging.info(
             f"selling, {rsi=:.1f} {williamsr=:.1f} {slow_williamsr=:.1f} {position_quantity=}")
 
-        intention["side"] = "sell"
-        intention["quantity"] = position_quantity
+        intention.update({
+            "side": "sell",
+            "quantity": position_quantity,
+        })
         log_intentions(ALGO_NAME, [intention], metadata)
 
         sell_symbol_market(symbol, position_quantity, algo_name=ALGO_NAME)
