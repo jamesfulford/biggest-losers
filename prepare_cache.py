@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import argparse
 
+import src.log
+
 from src.data.polygon.grouped_aggs import (
     fetch_grouped_aggs,
     get_cache_entry_refresh_time,

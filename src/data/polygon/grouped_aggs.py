@@ -267,3 +267,8 @@ def get_spy_change(today):
         return None
     spy_candle, spy_candle_yesterday = tuple(last_2_candles)
     return (spy_candle["c"] - spy_candle_yesterday["c"]) / spy_candle_yesterday["c"]
+
+
+def main():
+    print(get_last_n_candles(date(2021, 12, 1), "SPY", n=6))
+    print("allo")

@@ -1,3 +1,4 @@
 #!/bin/bash
 
+. paper.env
 nodemon -e py -x "python3 -c 'import src.log; from src.scan.$1 import prepare_csv; prepare_csv()'"

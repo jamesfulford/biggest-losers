@@ -41,6 +41,8 @@ def get_paths(target_environment_name=None):
         paths['data']['outputs']['dir'], 'winners.csv')
     paths['data']["outputs"]["supernovas_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'supernovas.csv')
+    paths['data']["outputs"]["rollercoasters_csv"] = os.path.join(
+        paths['data']['outputs']['dir'], 'rollercoasters.csv')
     paths['data']["outputs"]["gappers_csv"] = os.path.join(
         paths['data']['outputs']['dir'], 'gappers.csv')
     paths['data']["outputs"]["volume_movers_csv"] = os.path.join(
