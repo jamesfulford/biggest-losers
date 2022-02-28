@@ -19,17 +19,14 @@ from src.csv_dump import write_csv
 # - try to filter on OHLCV first before getting daily candles or calculating indicators
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
-
     tickers = list(enrich_tickers_with_indicators(today, tickers, {
         # how many days ago for percentage change
         "days_ago_close": extract_from_n_candles_ago("c", 6),
     }, n=6))
-
     for ticker in tickers:
         percent_change_days_ago = (ticker["days_ago_close"] -
                                    ticker["c"])/ticker["days_ago_close"]
         ticker["percent_change_days_ago"] = percent_change_days_ago
-
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
         # "is_etf": is_etf,
         # "is_right": is_right,
@@ -37,10 +34,9 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
         # "is_unit": is_unit,
         # "is_warrant": is_warrant,
     }))
-
     tickers = list(
         filter(lambda t: t["percent_change_days_ago"] > .1, tickers))
-
+    tickers.sort(key=lambda t: -t["percent_change_days_ago"])
     return tickers
 
 
