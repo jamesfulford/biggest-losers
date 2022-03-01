@@ -203,6 +203,18 @@ case $action in
             done
         done
         ;;
+    
+    "td-login")
+        sleep 3 && python -m webbrowser -n "https://localhost:8000" &
+        cd $DATA_DIR/inputs/td-token && ./start-login.sh
+        ;;
+    
+    "td-login-remote")
+        TARGET_ENV=${TARGET_ENV:-"cash1"}
+        SERVER_NAME=${SERVER_NAME:-"solomon"}
+        sleep 3 && python -m webbrowser -n "https://localhost:8000" &
+        ssh -L 8000:127.0.0.1:8000 $SERVER_NAME "cd ~/$TARGET_ENV-data/inputs/td-token && ./start-login.sh"
+        ;;
 
     # Catchall
     *)
