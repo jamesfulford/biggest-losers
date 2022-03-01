@@ -107,7 +107,11 @@ def _build_account(account):
     """
     account_type = account['securitiesAccount']["type"]
 
-    cash_available_for_trading = account['securitiesAccount']['currentBalances']['cashAvailableForTrading']
+    if account_type == "CASH":
+        cash_available_for_trading = account['securitiesAccount']['currentBalances']['cashAvailableForTrading']
+    else:
+        cash_available_for_trading = account['securitiesAccount']['currentBalances']['availableFunds']
+
     equity = account['securitiesAccount']['currentBalances']['liquidationValue']
 
     # TODO: this might behave differently in margin accounts
@@ -119,11 +123,11 @@ def _build_account(account):
         # on alpaca, all are margin account type. CASH | MARGIN
         "type": account_type,
         # less than just cash, it's only cash we can use right now.
-        "cash": cash_available_for_trading,
-        "equity": equity,
-        "long_market_value": long_market_value,
+        "cash": round(cash_available_for_trading, 2),
+        "equity": round(equity, 2),
+        "long_market_value": round(long_market_value, 2),
         # cash accounts only, not on Alpaca
-        "unsettled_cash": account['securitiesAccount']['currentBalances']['unsettledCash'] if account_type == 'CASH' else 0,
+        "unsettled_cash": round(account['securitiesAccount']['currentBalances']['unsettledCash'], 2) if account_type == 'CASH' else 0,
     }
 
 

@@ -71,6 +71,10 @@ function refresh_tokens_if_needed() {
 action="$1"
 
 case $action in
+    "account")
+        run_python -c 'import src.log;import json;from src.broker.generic import get_account;print(json.dumps(get_account(), indent=2, sort_keys=True))'
+        ;;
+
     #
     # Server actions
     #
