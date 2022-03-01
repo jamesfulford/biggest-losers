@@ -25,6 +25,7 @@ function run () {
         --env-file "$env_file" \
         --env "GIT_COMMIT=$GIT_COMMIT" \
         --env "DRY_RUN=$DRY_RUN" \
+        --env "DEBUG=$DEBUG" \
         -v "$DATA_DIR":/data \
         -v "$APP_DIR":/app \
         $daemon \
