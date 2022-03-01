@@ -220,6 +220,35 @@ case $action in
         ssh -L 8000:127.0.0.1:8000 $SERVER_NAME "cd ~/$TARGET_ENV-data/inputs/td-token && ./start-login.sh"
         ;;
 
+    "create-env-td")
+        TARGET_ENV=${TARGET_ENV:-"margin"}
+        SERVER_NAME=${SERVER_NAME:-"solomon"}
+        ./scripts/deploy/send-to-server.sh $TARGET_ENV || true
+
+        if [[ ! -f $TARGET_ENV.env ]]; then
+            echo "Creating $TARGET_ENV.env"
+
+            echo "POLYGON_API_KEY=" > $TARGET_ENV.env
+            echo "FINNHUB_API_KEY=" >> $TARGET_ENV.env
+            echo "BROKER=td" >> $TARGET_ENV.env
+            echo "TD_ACCOUNT_ID=" >> $TARGET_ENV.env
+        fi
+        vi "$TARGET_ENV.env"
+        scp $TARGET_ENV.env $SERVER_NAME:~/$TARGET_ENV-data/inputs/.env
+        ssh $SERVER_NAME "test -d ~/$TARGET_ENV-data/inputs/td-token || git clone https://github.com/jamesfulford/td-token.git ~/$TARGET_ENV-data/inputs/td-token"
+
+        # copy certs
+        ssh $SERVER_NAME "mkdir -p ~/$TARGET_ENV-data/inputs/td-token/cert"
+        scp $DATA_DIR/inputs/td-token/cert/cert.crt $SERVER_NAME:~/$TARGET_ENV-data/inputs/td-token/cert/cert.crt
+        scp $DATA_DIR/inputs/td-token/cert/key.key $SERVER_NAME:~/$TARGET_ENV-data/inputs/td-token/cert/key.key
+        scp $DATA_DIR/inputs/td-token/.env $SERVER_NAME:~/$TARGET_ENV-data/inputs/td-token/.env
+
+        # get tokens
+        TARGET_ENV="$TARGET_ENV" SERVER_NAME="$SERVER_NAME" ./run.sh td-login-remote
+
+        ./scripts/deploy/send-to-server.sh $TARGET_ENV
+        ;;
+
     # Catchall
     *)
         echo "unknown action $action"
