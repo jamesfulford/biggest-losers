@@ -69,6 +69,7 @@ function refresh_tokens_if_needed() {
 }
 
 action="$1"
+shift 1
 
 case $action in
     "account")
@@ -187,24 +188,30 @@ case $action in
         echo "Analyzing performance..."
         ./run.sh analyze-performance
         ;;
+    
+    "deploy")
+        TARGET_ENV=${1}
+        if [[ "$TARGET_ENV" == "" ]]; then
+            echo "Usage: deploy <environment>"
+            exit 1
+        fi
+        echo "Deploying $TARGET_ENV..."
+        until ./scripts/deploy/send-to-server.sh $TARGET_ENV; do
+            echo "rsync failed, retrying in 30 seconds..."
+            sleep 30
+        done
+        ;;
 
     "test-deploy")
         echo "Testing deploy..."
         for e in paper; do
-            until ./scripts/deploy/send-to-server.sh $e; do
-                echo "rsync failed, retrying in 30 seconds..."
-                sleep 30
-            done
+            ./run.sh deploy $e
         done
         ;;
 
     "prod-deploy")
-        echo "Deploying..."
-        for e in prod cash1 intrac1 collector; do
-            until ./scripts/deploy/send-to-server.sh $e; do
-                echo "rsync failed, retrying in 30 seconds..."
-                sleep 30
-            done
+        for e in prod cash1 margin collector intrac1; do
+            ./run.sh deploy $e
         done
         ;;
     
@@ -214,14 +221,22 @@ case $action in
         ;;
     
     "td-login-remote")
-        TARGET_ENV=${TARGET_ENV:-"cash1"}
+        TARGET_ENV=${1}
+        if [[ "$TARGET_ENV" == "" ]]; then
+            echo "Usage: td-login-remote <environment>"
+            exit 1
+        fi
         SERVER_NAME=${SERVER_NAME:-"solomon"}
         sleep 3 && python -m webbrowser -n "https://localhost:8000" &
         ssh -L 8000:127.0.0.1:8000 $SERVER_NAME "cd ~/$TARGET_ENV-data/inputs/td-token && ./start-login.sh"
         ;;
 
     "create-env-td")
-        TARGET_ENV=${TARGET_ENV:-"margin"}
+        TARGET_ENV=${1}
+        if [[ "$TARGET_ENV" == "" ]]; then
+            echo "Usage: create-env-td <environment>"
+            exit 1
+        fi
         SERVER_NAME=${SERVER_NAME:-"solomon"}
         ./scripts/deploy/send-to-server.sh $TARGET_ENV || true
 
@@ -244,9 +259,9 @@ case $action in
         scp $DATA_DIR/inputs/td-token/.env $SERVER_NAME:~/$TARGET_ENV-data/inputs/td-token/.env
 
         # get tokens
-        TARGET_ENV="$TARGET_ENV" SERVER_NAME="$SERVER_NAME" ./run.sh td-login-remote
+        SERVER_NAME="$SERVER_NAME" ./run.sh td-login-remote "$TARGET_ENV"
 
-        ./scripts/deploy/send-to-server.sh $TARGET_ENV
+        ./scripts/deploy/send-to-server.sh "$TARGET_ENV"
         ;;
 
     # Catchall
