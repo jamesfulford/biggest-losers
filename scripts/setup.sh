@@ -32,7 +32,7 @@ source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourc
 #
 # Build container (if already built, will hit cache)
 #
-docker build -t "talib-py-runner-$ENV_NAME" . || fail_script "Failed to build docker container"
+# docker build -t "talib-py-runner" . || fail_script "Failed to build docker container"
 
 
 # TODO: account for time and timezones in crontab entries

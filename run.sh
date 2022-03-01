@@ -30,7 +30,7 @@ function run () {
         -v "$APP_DIR":/app \
         $daemon \
         --name $ENV_NAME-$RANDOM \
-        "talib-py-runner-$ENV_NAME" "$@"
+        "talib-py-runner" "$@"
 }
 
 function run_python () {
