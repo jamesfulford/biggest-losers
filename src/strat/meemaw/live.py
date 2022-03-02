@@ -53,7 +53,7 @@ Questions We Have to be Answers By Data
 - able to buy the dip?
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 import logging
 from importlib import import_module
 
@@ -73,8 +73,12 @@ def next_minute_mark(dt: datetime) -> datetime:
     return dt - timedelta(microseconds=dt.microsecond, seconds=dt.second) + timedelta(minutes=1)
 
 
+def should_continue():
+    return now().time() < time(12, 0)
+
+
 def loop(scanner: str):
-    while True:
+    while should_continue():
         try:
             execute_phases(scanner)
         except HTTPError as e:
