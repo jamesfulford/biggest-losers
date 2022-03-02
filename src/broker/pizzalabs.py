@@ -35,3 +35,7 @@ def get_account(*args, **kwargs):
 
 def get_filled_orders(*args, **kwargs):
     logging.info(f"get_filled_orders: {args=} {kwargs=}")
+
+
+def cancel_all_orders() -> None:
+    logging.info(f"Canceled all orders")

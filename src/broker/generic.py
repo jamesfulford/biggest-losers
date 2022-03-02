@@ -13,6 +13,7 @@ if broker_name == "alpaca":
     get_positions = alpaca.get_positions
     get_account = alpaca.get_account
     get_filled_orders = alpaca.get_filled_orders
+    cancel_all_orders = alpaca.cancel_all_orders
 elif broker_name == "td":
     import src.broker.td as td
     buy_symbol_at_close = td.buy_symbol_at_close
@@ -22,6 +23,7 @@ elif broker_name == "td":
     get_positions = td.get_positions
     get_account = td.get_account
     get_filled_orders = td.get_filled_orders
+    # TODO: cancel all orders
 elif broker_name == "pizzalabs":
     import src.broker.pizzalabs as pizzalabs
     buy_symbol_at_close = pizzalabs.buy_symbol_at_close
@@ -31,6 +33,7 @@ elif broker_name == "pizzalabs":
     get_positions = pizzalabs.get_positions
     get_account = pizzalabs.get_account
     get_filled_orders = pizzalabs.get_filled_orders
+    cancel_all_orders = pizzalabs.cancel_all_orders
 else:
     logging.fatal(f"BROKER '{broker_name}' not supported. Exiting...")
     exit(1)
