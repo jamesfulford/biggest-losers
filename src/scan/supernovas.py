@@ -8,6 +8,7 @@ from src.trading_day import generate_trading_days
 from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 from src.csv_dump import write_csv
 from src.data.polygon.grouped_aggs import get_today_grouped_aggs
+from src.scan.utils.rank import rank_candidates_by
 
 
 #
@@ -20,6 +21,7 @@ from src.data.polygon.grouped_aggs import get_today_grouped_aggs
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
 
+    # TODO: when live, use 'c', when backtest, use 'h'?
     for ticker in tickers:
         ticker["peak_percentage"] = (ticker['h'] - ticker['o']) / ticker['o']
 
@@ -32,6 +34,9 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
         "is_unit": is_unit,
         "is_warrant": is_warrant,
     }))
+
+    tickers = rank_candidates_by(
+        tickers, lambda t: -t['peak_percentage'])
 
     return tickers
 

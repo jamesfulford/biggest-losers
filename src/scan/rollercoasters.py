@@ -8,6 +8,7 @@ from src.scan.utils.indicators import enrich_tickers_with_indicators, extract_fr
 from src.trading_day import generate_trading_days
 from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 from src.csv_dump import write_csv
+from src.scan.utils.rank import rank_candidates_by
 
 
 #
@@ -24,6 +25,7 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
         "days_ago_close": extract_from_n_candles_ago("c", 6),
     }, n=6))
     for ticker in tickers:
+        # TODO: in backtest, use 'h', when live use 'c'?
         percent_change_days_ago = (ticker["days_ago_close"] -
                                    ticker["c"])/ticker["days_ago_close"]
         ticker["percent_change_days_ago"] = percent_change_days_ago
@@ -36,7 +38,8 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
     }))
     tickers = list(
         filter(lambda t: t["percent_change_days_ago"] > .1, tickers))
-    tickers.sort(key=lambda t: -t["percent_change_days_ago"])
+    tickers = rank_candidates_by(
+        tickers, lambda t: -t['percent_change_days_ago'])
     return tickers
 
 

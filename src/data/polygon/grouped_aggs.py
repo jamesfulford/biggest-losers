@@ -124,7 +124,8 @@ def prepare_cache_grouped_aggs(start: date, end: date) -> None:
         logging.info("cache is all present, will not refetch")
 
 
-@lru_cache(maxsize=30)
+# TODO: add lru_cache honoring skip_cache
+# @lru_cache(maxsize=30)
 def fetch_grouped_aggs_with_cache(day: date, skip_cache=False):
     should_cache = day != date.today()
     if skip_cache:
@@ -191,7 +192,7 @@ def get_last_trading_day_grouped_aggs(today: date):
     return _enrich_grouped_aggs(yesterday_raw_grouped_aggs)
 
 
-@lru_cache(maxsize=130)
+# TODO: add lru_cache honoring skip_cache
 def get_today_grouped_aggs(today: date, skip_cache=False):
     today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(
         today, skip_cache=skip_cache)
