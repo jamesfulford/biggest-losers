@@ -1,9 +1,11 @@
 from datetime import date
+import logging
 from typing import Callable
 import numpy as np
 from talib.abstract import Function
 
 from src.data.polygon.grouped_aggs import get_last_n_candles
+from src.trading_day import previous_trading_day
 
 
 def use_indicator(indicator: Function, **kwargs):
@@ -43,12 +45,21 @@ def enrich_tickers_with_indicators(day: date, tickers: list[dict], indicators: d
     Last value from each indicator is added to each ticker.
     To use talib, use `use_indicator` function and `talib.abstract.*` (ex: talib.abstract.RSI)
     """
+    new_tickers = []
     for ticker in tickers:
-        daily_candles = get_last_n_candles(day, ticker["T"], n=n)
+        # exclude today (won't be in cache), add `ticker` dict to the end which is candle-like
+        daily_candles = get_last_n_candles(
+            previous_trading_day(day), ticker["T"], n=n-1)
         if not daily_candles:
             continue
-        daily_candles = list(reversed(daily_candles))
+        daily_candles = list(reversed(daily_candles)) + [ticker]
 
         for indicator_name, indicator in indicators.items():
             ticker[indicator_name] = indicator(daily_candles)
-        yield ticker
+        new_tickers.append(ticker)
+
+    if not new_tickers:
+        logging.warning(
+            f"enrich_tickers_with_indicators: all {len(tickers)} tickers on {day} were filtered out when getting last {n} candles. Is the cache up to date?")
+
+    return new_tickers
