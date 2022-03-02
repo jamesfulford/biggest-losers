@@ -59,13 +59,15 @@ from datetime import datetime, time, timedelta
 import logging
 from importlib import import_module
 
+import sys
+
 from requests.exceptions import HTTPError
 from src.intention import log_intentions
 
 from src.trading_day import now, today
 from src.wait import wait_until
 
-from src.broker.generic import buy_symbol_market, get_positions
+from src.broker.generic import buy_symbol_market, get_positions, get_account
 
 
 ALGO_NAME = "meemaw"
@@ -155,7 +157,10 @@ def execute_phases(scanner: str):
 
 
 def main():
-    import sys
+    logging.info(f"Checking algo can be run in this account...")
+    account = get_account()
+    assert account["type"] == "CASH" or account["equity"] > 25000, "Either use a cash account or fund margin account with $25k+ equity to avoid PDT violations."
+    logging.info(f"Account is OK.")
 
     scanner = sys.argv[1]
     assert scanner.replace("_", "").isalpha()
