@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 import logging
 import os
-from typing import Union
+from typing import List, Union
 import requests
 
 
@@ -450,9 +450,23 @@ def sell_symbol_at_open(symbol: str, quantity: float, account_id: Union[str, Non
 
 
 def print_accounts_summary():
-    for account in get_accounts():
-        logging.info(
-            f"  '{account['id']}' (has ${round(account['equity'], 2)} in equity)")
+    accounts = get_accounts()
+    user_info = get_user_info()
+    print(f"User {user_info['userId']}:")
+    for account_info in user_info["accounts"]:
+        account = next(
+            filter(lambda a: a['id'] == account_info["accountId"], accounts), None)
+
+        is_primary = user_info['primaryAccountId'] == account_info["accountId"]
+        is_margin = account_info['authorizations']['marginTrading']
+
+        equity = account['equity']
+        cash = account['cash']
+
+        print(
+            f" {'*' if is_primary else ' '}{account_info['displayName']:<16} {'MARGIN' if is_margin else '':<6} '{account['id']}' {equity=:>10.2f} {cash=:>10.2f}")
+        # print(account_info["accountId"], account_info['displayName'],
+        #       account_info['authorizations']['marginTrading'], account['equity'])
 
 
 try:
@@ -462,3 +476,187 @@ except KeyError as e:
         f"cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
     print_accounts_summary()
     exit(1)
+
+
+def _get_price_rounded(quote: dict, price_key: str):
+    return round(quote[price_key], quote['digits'])
+
+
+def get_quotes(symbols: List[str]):
+    """
+    "NRGU": {
+        "52WkHigh": 356.0,
+        "52WkLow": 85.89,
+        "askId": "P",
+        "askPrice": 339.9,
+        "askSize": 300,
+        "assetMainType": "EQUITY",
+        "assetType": "EQUITY",
+        "bidId": "P",
+        "bidPrice": 327.72,
+        "bidSize": 100,
+        "bidTick": " ",
+        "closePrice": 330.0,
+        "cusip": "06367V105",
+        "delayed": false,
+        "description": "MicroSectors U.S. Big Oil Index 3X Leveraged ETN",
+        "digits": 2,
+        "divAmount": 0.0,
+        "divDate": "",
+        "divYield": 0.0,
+        "exchange": "p",
+        "exchangeName": "PACIFIC",
+        "highPrice": 356.0,
+        "lastId": "P",
+        "lastPrice": 337.99,
+        "lastSize": 0,
+        "lowPrice": 327.0,
+        "marginable": true,
+        "mark": 337.99,
+        "markChangeInDouble": 7.99,
+        "markPercentChangeInDouble": 2.4212,
+        "nAV": 0.0,
+        "netChange": 7.99,
+        "netPercentChangeInDouble": 2.4212,
+        "openPrice": 340.55,
+        "peRatio": 0.0,
+        "quoteTimeInLong": 1646172261975,
+        "realtimeEntitled": true,
+        "regularMarketLastPrice": 337.99,
+        "regularMarketLastSize": 4,
+        "regularMarketNetChange": 7.99,
+        "regularMarketPercentChangeInDouble": 2.4212,
+        "regularMarketTradeTimeInLong": 1646169000002,
+        "securityStatus": "Normal",
+        "shortable": true,
+        "symbol": "NRGU",
+        "totalVolume": 257805,
+        "tradeTimeInLong": 1646172091728,
+        "volatility": 0.2284
+    }
+    """
+    response = _get(f"/v1/marketdata/quotes", params={
+        "symbol": ",".join(symbols)
+    })
+
+    quotes = {}
+    for symbol, quote in response.json().items():
+        quotes[symbol] = {
+            "ask": _get_price_rounded(quote, 'askPrice'),
+            "bid": _get_price_rounded(quote, 'bidPrice'),
+            "spread": round(quote['askPrice'] - quote['bidPrice'], quote['digits']),
+            "day_candle": {
+                "open": _get_price_rounded(quote, 'openPrice'),
+                "high": _get_price_rounded(quote, 'highPrice'),
+                "low": _get_price_rounded(quote, 'lowPrice'),
+                "close": _get_price_rounded(quote, 'closePrice'),
+                "volume": quote['totalVolume'],
+            },
+        }
+
+    return quotes
+
+
+def get_quote(symbol: str):
+    return get_quotes([symbol])[symbol]
+
+
+def get_user_info():
+    """
+    {
+        "userId" : "jamespfulford",
+        "userCdDomainId" : "A000000085603460",
+        "primaryAccountId" : "279989255",
+        "lastLoginTime" : "2022-03-01T22:16:17+0000",
+        "tokenExpirationTime" : "2022-03-01T22:49:28+0000",
+        "loginTime" : "2022-03-01T22:19:28+0000",
+        "accessLevel" : "CUS",
+        "stalePassword" : false,
+        "professionalStatus" : "NON_PROFESSIONAL",
+        "quotes" : {
+            "isNyseDelayed" : false,
+            "isNasdaqDelayed" : false,
+            "isOpraDelayed" : false,
+            "isAmexDelayed" : false,
+            "isCmeDelayed" : true,
+            "isIceDelayed" : true,
+            "isForexDelayed" : true
+        },
+        "exchangeAgreements" : {
+            "OPRA_EXCHANGE_AGREEMENT" : "ACCEPTED",
+            "NASDAQ_EXCHANGE_AGREEMENT" : "ACCEPTED",
+            "NYSE_EXCHANGE_AGREEMENT" : "ACCEPTED"
+        },
+        "accounts" : [
+            {
+                "accountId" : "252321094",
+                "displayName" : "margin",
+                "accountCdDomainId" : "A000000093786939",
+                "company" : "AMER",
+                "segment" : "AMER",
+                "acl" : "BPCCDRDTDWESF7G1G3G5G7GKGLH1H3H5LTM1MAPNQSRFSDTETFTOTTUAURXBXNXO",
+                "authorizations" : {
+                    "apex" : false,
+                    "levelTwoQuotes" : false,
+                    "stockTrading" : true,
+                    "marginTrading" : true,
+                    "streamingNews" : false,
+                    "optionTradingLevel" : "NONE",
+                    "streamerAccess" : true,
+                    "advancedMargin" : true,
+                    "scottradeAccount" : false
+                }
+            },
+            ...
+        ]
+    }
+    """
+    return _get("/v1/userprincipals").json()
+
+
+def get_watchlists():
+    return _get("/v1/accounts/watchlists").json()
+
+
+def main():
+    # print_accounts_summary()
+    update_watchlist('James 1', ["AAPL", "XLE"])
+
+    for w in get_watchlists():
+        print(w["name"], w["accountId"], w["watchlistId"], list(
+            map(lambda i: i['instrument']['symbol'], w["watchlistItems"])))
+
+
+def update_watchlist(target_name: str, symbols: List[str]):
+    """
+    Overwrites (or creates) watchlist in primary account with given symbols.
+    NOTE: TDAmeritrade does not propagate updates to TOS clients quickly. Restarting clients seems to be best.
+    https://www.reddit.com/r/thinkorswim/comments/or2uyj/watchlist_updates_using_tda_api_not_behaving/
+    """
+    user_info = get_user_info()
+    primary_account_id = user_info['primaryAccountId']
+
+    watchlists = get_watchlists()
+    w = next(filter(lambda w: w['name'] == target_name and w['accountId']
+             == primary_account_id, watchlists), None)
+
+    new_watchlist = {
+        "name": target_name,
+        "watchlistItems": list(map(lambda symbol: {
+            "instrument": {
+                "symbol": symbol,
+            },
+        }, symbols)),
+    }
+    if not w:
+        print(f"Creating watchlist {target_name}")
+        r = requests.post(
+            f"https://api.tdameritrade.com/v1/accounts/{primary_account_id}/watchlists", json=new_watchlist, headers=_get_headers())
+        _log_response(r)
+        r.raise_for_status()
+        return
+
+    r = requests.put(
+        f"https://api.tdameritrade.com/v1/accounts/{w['accountId']}/watchlists/{w['watchlistId']}", json=new_watchlist, headers=_get_headers())
+    _log_response(r)
+    r.raise_for_status()
