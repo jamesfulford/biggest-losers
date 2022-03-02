@@ -41,6 +41,13 @@ def _warn_for_fractional_shares(quantity: float):
             f"quantity {quantity} is not an integer, broker will use fractional shares")
 
 
+def _get(url: str, **kwargs):
+    response = requests.get(
+        "https://api.tdameritrade.com" + url, **kwargs, headers=_get_headers())
+    _log_response(response)
+    response.raise_for_status()
+    return response
+
 #
 # Accounts
 #
@@ -135,19 +142,13 @@ def get_account(account_id: str = None):
     if not account_id:
         account_id = get_account_id()
 
-    response = requests.get(
-        f"https://api.tdameritrade.com/v1/accounts/{account_id}", headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
+    response = _get(f"/v1/accounts/{account_id}")
 
     return _build_account(response.json())
 
 
 def get_accounts():
-    response = requests.get(
-        f"https://api.tdameritrade.com/v1/accounts", headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
+    response = _get(f"/v1/accounts")
 
     return list(map(_build_account, response.json()))
 
@@ -159,14 +160,11 @@ def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
     if not account_id:
         account_id = get_account_id()
 
-    response = requests.get(
-        f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", headers=_get_headers(), params={
-            'status': 'filled',
-            'fromEnteredTime': start.date().isoformat(),
-            'toEnteredTime': end.date().isoformat(),
-        })
-    _log_response(response)
-    response.raise_for_status()
+    response = _get(f"/v1/accounts/{account_id}/orders", params={
+        'status': 'filled',
+        'fromEnteredTime': start.date().isoformat(),
+        'toEnteredTime': end.date().isoformat(),
+    })
 
     filled_orders = list(
         filter(bool, list(map(_build_order, response.json()))))
@@ -307,12 +305,9 @@ def get_positions(account_id: str = None):
     if not account_id:
         account_id = get_account_id()
 
-    response = requests.get(
-        f"https://api.tdameritrade.com/v1/accounts/{account_id}", params={
-            'fields': 'positions'
-        }, headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
+    response = _get(f"/v1/accounts/{account_id}", params={
+        'fields': 'positions'
+    })
 
     raw_account = response.json()
     positions = raw_account['securitiesAccount'].get(
