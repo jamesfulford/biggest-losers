@@ -26,8 +26,8 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
     }, n=6))
     for ticker in tickers:
         # TODO: in backtest, use 'h', when live use 'c'?
-        percent_change_days_ago = (ticker["days_ago_close"] -
-                                   ticker["c"])/ticker["days_ago_close"]
+        percent_change_days_ago = (ticker["c"]-ticker["days_ago_close"]
+                                   )/ticker["days_ago_close"]
         ticker["percent_change_days_ago"] = percent_change_days_ago
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
         # "is_etf": is_etf,
