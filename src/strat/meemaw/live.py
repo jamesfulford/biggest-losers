@@ -28,6 +28,7 @@ Exit:
 - [X] selling: sell all positions
 - [X] tire out the dog 
 - [ ] crontab entry start at 9:30am, stop at 11:59am
+- [ ] crontab entry for meemaw-prepare
 - [ ] crontab clear_acount for 12pm (noon)
 - [ ] hook up to alpaca paper 
 - [ ] 5% up bracket profit
@@ -39,6 +40,8 @@ Exit:
 - [ ] if buy, up 5%, sell, does it buy back if it shows back up on the list? go up 5, sell, buy, go up 5, sell, buy, etc.
 - [ ] make sure that the account is day-trade-able. (at least 25K margin account)
 - [ ] TD: cancel all orders
+- [ ] schedule cache updating beforehand
+- [ ] 
 
 Questions We Have to be Answers By Data
 - how often do members of the list change? (how many total stocks show up from 9:30-12)
@@ -53,7 +56,6 @@ Questions We Have to be Answers By Data
 from datetime import datetime, timedelta
 import logging
 from importlib import import_module
-from pprint import pformat
 
 from requests.exceptions import HTTPError
 from src.intention import log_intentions
@@ -61,7 +63,7 @@ from src.intention import log_intentions
 from src.trading_day import now, today
 from src.wait import wait_until
 
-from src.broker.pizzalabs import buy_symbol_market, get_positions
+from src.broker.generic import buy_symbol_market, get_positions
 
 
 ALGO_NAME = "meemaw"
@@ -90,16 +92,12 @@ def format_price(price: float):
 
 
 def execute_phases(scanner: str):
-    #
-    # Execution Phase
-    #
     next_interval_start = next_minute_mark(now())
 
     #
     # Preparation Phase
     #
-    # TODO: re-enable this
-    # wait_until(next_interval_start - timedelta(seconds=5))
+    wait_until(next_interval_start - timedelta(seconds=5))
     positions = get_positions()
     current_symbols = set()
 
@@ -107,9 +105,9 @@ def execute_phases(scanner: str):
         current_symbols.add(position["symbol"])
 
     #
-    # Scan
+    # Execution Phase
     #
-
+    wait_until(next_interval_start)
     # NOTE: Cache for multiple previous days must be prepared beforehand in order to work.
     day = today()
 
@@ -149,16 +147,14 @@ def execute_phases(scanner: str):
         }
         log_intentions(ALGO_NAME, intentions, metadata)
 
-    # TODO: move back up
-    wait_until(next_interval_start)
-
 
 def main():
     import sys
 
     scanner = sys.argv[1]
     assert scanner.replace("_", "").isalpha()
-    logging.info(f"Starting live scanning")
+
+    logging.info(f"Starting live scanning with scanner '{scanner}'")
     loop(scanner)
 
 

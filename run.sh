@@ -106,6 +106,19 @@ case $action in
         run_python -c 'import src.log; from src.strat.losers.warrants import main; main()' "sell"
         ;;
 
+    # Strategy: meemaw
+    "meemaw-prepare")
+        run_python prepare_cache.py --start end-3d --end today
+        ;;
+
+    "meemaw")
+        run_python -c 'import src.log;from src.strat.meemaw.live import main; main()' meemaw
+        ;;
+
+    "clear-account")
+        run_python -c 'import src.log;from src.strat.meemaw.clear_account import main; main()'
+        ;;
+
     # Strategy: daily bracketing on NRGU
     "bracketing")
         # TODO: refresh TD tokens continuously when TD support added for bracketing
@@ -149,7 +162,7 @@ case $action in
         ;;
 
     "prepare-cache")
-        run_python prepare_cache.py --end today --start end-2  # polygon free tier limits data to 2 years back
+        run_python prepare_cache.py --end today --start end-2y  # polygon free tier limits data to 2 years back
         ;;
 
     "collector-nightly")

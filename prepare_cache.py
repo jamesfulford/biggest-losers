@@ -69,10 +69,17 @@ if __name__ == "__main__":
         end = previous_trading_day(market_today)
 
     if "end-" in args.start:
-        years = int(args.start.replace("end-", ""))
-        start = today_or_previous_trading_day(
-            end - timedelta(days=365 * years))
-        print(f"checking whether API allows us to go back {years} years")
+        start_str = args.start.replace("end-", "")
+        if start_str.endswith("d"):
+            days = int(start_str.replace("d", ""))
+            start = today_or_previous_trading_day(
+                end - timedelta(days=days))
+        elif start_str.endswith('y'):
+            years = int(start_str.replace("y", ""))
+            start = today_or_previous_trading_day(
+                end - timedelta(days=365 * years))
+
+        print(f"checking whether API allows us to go back to {start}")
         while True:
             try:
                 fetch_grouped_aggs(start)  # no cache
