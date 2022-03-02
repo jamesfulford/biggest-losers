@@ -557,7 +557,9 @@ def get_quotes(symbols: List[str]):
     return quotes
 
 
-def get_quote(symbol: str):
+def get_quote(symbol: str) -> dict:
+    """
+    """
     return get_quotes([symbol])[symbol]
 
 
@@ -618,15 +620,6 @@ def get_watchlists():
     return _get("/v1/accounts/watchlists").json()
 
 
-def main():
-    # print_accounts_summary()
-    update_watchlist('James 1', ["AAPL", "XLE"])
-
-    for w in get_watchlists():
-        print(w["name"], w["accountId"], w["watchlistId"], list(
-            map(lambda i: i['instrument']['symbol'], w["watchlistItems"])))
-
-
 def update_watchlist(target_name: str, symbols: List[str]):
     """
     Overwrites (or creates) watchlist in primary account with given symbols.
@@ -660,3 +653,69 @@ def update_watchlist(target_name: str, symbols: List[str]):
         f"https://api.tdameritrade.com/v1/accounts/{w['accountId']}/watchlists/{w['watchlistId']}", json=new_watchlist, headers=_get_headers())
     _log_response(r)
     r.raise_for_status()
+
+
+def _round_price(price: float) -> float:
+    return round(price, 2 if price > 1 else 4)
+
+
+def buy_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False, account_id: Union[str, None] = None):
+    _warn_for_fractional_shares(quantity)
+    _place_order({
+        "orderType": "LIMIT",
+        "price": str(_round_price(price)),
+        "session": "SEAMLESS" if allow_premarket else "NORMAL",
+        "duration": "GOOD_TILL_CANCEL" if gtc else "DAY",
+        "orderStrategyType": "SINGLE",
+        "orderLegCollection": [
+            {
+                "instruction": "BUY",
+                "quantity": quantity,
+                "instrument": {
+                    "symbol": symbol,
+                    "assetType": "EQUITY"
+                }
+            }
+        ]
+    }, account_id=account_id)
+
+
+def sell_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False, account_id: Union[str, None] = None):
+    _warn_for_fractional_shares(quantity)
+    _place_order({
+        "orderType": "LIMIT",
+        "price": str(_round_price(price)),
+        "session": "SEAMLESS" if allow_premarket else "NORMAL",
+        "duration": "GOOD_TILL_CANCEL" if gtc else "DAY",
+        "orderStrategyType": "SINGLE",
+        "orderLegCollection": [
+            {
+                "instruction": "SELL",
+                "quantity": quantity,
+                "instrument": {
+                    "symbol": symbol,
+                    "assetType": "EQUITY"
+                }
+            }
+        ]
+    }, account_id=account_id)
+
+
+def buy_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
+    quote = get_quote(symbol)
+    price = _round_price(quote['ask'] + buffer)
+    logging.debug(
+        f"Buying {quantity} shares of {symbol} at {price} ({quote['ask']} + {buffer})")
+    buy_limit(symbol, quantity, price, **limit_args)
+
+
+def sell_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
+    quote = get_quote(symbol)
+    price = _round_price(quote['bid'] - buffer)
+    logging.debug(
+        f"Buying {quantity} shares of {symbol} at {price} ({quote['bid']} - {buffer})")
+    sell_limit(symbol, quantity, price, **limit_args)
+
+
+def main():
+    pass
