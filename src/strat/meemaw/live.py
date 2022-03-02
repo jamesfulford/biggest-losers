@@ -26,13 +26,15 @@ Exit:
 - [X] Buy stocks on list
 - [X] selling: cancel all orders
 - [X] selling: sell all positions
-- [X] tire out the dog 
-- [ ] crontab entry start at 9:30am, stop at 11:59am
-- [ ] crontab entry for meemaw-prepare
-- [ ] crontab clear_acount for 12pm (noon)
-- [ ] hook up to alpaca paper 
-- [ ] 5% up bracket profit
+- [X] tire out the dog
+- [X] crontab entry start at 9:30am,
+- [X] stop at 11:59am
+- [X] crontab entry for meemaw-prepare
+- [X] crontab clear_acount for 12pm (noon)
+- [X] hook up to alpaca paper
+- [X] fill in is_stock cache
 
+- [ ] 5% up bracket profit
 - [ ] add limit orders (to support premarket)
 - [ ] sizing? 20% of account?
 - [ ] sell at 9:38?
@@ -41,14 +43,14 @@ Exit:
 - [ ] make sure that the account is day-trade-able. (at least 25K margin account)
 - [ ] TD: cancel all orders
 - [ ] schedule cache updating beforehand
-- [ ] 
+- [ ]
 
 Questions We Have to be Answers By Data
 - how often do members of the list change? (how many total stocks show up from 9:30-12)
 - what is best time to buy for max profit at end
 - how should sizing work
     size down? 20, 15, 10, 5...
-- when is optimal sell time (not 12pm? 11? 10:30?) 
+- when is optimal sell time (not 12pm? 11? 10:30?)
 - impactof penny stocks (<1, <.1, <.01)
 - able to buy the dip?
 """
