@@ -1,10 +1,10 @@
-import json
-from datetime import datetime, timedelta, date
+import sys
+from datetime import datetime, timedelta
 import logging
-from importlib import import_module
-from pprint import pformat, pprint
+from pprint import pformat
 
 from requests.exceptions import HTTPError
+from src.strat.utils.scanners import get_scanner
 
 from src.trading_day import now, today
 from src.wait import wait_until
@@ -34,21 +34,21 @@ def format_price(price: float):
     else:
         return f"{price:.2f}" + "  "
 
+# NOTE: Cache for multiple previous days must be prepared beforehand in order to work.
+
 
 def execute_phases(scanner: str):
     #
     # Execution Phase
     #
+    scan_for_tickers = get_scanner(scanner)
     next_interval_start = next_minute_mark(now())
 
     #
     # Scan
     #
-    # NOTE: Cache for multiple previous days must be prepared beforehand in order to work.
     day = today()
-
-    module = import_module("src.scan." + scanner)
-    tickers = module.get_all_candidates_on_day(day, skip_cache=True)
+    tickers = scan_for_tickers(day, skip_cache=True)
 
     if scanner == "rollercoasters":
         print("-"*20, "oOo", now().strftime("%H:%M"), "oOo", "-"*20)
@@ -67,19 +67,13 @@ def execute_phases(scanner: str):
             del candidate['is_stock']
             del candidate['n']
             print(pformat(candidate, compact=True, depth=1).replace("\n", ""))
-            # print(json.dumps(candidate, sort_keys=True))
 
-    # NOCOMMIT
     wait_until(next_interval_start)
 
 
 def main():
-    import sys
-
     scanner = sys.argv[1]
-    assert scanner.replace("_", "").isalpha()
-    print(scanner)
-    logging.info(f"Starting live scanning")
+    logging.info(f"Starting live scanning with scanner '{scanner}'")
     loop(scanner)
 
 

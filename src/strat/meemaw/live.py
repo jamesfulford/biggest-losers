@@ -33,6 +33,7 @@ Exit:
 - [X] crontab clear_acount for 12pm (noon)
 - [X] hook up to alpaca paper
 - [X] fill in is_stock cache
+- [X] assert PDT
 
 - [ ] 5% up bracket profit
 - [ ] add limit orders (to support premarket)
@@ -57,17 +58,17 @@ Questions We Have to be Answers By Data
 
 from datetime import datetime, time, timedelta
 import logging
-from importlib import import_module
-
 import sys
 
 from requests.exceptions import HTTPError
 from src.intention import log_intentions
+from src.strat.utils.pdt import assert_pdt
+from src.strat.utils.scanners import get_scanner
 
 from src.trading_day import now, today
 from src.wait import wait_until
 
-from src.broker.generic import buy_symbol_market, get_positions, get_account
+from src.broker.generic import buy_symbol_market, get_positions
 
 
 ALGO_NAME = "meemaw"
@@ -106,11 +107,13 @@ def execute_phases(scanner: str):
     # Preparation Phase
     #
     wait_until(next_interval_start - timedelta(seconds=5))
+
     positions = get_positions()
     current_symbols = set()
-
     for position in positions:
         current_symbols.add(position["symbol"])
+
+    scan_for_tickers = get_scanner(scanner)
 
     #
     # Execution Phase
@@ -119,8 +122,7 @@ def execute_phases(scanner: str):
     # NOTE: Cache for multiple previous days must be prepared beforehand in order to work.
     day = today()
 
-    module = import_module("src.scan." + scanner)
-    tickers = module.get_all_candidates_on_day(day, skip_cache=True)
+    tickers = scan_for_tickers(day, skip_cache=True)
 
     desired_symbols = set()
     for ticker in tickers[:5]:
@@ -157,14 +159,9 @@ def execute_phases(scanner: str):
 
 
 def main():
-    logging.info(f"Checking algo can be run in this account...")
-    account = get_account()
-    assert account["type"] == "CASH" or account["equity"] > 25000, "Either use a cash account or fund margin account with $25k+ equity to avoid PDT violations."
-    logging.info(f"Account is OK.")
+    assert_pdt()
 
     scanner = sys.argv[1]
-    assert scanner.replace("_", "").isalpha()
-
     logging.info(f"Starting live scanning with scanner '{scanner}'")
     loop(scanner)
 

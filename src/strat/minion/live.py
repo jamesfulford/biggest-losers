@@ -10,6 +10,7 @@ import numpy as np
 from talib.abstract import RSI, WILLR
 from requests.exceptions import HTTPError
 from src.intention import log_intentions
+from src.strat.utils.pdt import assert_pdt
 
 from src.trading_day import now, today
 from src.wait import wait_until
@@ -198,10 +199,7 @@ def execute_phases(symbol: str):
 
 
 def main():
-    logging.info(f"Checking algo can be run in this account...")
-    account = get_account()
-    assert account["type"] == "CASH" or account["equity"] > 25000, "Either use a cash account or fund margin account with $25k+ equity to avoid PDT violations."
-    logging.info(f"Account is OK.")
+    assert_pdt()
 
     symbol = "NRGU"
     logging.info(f"Starting {symbol} live trading")
