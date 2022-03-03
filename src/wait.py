@@ -14,7 +14,7 @@ def wait_until(t):
 
         seconds_remaining = (
             t - market_time
-        ).seconds + 1  # so no crazy loop in last few milliseconds
+        ).total_seconds() + .001  # +1ms so no crazy loop at end
 
         logging.debug(
             f"{market_time} is before {t}, waiting {seconds_remaining} seconds")
