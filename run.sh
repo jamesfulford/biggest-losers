@@ -126,7 +126,6 @@ case $action in
         run_python -c 'import src.log; from src.strat.bracketing.bracketing import main; main()'
         ;;
 
-    # TODO: refresh TD tokens continuously
     # Strategy: Minion (NRGU 1m)
     "minion")
         run_python -c 'import src.log; from src.strat.minion.live import main; main()'

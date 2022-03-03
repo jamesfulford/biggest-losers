@@ -1,15 +1,13 @@
 from datetime import date
 import logging
 
-from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
+from src.criteria import is_stock
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
-from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle, use_indicator
+from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle
 from src.trading_day import generate_trading_days
 from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 from src.csv_dump import write_csv
-
-from talib.abstract import RSI
 
 #
 # _on_day: used for LIVE and BACKTEST
@@ -25,7 +23,7 @@ from src.data.td.td import get_fundamentals
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
     tickers = list(filter(lambda t: t["c"] < 5, tickers))
-    tickers = list(filter(lambda t: t["v"] > 100_000, tickers))
+    tickers = list(filter(lambda t: t["v"] > 1_000_000, tickers))
 
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
         "is_stock": is_stock,
