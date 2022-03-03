@@ -44,10 +44,11 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
 
     # TODO: how to backtest this? Do not have historical floats...
     fundamentals = get_fundamentals(list(map(lambda t: t["T"], tickers)))
+    tickers = list(filter(lambda t: t["T"] in fundamentals, tickers))
     for ticker in tickers:
         ticker['float'] = fundamentals[ticker['T']]['shares']['float']
     tickers = list(
-        filter(lambda t: t['float'] < 50_000_000 and t['float'] > 0, tickers))
+        filter(lambda t: t['float'] < 50_000_000 and t['float'] > 1_000_000, tickers))
 
     tickers.sort(key=lambda t: t['v']/t['float'], reverse=True)
 
