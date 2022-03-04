@@ -59,7 +59,7 @@ def execute_phases(scanner: str):
         print("-"*20, "oOo", now().strftime("%H:%M"), "oOo", "-"*20)
         for candidate in tickers[:10]:
             print(
-                f"{candidate['T']:<5} | ${format_price(candidate['c']):>8} | {candidate['v']/1000000:>6.1f}M ({candidate['v']/candidate['float']:>5.0%} of fl) | {candidate['float']/1000000 :>6.1f}M fl | {candidate['percent_change']:>3.0%}")
+                f"{candidate['T']:<5} | ${format_price(candidate['c']):>8} | {candidate['v']/1000000:>6.1f}M ({candidate['relative_volume']:>5.0%} of fl) | {candidate['float']/1000000 :>6.1f}M fl | +{candidate['percent_change']:>3.0%} | {candidate['short_interest']:>3.0%} short")
     else:
         print("WARNING: no pretty printer found for scanner", scanner)
         for candidate in tickers[:10]:

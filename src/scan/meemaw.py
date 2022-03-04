@@ -2,6 +2,7 @@ from datetime import date
 import logging
 
 from src.criteria import is_stock
+from src.data.yh.stats import get_short_interest
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle
@@ -68,6 +69,14 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
             ticker['float']  # (because >, no divide by zero)
     tickers = list(filter(lambda t: t['relative_volume'], tickers))
 
+    # Short Interest
+    for ticker in tickers:
+        short_interest = get_short_interest(ticker["T"], today)
+        if short_interest:
+            ticker["shares_short"] = short_interest["shares_short"]
+            ticker["short_interest"] = ticker["shares_short"]/ticker["float"]
+    tickers = list(filter(lambda t: t["short_interest"], tickers))
+    tickers = list(filter(lambda t: t["short_interest"] > .02, tickers))
 
     # Highest volume first
     tickers.sort(key=lambda t: t['v'], reverse=True)
