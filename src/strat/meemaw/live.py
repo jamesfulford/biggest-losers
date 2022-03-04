@@ -124,8 +124,11 @@ def execute_phases(scanner: str):
 
     tickers = scan_for_tickers(day, skip_cache=True)
 
+    # we want only top 1
+    tickers = tickers[:1]
+
     desired_symbols = set()
-    for ticker in tickers[:5]:
+    for ticker in tickers:
         desired_symbols.add(ticker["T"])
 
     symbols_to_add = desired_symbols.difference(current_symbols)
