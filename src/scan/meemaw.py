@@ -22,8 +22,14 @@ from src.data.td.td import get_fundamentals
 
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
+
     tickers = list(filter(lambda t: t["c"] < 5, tickers))
-    tickers = list(filter(lambda t: t["v"] > 1_000_000, tickers))
+    tickers = list(filter(lambda t: t["v"] > 100_000, tickers))
+
+    for ticker in tickers:
+        ticker["open_to_close_change"] = (
+            ticker['c'] - ticker['o']) / ticker['o']
+    tickers = list(filter(lambda t: t["open_to_close_change"] > 0, tickers))
 
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
         "is_stock": is_stock,
