@@ -131,6 +131,8 @@ def execute_phases(scanner: str):
     for ticker in tickers:
         desired_symbols.add(ticker["T"])
 
+    logging.info(f"Desired Symbols: {desired_symbols}")
+
     symbols_to_add = desired_symbols.difference(current_symbols)
 
     intentions = []
