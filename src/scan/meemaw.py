@@ -20,6 +20,15 @@ from src.csv_dump import write_csv
 from src.data.td.td import get_fundamentals
 
 
+# TODO: build backtest tools for intraday minutely scan
+# - historical floats?
+# - Switch "skip_cache" to "live/not_live" semantics
+# - separate get_all_tickers_on_day from narrowing logic
+# - scan for daily candle 'h' (instead of 'c') to do percent_change and open_to_close_change (was it at some point acceptable?)
+#   - change script to read "current_price" so we can swap 'h' for 'c' later?
+#   - (also provide "current_price_aim_low" for "l"/"c" semantics for dippers?)
+#   - or provide utility function?
+# - then do 1m candles to calculate actual 'c' and running total of 'v'
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
 
