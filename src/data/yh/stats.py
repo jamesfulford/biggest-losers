@@ -55,6 +55,16 @@ def _get_stats(symbol: str):
 
     return data
 
+#
+# Can get:
+# - short values
+# - float
+# - ebitda, revenue, ratios, eps, etc.
+# - earnings? (calendar events)
+# - dividend stats, yield, payout
+# - quote (delayed sometimes), ohlcv, rolling averages 52w high/low
+#
+
 
 #
 # Short Interest
