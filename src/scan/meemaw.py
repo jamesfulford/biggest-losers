@@ -31,15 +31,24 @@ from src.data.td.td import get_fundamentals
 #   - or provide utility function?
 # - then do 1m candles to calculate actual 'c' and running total of 'v'
 def get_all_candidates_on_day(today: date, skip_cache=False):
+    max_close_price = 5
+    min_volume = 100_000
+    min_open_to_close_change = 0
+    min_percent_change = 0.05
+    min_float, max_float = (1_000_000, 50_000_000)
+    min_short_interest = 0.02
+    top_n = 1
+
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
 
-    tickers = list(filter(lambda t: t["c"] < 5, tickers))
-    tickers = list(filter(lambda t: t["v"] > 100_000, tickers))
+    tickers = list(filter(lambda t: t["c"] < max_close_price, tickers))
+    tickers = list(filter(lambda t: t["v"] > min_volume, tickers))
 
     for ticker in tickers:
         ticker["open_to_close_change"] = (
             ticker['c'] - ticker['o']) / ticker['o']
-    tickers = list(filter(lambda t: t["open_to_close_change"] > 0, tickers))
+    tickers = list(
+        filter(lambda t: t["open_to_close_change"] > min_open_to_close_change, tickers))
 
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
         "is_stock": is_stock,
@@ -53,7 +62,8 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
         # TODO: in backtest, use 'h', when live use 'c'?
         ticker["percent_change"] = (
             ticker["c"] - ticker["c-1d"]) / ticker["c-1d"]
-    tickers = list(filter(lambda t: t["percent_change"] > 0.05, tickers))
+    tickers = list(
+        filter(lambda t: t["percent_change"] > min_percent_change, tickers))
 
     # Low float
     fundamentals = get_fundamentals(list(map(lambda t: t["T"], tickers)))
@@ -61,7 +71,7 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
     for ticker in tickers:
         ticker['float'] = fundamentals[ticker['T']]['shares']['float']
     tickers = list(
-        filter(lambda t: t['float'] < 50_000_000 and t['float'] > 1_000_000, tickers))
+        filter(lambda t: t['float'] < max_float and t['float'] > min_float, tickers))
 
     # High relative volume
     for ticker in tickers:
@@ -69,17 +79,22 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
             ticker['float']  # (because >, no divide by zero)
     tickers = list(filter(lambda t: t['relative_volume'], tickers))
 
-    # Short Interest
-    for ticker in tickers:
-        short_interest = get_short_interest(ticker["T"], today)
-        if short_interest:
-            ticker["shares_short"] = short_interest["shares_short"]
-            ticker["short_interest"] = ticker["shares_short"]/ticker["float"]
-    tickers = list(filter(lambda t: t["short_interest"], tickers))
-    tickers = list(filter(lambda t: t["short_interest"] > .02, tickers))
-
     # Highest volume first
     tickers.sort(key=lambda t: t['v'], reverse=True)
+
+    # Short Interest
+    # (done last to save very restricted API call quota)
+    new_tickers = []
+    for ticker in tickers:
+        short_data = get_short_interest(ticker["T"], today)
+        if short_data:
+            ticker["shares_short"] = short_data["shares_short"]
+            ticker["short_interest"] = ticker["shares_short"] / ticker["float"]
+            if ticker["short_interest"] > min_short_interest:
+                new_tickers.append(ticker)
+                if len(new_tickers) >= top_n:
+                    break
+    tickers = new_tickers
 
     return tickers
 
