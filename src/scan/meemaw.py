@@ -48,14 +48,13 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
         "c-1d": from_yesterday_candle("c"),
         "v-1d": from_yesterday_candle("v"),
     }, n=2))
-
     for ticker in tickers:
         # TODO: in backtest, use 'h', when live use 'c'?
         ticker["percent_change"] = (
             ticker["c"] - ticker["c-1d"]) / ticker["c-1d"]
     tickers = list(filter(lambda t: t["percent_change"] > 0.05, tickers))
 
-    # TODO: how to backtest this? Do not have historical floats...
+    # Low float
     fundamentals = get_fundamentals(list(map(lambda t: t["T"], tickers)))
     tickers = list(filter(lambda t: t["T"] in fundamentals, tickers))
     for ticker in tickers:
@@ -63,7 +62,15 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = list(
         filter(lambda t: t['float'] < 50_000_000 and t['float'] > 1_000_000, tickers))
 
-    tickers.sort(key=lambda t: t['v']/t['float'], reverse=True)
+    # High relative volume
+    for ticker in tickers:
+        ticker['relative_volume'] = ticker['v'] / \
+            ticker['float']  # (because >, no divide by zero)
+    tickers = list(filter(lambda t: t['relative_volume'], tickers))
+
+
+    # Highest volume first
+    tickers.sort(key=lambda t: t['v'], reverse=True)
 
     return tickers
 
