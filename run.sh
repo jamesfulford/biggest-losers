@@ -173,9 +173,9 @@ case $action in
     # Client Operations (across environments/accounts)
     #
     "sync-data")
-        ./scripts/deploy/sync-collector-data-back.sh collector
+        # ./scripts/deploy/sync-collector-data-back.sh collector
 
-        for e in collector paper prod td-cash cash1 intrac1; do
+        for e in paper prod cash1 margin; do
             echo
             echo Syncing $e...
             until ./scripts/deploy/sync-data-back.sh $e; do
@@ -223,7 +223,7 @@ case $action in
         ;;
 
     "prod-deploy")
-        for e in prod cash1 margin collector intrac1; do
+        for e in prod cash1 margin; do
             ./run.sh deploy $e
         done
         ;;
@@ -242,6 +242,22 @@ case $action in
         SERVER_NAME=${SERVER_NAME:-"solomon"}
         sleep 3 && python -m webbrowser -n "https://localhost:8000" &
         ssh -L 8000:127.0.0.1:8000 $SERVER_NAME "cd ~/$TARGET_ENV-data/inputs/td-token && ./start-login.sh"
+        ;;
+    
+    "account-remote")
+        SERVER_NAME=${SERVER_NAME:-"solomon"}
+
+        function account() {
+            local e=$1
+            ssh $SERVER_NAME "cd ~/$e && ./run.sh account"
+            return $?
+        }
+
+        for e in paper prod cash1 margin; do
+            echo
+            echo "$e"
+            account $e || (echo "(trying again in 30s)" && sleep 30 && account $e) || echo "ERROR with $e"
+        done
         ;;
 
     "create-env-td")
