@@ -47,13 +47,12 @@ function fail_script() {
 # TD tokens handling
 #
 function refresh_tokens() {
-    container_name=$1
     current_dir=`pwd`
     exit_code=0
-    cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh "$container_name" || exit_code=1
+    cd $DATA_DIR/inputs/td-token && ./refresh-tokens.sh || exit_code=1
     if [[ $exit_code -eq 1 ]]; then
         echo "ERROR failed to refresh tokens on first try, trying again with log output enabled..."
-        ./refresh-tokens.sh "$container_name" || fail_script "Failed to refresh tokens"
+        ./refresh-tokens.sh || fail_script "Failed to refresh tokens"
     fi
     cd $current_dir
     return $exit_code
@@ -65,7 +64,7 @@ function refresh_tokens_if_needed() {
         return
     fi
     echo "Refreshing tokens..."
-    refresh_tokens "td-token-$RANDOM" || fail_script "Failed to refresh tokens"
+    refresh_tokens || fail_script "Failed to refresh tokens"
 }
 
 action="$1"
