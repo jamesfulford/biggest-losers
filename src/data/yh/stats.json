@@ -1,0 +1,1453 @@
+{
+    "defaultKeyStatistics": {
+        "annualHoldingsTurnover": {},
+        "enterpriseToRevenue": {
+            "raw": -0.125,
+            "fmt": "-0.12"
+        },
+        "beta3Year": {},
+        "profitMargins": {
+            "raw": 0.13605,
+            "fmt": "13.61%"
+        },
+        "enterpriseToEbitda": {
+            "raw": -0.536,
+            "fmt": "-0.54"
+        },
+        "52WeekChange": {
+            "raw": -0.9479592,
+            "fmt": "-94.80%"
+        },
+        "morningStarRiskRating": {},
+        "forwardEps": {},
+        "revenueQuarterlyGrowth": {},
+        "sharesOutstanding": {
+            "raw": 31512600,
+            "fmt": "31.51M",
+            "longFmt": "31,512,600"
+        },
+        "fundInceptionDate": {},
+        "annualReportExpenseRatio": {},
+        "totalAssets": {},
+        "bookValue": {
+            "raw": 4.271,
+            "fmt": "4.27"
+        },
+        "sharesShort": {
+            "raw": 194212,
+            "fmt": "194.21k",
+            "longFmt": "194,212"
+        },
+        "sharesPercentSharesOut": {
+            "raw": 0.0062,
+            "fmt": "0.62%"
+        },
+        "fundFamily": null,
+        "lastFiscalYearEnd": {
+            "raw": 1609372800,
+            "fmt": "2020-12-31"
+        },
+        "heldPercentInstitutions": {
+            "raw": 0.23652,
+            "fmt": "23.65%"
+        },
+        "netIncomeToCommon": {
+            "raw": 22819548,
+            "fmt": "22.82M",
+            "longFmt": "22,819,548"
+        },
+        "trailingEps": {
+            "raw": 0.817,
+            "fmt": "0.8170"
+        },
+        "lastDividendValue": {},
+        "SandP52WeekChange": {
+            "raw": 0.16401088,
+            "fmt": "16.40%"
+        },
+        "priceToBook": {
+            "raw": 0.21634279,
+            "fmt": "0.22"
+        },
+        "heldPercentInsiders": {
+            "raw": 0.58597,
+            "fmt": "58.60%"
+        },
+        "nextFiscalYearEnd": {
+            "raw": 1672444800,
+            "fmt": "2022-12-31"
+        },
+        "yield": {},
+        "mostRecentQuarter": {
+            "raw": 1632960000,
+            "fmt": "2021-09-30"
+        },
+        "shortRatio": {
+            "raw": 0.61,
+            "fmt": "0.61"
+        },
+        "sharesShortPreviousMonthDate": {
+            "raw": 1642118400,
+            "fmt": "2022-01-14"
+        },
+        "floatShares": {
+            "raw": 10586097,
+            "fmt": "10.59M",
+            "longFmt": "10,586,097"
+        },
+        "beta": {
+            "raw": 0.947787,
+            "fmt": "0.95"
+        },
+        "enterpriseValue": {
+            "raw": -15194017,
+            "fmt": "-15.19M",
+            "longFmt": "-15,194,017"
+        },
+        "priceHint": {
+            "raw": 4,
+            "fmt": "4",
+            "longFmt": "4"
+        },
+        "threeYearAverageReturn": {},
+        "lastSplitDate": {},
+        "lastSplitFactor": null,
+        "legalType": null,
+        "lastDividendDate": {},
+        "morningStarOverallRating": {},
+        "earningsQuarterlyGrowth": {},
+        "priceToSalesTrailing12Months": {},
+        "dateShortInterest": {
+            "raw": 1644883200,
+            "fmt": "2022-02-15"
+        },
+        "pegRatio": {},
+        "ytdReturn": {},
+        "forwardPE": {},
+        "maxAge": 1,
+        "lastCapGain": {},
+        "shortPercentOfFloat": {
+            "raw": 0.0089,
+            "fmt": "0.89%"
+        },
+        "sharesShortPriorMonth": {
+            "raw": 314522,
+            "fmt": "314.52k",
+            "longFmt": "314,522"
+        },
+        "impliedSharesOutstanding": {
+            "raw": 0,
+            "fmt": null,
+            "longFmt": "0"
+        },
+        "category": null,
+        "fiveYearAverageReturn": {}
+    },
+    "financialsTemplate": {
+        "code": "N",
+        "maxAge": 1
+    },
+    "price": {
+        "quoteSourceName": "Delayed Quote",
+        "regularMarketOpen": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "averageDailyVolume3Month": {
+            "raw": 405635,
+            "fmt": "405.63k",
+            "longFmt": "405,635"
+        },
+        "exchange": "NCM",
+        "regularMarketTime": 1646341202,
+        "volume24Hr": {},
+        "regularMarketDayHigh": {
+            "raw": 1,
+            "fmt": "1.0000"
+        },
+        "shortName": "NiSun Intl Enterprise Developme",
+        "averageDailyVolume10Day": {
+            "raw": 279730,
+            "fmt": "279.73k",
+            "longFmt": "279,730"
+        },
+        "longName": "Nisun International Enterprise Development Group Co., Ltd",
+        "regularMarketChange": {
+            "raw": 0.05730003,
+            "fmt": "0.0573"
+        },
+        "currencySymbol": "$",
+        "regularMarketPreviousClose": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "preMarketPrice": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "preMarketTime": 1646308800,
+        "exchangeDataDelayedBy": 0,
+        "toCurrency": null,
+        "postMarketChange": {},
+        "postMarketPrice": {},
+        "exchangeName": "NasdaqCM",
+        "preMarketChange": {
+            "raw": 0,
+            "fmt": "0.00"
+        },
+        "circulatingSupply": {},
+        "regularMarketDayLow": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "priceHint": {
+            "raw": 4,
+            "fmt": "4",
+            "longFmt": "4"
+        },
+        "currency": "USD",
+        "regularMarketPrice": {
+            "raw": 0.924,
+            "fmt": "0.9240"
+        },
+        "regularMarketVolume": {
+            "raw": 594404,
+            "fmt": "594.40k",
+            "longFmt": "594,404.00"
+        },
+        "lastMarket": null,
+        "regularMarketSource": "FREE_REALTIME",
+        "openInterest": {},
+        "marketState": "POST",
+        "underlyingSymbol": null,
+        "marketCap": {
+            "raw": 29117644,
+            "fmt": "29.12M",
+            "longFmt": "29,117,644.00"
+        },
+        "quoteType": "EQUITY",
+        "preMarketChangePercent": {
+            "raw": 0,
+            "fmt": "0.00%"
+        },
+        "volumeAllCurrencies": {},
+        "strikePrice": {},
+        "symbol": "NISN",
+        "preMarketSource": "DELAYED",
+        "maxAge": 1,
+        "fromCurrency": null,
+        "regularMarketChangePercent": {
+            "raw": 0.066112876,
+            "fmt": "6.61%"
+        }
+    },
+    "financialData": {
+        "ebitdaMargins": {
+            "raw": 0.23421,
+            "fmt": "23.42%"
+        },
+        "profitMargins": {
+            "raw": 0.13605,
+            "fmt": "13.61%"
+        },
+        "grossMargins": {
+            "raw": 0.33185002,
+            "fmt": "33.19%"
+        },
+        "operatingCashflow": {},
+        "revenueGrowth": {
+            "raw": 3.726,
+            "fmt": "372.60%"
+        },
+        "operatingMargins": {
+            "raw": 0.21937999,
+            "fmt": "21.94%"
+        },
+        "ebitda": {
+            "raw": 28372694,
+            "fmt": "28.37M",
+            "longFmt": "28,372,694"
+        },
+        "targetLowPrice": {},
+        "recommendationKey": "none",
+        "grossProfits": {
+            "raw": 22449924,
+            "fmt": "22.45M",
+            "longFmt": "22,449,924"
+        },
+        "freeCashflow": {},
+        "targetMedianPrice": {},
+        "currentPrice": {
+            "raw": 0.924,
+            "fmt": "0.92"
+        },
+        "earningsGrowth": {},
+        "currentRatio": {},
+        "returnOnAssets": {},
+        "numberOfAnalystOpinions": {},
+        "targetMeanPrice": {},
+        "debtToEquity": {
+            "raw": 13.635,
+            "fmt": "13.64"
+        },
+        "returnOnEquity": {},
+        "targetHighPrice": {},
+        "totalCash": {
+            "raw": 47461056,
+            "fmt": "47.46M",
+            "longFmt": "47,461,056"
+        },
+        "totalDebt": {
+            "raw": 12405869,
+            "fmt": "12.41M",
+            "longFmt": "12,405,869"
+        },
+        "totalRevenue": {
+            "raw": 121142080,
+            "fmt": "121.14M",
+            "longFmt": "121,142,080"
+        },
+        "totalCashPerShare": {
+            "raw": 2.309,
+            "fmt": "2.31"
+        },
+        "financialCurrency": "USD",
+        "maxAge": 86400,
+        "revenuePerShare": {
+            "raw": 6.006,
+            "fmt": "6.01"
+        },
+        "quickRatio": {},
+        "recommendationMean": {}
+    },
+    "quoteType": {
+        "exchange": "NCM",
+        "shortName": "NiSun Intl Enterprise Developme",
+        "longName": "Nisun International Enterprise Development Group Co., Ltd",
+        "exchangeTimezoneName": "America/New_York",
+        "exchangeTimezoneShortName": "EST",
+        "isEsgPopulated": false,
+        "gmtOffSetMilliseconds": "-18000000",
+        "quoteType": "EQUITY",
+        "symbol": "NISN",
+        "messageBoardId": "finmb_305457935",
+        "market": "us_market"
+    },
+    "calendarEvents": {
+        "maxAge": 1,
+        "earnings": {
+            "earningsDate": [
+                {
+                    "raw": 1636531200,
+                    "fmt": "2021-11-10"
+                }
+            ],
+            "earningsAverage": {},
+            "earningsLow": {},
+            "earningsHigh": {},
+            "revenueAverage": {},
+            "revenueLow": {},
+            "revenueHigh": {}
+        },
+        "exDividendDate": {},
+        "dividendDate": {}
+    },
+    "summaryDetail": {
+        "previousClose": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "regularMarketOpen": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "twoHundredDayAverage": {
+            "raw": 8.251635,
+            "fmt": "8.2516"
+        },
+        "trailingAnnualDividendYield": {
+            "raw": 0,
+            "fmt": "0.00%"
+        },
+        "payoutRatio": {
+            "raw": 0,
+            "fmt": "0.00%"
+        },
+        "volume24Hr": {},
+        "regularMarketDayHigh": {
+            "raw": 1,
+            "fmt": "1.0000"
+        },
+        "navPrice": {},
+        "averageDailyVolume10Day": {
+            "raw": 279730,
+            "fmt": "279.73k",
+            "longFmt": "279,730"
+        },
+        "totalAssets": {},
+        "regularMarketPreviousClose": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "fiftyDayAverage": {
+            "raw": 1.84374,
+            "fmt": "1.8437"
+        },
+        "trailingAnnualDividendRate": {
+            "raw": 0,
+            "fmt": "0.00"
+        },
+        "open": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "toCurrency": null,
+        "averageVolume10days": {
+            "raw": 279730,
+            "fmt": "279.73k",
+            "longFmt": "279,730"
+        },
+        "expireDate": {},
+        "yield": {},
+        "algorithm": null,
+        "dividendRate": {},
+        "exDividendDate": {},
+        "beta": {
+            "raw": 0.947787,
+            "fmt": "0.95"
+        },
+        "circulatingSupply": {},
+        "startDate": {},
+        "regularMarketDayLow": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "priceHint": {
+            "raw": 4,
+            "fmt": "4",
+            "longFmt": "4"
+        },
+        "currency": "USD",
+        "trailingPE": {
+            "raw": 1.130967,
+            "fmt": "1.13"
+        },
+        "regularMarketVolume": {
+            "raw": 594404,
+            "fmt": "594.4k",
+            "longFmt": "594,404"
+        },
+        "lastMarket": null,
+        "maxSupply": {},
+        "openInterest": {},
+        "marketCap": {
+            "raw": 29117644,
+            "fmt": "29.12M",
+            "longFmt": "29,117,644"
+        },
+        "volumeAllCurrencies": {},
+        "strikePrice": {},
+        "averageVolume": {
+            "raw": 405635,
+            "fmt": "405.63k",
+            "longFmt": "405,635"
+        },
+        "priceToSalesTrailing12Months": {
+            "raw": 0.24035946,
+            "fmt": "0.24"
+        },
+        "dayLow": {
+            "raw": 0.8667,
+            "fmt": "0.8667"
+        },
+        "ask": {
+            "raw": 0.9399,
+            "fmt": "0.9399"
+        },
+        "ytdReturn": {},
+        "askSize": {
+            "raw": 1100,
+            "fmt": "1.1k",
+            "longFmt": "1,100"
+        },
+        "volume": {
+            "raw": 594404,
+            "fmt": "594.4k",
+            "longFmt": "594,404"
+        },
+        "fiftyTwoWeekHigh": {
+            "raw": 18.58,
+            "fmt": "18.5800"
+        },
+        "forwardPE": {},
+        "maxAge": 1,
+        "fromCurrency": null,
+        "fiveYearAvgDividendYield": {},
+        "fiftyTwoWeekLow": {
+            "raw": 0.76,
+            "fmt": "0.7600"
+        },
+        "bid": {
+            "raw": 0.9288,
+            "fmt": "0.9288"
+        },
+        "tradeable": false,
+        "dividendYield": {},
+        "bidSize": {
+            "raw": 900,
+            "fmt": "900",
+            "longFmt": "900"
+        },
+        "dayHigh": {
+            "raw": 1,
+            "fmt": "1.0000"
+        }
+    },
+    "symbol": "NISN",
+    "pageViews": {
+        "shortTermTrend": "DOWN",
+        "midTermTrend": "UP",
+        "longTermTrend": "UP",
+        "maxAge": 1
+    },
+    "quoteData": {
+        "NISN": {
+            "sourceInterval": 15,
+            "quoteSourceName": "Delayed Quote",
+            "regularMarketOpen": {
+                "raw": 0.8667,
+                "fmt": "0.8667"
+            },
+            "exchange": "NCM",
+            "regularMarketTime": {
+                "raw": 1646341202,
+                "fmt": "4:00PM EST"
+            },
+            "fiftyTwoWeekRange": {
+                "raw": "0.76 - 18.58",
+                "fmt": "0.76 - 18.58"
+            },
+            "sharesOutstanding": {
+                "raw": 31512600,
+                "fmt": "31.513M",
+                "longFmt": "31,512,600"
+            },
+            "regularMarketDayHigh": {
+                "raw": 1,
+                "fmt": "1.0000"
+            },
+            "shortName": "NiSun Intl Enterprise Developme",
+            "longName": "Nisun International Enterprise Development Group Co., Ltd",
+            "exchangeTimezoneName": "America/New_York",
+            "regularMarketChange": {
+                "raw": 0.05730003,
+                "fmt": "0.0573"
+            },
+            "regularMarketPreviousClose": {
+                "raw": 0.8667,
+                "fmt": "0.8667"
+            },
+            "fiftyTwoWeekHighChange": {
+                "raw": -17.656,
+                "fmt": "-17.66"
+            },
+            "exchangeTimezoneShortName": "EST",
+            "fiftyTwoWeekLowChange": {
+                "raw": 0.16400003,
+                "fmt": "0.16"
+            },
+            "exchangeDataDelayedBy": 0,
+            "customPriceAlertConfidence": "HIGH",
+            "regularMarketDayLow": {
+                "raw": 0.8667,
+                "fmt": "0.8667"
+            },
+            "priceHint": 4,
+            "currency": "USD",
+            "regularMarketPrice": {
+                "raw": 0.924,
+                "fmt": "0.9240"
+            },
+            "regularMarketVolume": {
+                "raw": 594404,
+                "fmt": "594,404",
+                "longFmt": "594,404"
+            },
+            "isLoading": false,
+            "triggerable": true,
+            "gmtOffSetMilliseconds": -18000000,
+            "firstTradeDateMilliseconds": 1482849000000,
+            "region": "US",
+            "marketState": "POST",
+            "marketCap": {
+                "raw": 29117644,
+                "fmt": "29.118M",
+                "longFmt": "29,117,644"
+            },
+            "quoteType": "EQUITY",
+            "invalid": false,
+            "symbol": "NISN",
+            "language": "en-US",
+            "fiftyTwoWeekLowChangePercent": {
+                "raw": 0.21578953,
+                "fmt": "21.58%"
+            },
+            "regularMarketDayRange": {
+                "raw": "0.8667 - 1.0",
+                "fmt": "0.87 - 1.00"
+            },
+            "messageBoardId": "finmb_305457935",
+            "fiftyTwoWeekHigh": {
+                "raw": 18.58,
+                "fmt": "18.5800"
+            },
+            "fiftyTwoWeekHighChangePercent": {
+                "raw": -0.9502691,
+                "fmt": "-95.03%"
+            },
+            "uuid": "66d1dedb-071b-32ae-bdb2-c67ebdca3e9b",
+            "market": "us_market",
+            "fiftyTwoWeekLow": {
+                "raw": 0.76,
+                "fmt": "0.7600"
+            },
+            "regularMarketChangePercent": {
+                "raw": 6.6112876,
+                "fmt": "6.61%"
+            },
+            "fullExchangeName": "NasdaqCM",
+            "tradeable": false
+        },
+        "MDJH": {
+            "sourceInterval": 15,
+            "quoteSourceName": "Delayed Quote",
+            "regularMarketOpen": {
+                "raw": 2.56,
+                "fmt": "2.5600"
+            },
+            "exchange": "NCM",
+            "regularMarketTime": {
+                "raw": 1646341203,
+                "fmt": "4:00PM EST"
+            },
+            "fiftyTwoWeekRange": {
+                "raw": "1.4 - 8.6",
+                "fmt": "1.40 - 8.60"
+            },
+            "sharesOutstanding": {
+                "raw": 11675200,
+                "fmt": "11.675M",
+                "longFmt": "11,675,200"
+            },
+            "regularMarketDayHigh": {
+                "raw": 2.7799,
+                "fmt": "2.7799"
+            },
+            "shortName": "MDJM LTD",
+            "longName": "MDJM Ltd",
+            "exchangeTimezoneName": "America/New_York",
+            "regularMarketChange": {
+                "raw": -0.00999999,
+                "fmt": "-0.0100"
+            },
+            "regularMarketPreviousClose": {
+                "raw": 2.61,
+                "fmt": "2.6100"
+            },
+            "fiftyTwoWeekHighChange": {
+                "raw": -6.0000005,
+                "fmt": "-6.00"
+            },
+            "exchangeTimezoneShortName": "EST",
+            "fiftyTwoWeekLowChange": {
+                "raw": 1.1999999,
+                "fmt": "1.20"
+            },
+            "exchangeDataDelayedBy": 0,
+            "customPriceAlertConfidence": "HIGH",
+            "regularMarketDayLow": {
+                "raw": 2.56,
+                "fmt": "2.5600"
+            },
+            "priceHint": 4,
+            "currency": "USD",
+            "regularMarketPrice": {
+                "raw": 2.6,
+                "fmt": "2.6000"
+            },
+            "regularMarketVolume": {
+                "raw": 38912,
+                "fmt": "38,912",
+                "longFmt": "38,912"
+            },
+            "isLoading": false,
+            "triggerable": true,
+            "gmtOffSetMilliseconds": -18000000,
+            "firstTradeDateMilliseconds": 1546957800000,
+            "region": "US",
+            "marketState": "POST",
+            "marketCap": {
+                "raw": 30355518,
+                "fmt": "30.356M",
+                "longFmt": "30,355,518"
+            },
+            "quoteType": "EQUITY",
+            "invalid": false,
+            "symbol": "MDJH",
+            "language": "en-US",
+            "fiftyTwoWeekLowChangePercent": {
+                "raw": 0.8571428,
+                "fmt": "85.71%"
+            },
+            "regularMarketDayRange": {
+                "raw": "2.56 - 2.7799",
+                "fmt": "2.56 - 2.78"
+            },
+            "messageBoardId": "finmb_577390219",
+            "fiftyTwoWeekHigh": {
+                "raw": 8.6,
+                "fmt": "8.6000"
+            },
+            "fiftyTwoWeekHighChangePercent": {
+                "raw": -0.69767445,
+                "fmt": "-69.77%"
+            },
+            "uuid": "b8e532ce-0483-3657-89b6-239af93a5cd6",
+            "market": "us_market",
+            "fiftyTwoWeekLow": {
+                "raw": 1.4,
+                "fmt": "1.4000"
+            },
+            "regularMarketChangePercent": {
+                "raw": -0.3831414,
+                "fmt": "-0.38%"
+            },
+            "fullExchangeName": "NasdaqCM",
+            "tradeable": false
+        },
+        "AGMH": {
+            "sourceInterval": 15,
+            "quoteSourceName": "Delayed Quote",
+            "regularMarketOpen": {
+                "raw": 1.7,
+                "fmt": "1.7000"
+            },
+            "exchange": "NCM",
+            "regularMarketTime": {
+                "raw": 1646341203,
+                "fmt": "4:00PM EST"
+            },
+            "fiftyTwoWeekRange": {
+                "raw": "1.496 - 26.5",
+                "fmt": "1.50 - 26.50"
+            },
+            "sharesOutstanding": {
+                "raw": 24254800,
+                "fmt": "24.255M",
+                "longFmt": "24,254,800"
+            },
+            "regularMarketDayHigh": {
+                "raw": 1.69,
+                "fmt": "1.6900"
+            },
+            "shortName": "AGM Group Holdings Inc.",
+            "longName": "AGM Group Holdings Inc.",
+            "exchangeTimezoneName": "America/New_York",
+            "regularMarketChange": {
+                "raw": -0.120000005,
+                "fmt": "-0.1200"
+            },
+            "regularMarketPreviousClose": {
+                "raw": 1.7,
+                "fmt": "1.7000"
+            },
+            "fiftyTwoWeekHighChange": {
+                "raw": -24.92,
+                "fmt": "-24.92"
+            },
+            "exchangeTimezoneShortName": "EST",
+            "fiftyTwoWeekLowChange": {
+                "raw": 0.08399999,
+                "fmt": "0.08"
+            },
+            "exchangeDataDelayedBy": 0,
+            "customPriceAlertConfidence": "HIGH",
+            "regularMarketDayLow": {
+                "raw": 1.55,
+                "fmt": "1.5500"
+            },
+            "priceHint": 4,
+            "currency": "USD",
+            "regularMarketPrice": {
+                "raw": 1.58,
+                "fmt": "1.5800"
+            },
+            "regularMarketVolume": {
+                "raw": 45372,
+                "fmt": "45,372",
+                "longFmt": "45,372"
+            },
+            "isLoading": false,
+            "triggerable": true,
+            "gmtOffSetMilliseconds": -18000000,
+            "firstTradeDateMilliseconds": 1524058200000,
+            "region": "US",
+            "marketState": "POST",
+            "marketCap": {
+                "raw": 38322584,
+                "fmt": "38.323M",
+                "longFmt": "38,322,584"
+            },
+            "quoteType": "EQUITY",
+            "invalid": false,
+            "symbol": "AGMH",
+            "language": "en-US",
+            "fiftyTwoWeekLowChangePercent": {
+                "raw": 0.056149725,
+                "fmt": "5.61%"
+            },
+            "regularMarketDayRange": {
+                "raw": "1.55 - 1.69",
+                "fmt": "1.55 - 1.69"
+            },
+            "messageBoardId": "finmb_431004766",
+            "fiftyTwoWeekHigh": {
+                "raw": 26.5,
+                "fmt": "26.5000"
+            },
+            "fiftyTwoWeekHighChangePercent": {
+                "raw": -0.94037735,
+                "fmt": "-94.04%"
+            },
+            "uuid": "d371c107-d54e-36a9-8a7d-344317f845b9",
+            "market": "us_market",
+            "fiftyTwoWeekLow": {
+                "raw": 1.496,
+                "fmt": "1.4960"
+            },
+            "regularMarketChangePercent": {
+                "raw": -7.058824,
+                "fmt": "-7.06%"
+            },
+            "fullExchangeName": "NasdaqCM",
+            "tradeable": false
+        },
+        "CNEY": {
+            "sourceInterval": 15,
+            "quoteSourceName": "Delayed Quote",
+            "regularMarketOpen": {
+                "raw": 1.93,
+                "fmt": "1.9300"
+            },
+            "exchange": "NCM",
+            "regularMarketTime": {
+                "raw": 1646340244,
+                "fmt": "3:44PM EST"
+            },
+            "fiftyTwoWeekRange": {
+                "raw": "1.53 - 13.5",
+                "fmt": "1.53 - 13.50"
+            },
+            "sharesOutstanding": {
+                "raw": 20319300,
+                "fmt": "20.319M",
+                "longFmt": "20,319,300"
+            },
+            "regularMarketDayHigh": {
+                "raw": 1.98,
+                "fmt": "1.9800"
+            },
+            "shortName": "CN Energy Group Inc.",
+            "longName": "CN Energy Group. Inc.",
+            "exchangeTimezoneName": "America/New_York",
+            "regularMarketChange": {
+                "raw": -0.03000009,
+                "fmt": "-0.0300"
+            },
+            "regularMarketPreviousClose": {
+                "raw": 1.95,
+                "fmt": "1.9500"
+            },
+            "fiftyTwoWeekHighChange": {
+                "raw": -11.58,
+                "fmt": "-11.58"
+            },
+            "exchangeTimezoneShortName": "EST",
+            "fiftyTwoWeekLowChange": {
+                "raw": 0.39,
+                "fmt": "0.39"
+            },
+            "exchangeDataDelayedBy": 0,
+            "customPriceAlertConfidence": "HIGH",
+            "regularMarketDayLow": {
+                "raw": 1.88,
+                "fmt": "1.8800"
+            },
+            "priceHint": 4,
+            "currency": "USD",
+            "regularMarketPrice": {
+                "raw": 1.92,
+                "fmt": "1.9200"
+            },
+            "regularMarketVolume": {
+                "raw": 15452,
+                "fmt": "15,452",
+                "longFmt": "15,452"
+            },
+            "isLoading": false,
+            "triggerable": true,
+            "gmtOffSetMilliseconds": -18000000,
+            "firstTradeDateMilliseconds": 1612535400000,
+            "region": "US",
+            "marketState": "POST",
+            "marketCap": {
+                "raw": 39013056,
+                "fmt": "39.013M",
+                "longFmt": "39,013,056"
+            },
+            "quoteType": "EQUITY",
+            "invalid": false,
+            "symbol": "CNEY",
+            "language": "en-US",
+            "fiftyTwoWeekLowChangePercent": {
+                "raw": 0.25490195,
+                "fmt": "25.49%"
+            },
+            "regularMarketDayRange": {
+                "raw": "1.88 - 1.98",
+                "fmt": "1.88 - 1.98"
+            },
+            "messageBoardId": "finmb_653860224",
+            "fiftyTwoWeekHigh": {
+                "raw": 13.5,
+                "fmt": "13.5000"
+            },
+            "fiftyTwoWeekHighChangePercent": {
+                "raw": -0.8577778,
+                "fmt": "-85.78%"
+            },
+            "uuid": "629cc354-c7c2-381a-8a16-31fbb40d944e",
+            "market": "us_market",
+            "fiftyTwoWeekLow": {
+                "raw": 1.53,
+                "fmt": "1.5300"
+            },
+            "regularMarketChangePercent": {
+                "raw": -1.5384661,
+                "fmt": "-1.54%"
+            },
+            "fullExchangeName": "NasdaqCM",
+            "tradeable": false
+        },
+        "GSMG": {
+            "sourceInterval": 15,
+            "quoteSourceName": "Delayed Quote",
+            "regularMarketOpen": {
+                "raw": 1.08,
+                "fmt": "1.0800"
+            },
+            "exchange": "NCM",
+            "regularMarketTime": {
+                "raw": 1646341196,
+                "fmt": "3:59PM EST"
+            },
+            "fiftyTwoWeekRange": {
+                "raw": "1.0 - 4.86",
+                "fmt": "1.00 - 4.86"
+            },
+            "sharesOutstanding": {
+                "raw": 68122400,
+                "fmt": "68.122M",
+                "longFmt": "68,122,400"
+            },
+            "regularMarketDayHigh": {
+                "raw": 1.09,
+                "fmt": "1.0900"
+            },
+            "shortName": "Glory Star New Media Group Hold",
+            "longName": "Glory Star New Media Group Holdings Limited",
+            "exchangeTimezoneName": "America/New_York",
+            "regularMarketChange": {
+                "raw": -0.029999971,
+                "fmt": "-0.0300"
+            },
+            "regularMarketPreviousClose": {
+                "raw": 1.1,
+                "fmt": "1.1000"
+            },
+            "fiftyTwoWeekHighChange": {
+                "raw": -3.79,
+                "fmt": "-3.79"
+            },
+            "exchangeTimezoneShortName": "EST",
+            "fiftyTwoWeekLowChange": {
+                "raw": 0.07000005,
+                "fmt": "0.07"
+            },
+            "exchangeDataDelayedBy": 0,
+            "customPriceAlertConfidence": "HIGH",
+            "regularMarketDayLow": {
+                "raw": 1.06,
+                "fmt": "1.0600"
+            },
+            "priceHint": 4,
+            "currency": "USD",
+            "regularMarketPrice": {
+                "raw": 1.07,
+                "fmt": "1.0700"
+            },
+            "regularMarketVolume": {
+                "raw": 82586,
+                "fmt": "82,586",
+                "longFmt": "82,586"
+            },
+            "isLoading": false,
+            "triggerable": true,
+            "gmtOffSetMilliseconds": -18000000,
+            "firstTradeDateMilliseconds": 1536759000000,
+            "region": "US",
+            "marketState": "POST",
+            "marketCap": {
+                "raw": 72890968,
+                "fmt": "72.891M",
+                "longFmt": "72,890,968"
+            },
+            "quoteType": "EQUITY",
+            "invalid": false,
+            "symbol": "GSMG",
+            "language": "en-US",
+            "fiftyTwoWeekLowChangePercent": {
+                "raw": 0.07000005,
+                "fmt": "7.00%"
+            },
+            "regularMarketDayRange": {
+                "raw": "1.06 - 1.09",
+                "fmt": "1.06 - 1.09"
+            },
+            "messageBoardId": "finmb_636228398",
+            "fiftyTwoWeekHigh": {
+                "raw": 4.86,
+                "fmt": "4.8600"
+            },
+            "fiftyTwoWeekHighChangePercent": {
+                "raw": -0.77983534,
+                "fmt": "-77.98%"
+            },
+            "uuid": "4bf933db-b68e-31ff-bad5-bf62cceb2068",
+            "market": "us_market",
+            "fiftyTwoWeekLow": {
+                "raw": 1,
+                "fmt": "1.0000"
+            },
+            "regularMarketChangePercent": {
+                "raw": -2.7272701,
+                "fmt": "-2.73%"
+            },
+            "fullExchangeName": "NasdaqCM",
+            "tradeable": false
+        },
+        "HUIZ": {
+            "sourceInterval": 15,
+            "quoteSourceName": "Delayed Quote",
+            "regularMarketOpen": {
+                "raw": 1.28,
+                "fmt": "1.2800"
+            },
+            "exchange": "NGM",
+            "regularMarketTime": {
+                "raw": 1646341204,
+                "fmt": "4:00PM EST"
+            },
+            "fiftyTwoWeekRange": {
+                "raw": "1.05 - 11.286",
+                "fmt": "1.05 - 11.29"
+            },
+            "sharesOutstanding": {
+                "raw": 51936400,
+                "fmt": "51.936M",
+                "longFmt": "51,936,400"
+            },
+            "regularMarketDayHigh": {
+                "raw": 1.3,
+                "fmt": "1.3000"
+            },
+            "shortName": "Huize Holding Limited",
+            "longName": "Huize Holding Limited",
+            "exchangeTimezoneName": "America/New_York",
+            "regularMarketChange": {
+                "raw": -0.05000007,
+                "fmt": "-0.0500"
+            },
+            "regularMarketPreviousClose": {
+                "raw": 1.32,
+                "fmt": "1.3200"
+            },
+            "fiftyTwoWeekHighChange": {
+                "raw": -10.016001,
+                "fmt": "-10.02"
+            },
+            "exchangeTimezoneShortName": "EST",
+            "fiftyTwoWeekLowChange": {
+                "raw": 0.22000003,
+                "fmt": "0.22"
+            },
+            "exchangeDataDelayedBy": 0,
+            "customPriceAlertConfidence": "HIGH",
+            "regularMarketDayLow": {
+                "raw": 1.27,
+                "fmt": "1.2700"
+            },
+            "priceHint": 4,
+            "currency": "USD",
+            "regularMarketPrice": {
+                "raw": 1.27,
+                "fmt": "1.2700"
+            },
+            "regularMarketVolume": {
+                "raw": 21963,
+                "fmt": "21,963",
+                "longFmt": "21,963"
+            },
+            "isLoading": false,
+            "triggerable": true,
+            "gmtOffSetMilliseconds": -18000000,
+            "firstTradeDateMilliseconds": 1581517800000,
+            "region": "US",
+            "marketState": "POST",
+            "marketCap": {
+                "raw": 65959228,
+                "fmt": "65.959M",
+                "longFmt": "65,959,228"
+            },
+            "quoteType": "EQUITY",
+            "invalid": false,
+            "symbol": "HUIZ",
+            "language": "en-US",
+            "fiftyTwoWeekLowChangePercent": {
+                "raw": 0.20952384,
+                "fmt": "20.95%"
+            },
+            "regularMarketDayRange": {
+                "raw": "1.27 - 1.3",
+                "fmt": "1.27 - 1.30"
+            },
+            "messageBoardId": "finmb_635688353",
+            "fiftyTwoWeekHigh": {
+                "raw": 11.286,
+                "fmt": "11.2860"
+            },
+            "fiftyTwoWeekHighChangePercent": {
+                "raw": -0.88747126,
+                "fmt": "-88.75%"
+            },
+            "uuid": "08307042-9cbc-3706-b86d-411e14565c74",
+            "market": "us_market",
+            "fiftyTwoWeekLow": {
+                "raw": 1.05,
+                "fmt": "1.0500"
+            },
+            "regularMarketChangePercent": {
+                "raw": -3.7878842,
+                "fmt": "-3.79%"
+            },
+            "fullExchangeName": "NasdaqGM",
+            "tradeable": false
+        }
+    },
+    "mktmData": {},
+    "timeSeries": {
+        "trailingPbRatio": [
+            {
+                "dataId": 14012,
+                "asOfDate": "2022-02-25",
+                "periodType": "TTM",
+                "reportedValue": {
+                    "raw": 0.315826,
+                    "fmt": "0.32"
+                }
+            }
+        ],
+        "trailingEnterprisesValueEBITDARatio": [
+            {
+                "dataId": 102,
+                "asOfDate": "2022-02-28",
+                "periodType": "TTM",
+                "reportedValue": {
+                    "raw": -0.367236,
+                    "fmt": "-0.37"
+                }
+            }
+        ],
+        "quarterlyPsRatio": [
+            {
+                "dataId": 14010,
+                "asOfDate": "2021-03-31",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 8.256442,
+                    "fmt": "8.26"
+                }
+            },
+            {
+                "dataId": 14010,
+                "asOfDate": "2021-06-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 4.714084,
+                    "fmt": "4.71"
+                }
+            },
+            {
+                "dataId": 14010,
+                "asOfDate": "2021-09-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 3.450686,
+                    "fmt": "3.45"
+                }
+            }
+        ],
+        "trailingMarketCap": [
+            {
+                "dataId": 40001,
+                "asOfDate": "2022-02-25",
+                "periodType": "TTM",
+                "reportedValue": {
+                    "raw": 27727962,
+                    "fmt": "27.73M"
+                }
+            }
+        ],
+        "quarterlyMarketCap": [
+            {
+                "dataId": 40001,
+                "asOfDate": "2021-03-31",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 469769910,
+                    "fmt": "469.77M"
+                }
+            },
+            {
+                "dataId": 40001,
+                "asOfDate": "2021-06-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 303168760,
+                    "fmt": "303.17M"
+                }
+            },
+            {
+                "dataId": 40001,
+                "asOfDate": "2021-09-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 242550522,
+                    "fmt": "242.55M"
+                }
+            }
+        ],
+        "quarterlyPeRatio": [
+            {
+                "dataId": 14008,
+                "asOfDate": "2021-03-31",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 39.47619,
+                    "fmt": "39.48"
+                }
+            },
+            {
+                "dataId": 14008,
+                "asOfDate": "2021-06-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 20.188679,
+                    "fmt": "20.19"
+                }
+            },
+            {
+                "dataId": 14008,
+                "asOfDate": "2021-09-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 14.567901,
+                    "fmt": "14.57"
+                }
+            }
+        ],
+        "quarterlyEnterprisesValueRevenueRatio": [
+            {
+                "dataId": 101,
+                "asOfDate": "2021-03-31",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 25.03537,
+                    "fmt": "25.04"
+                }
+            },
+            {
+                "dataId": 101,
+                "asOfDate": "2021-06-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 13.867117,
+                    "fmt": "13.87"
+                }
+            },
+            {
+                "dataId": 101,
+                "asOfDate": "2021-09-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 3.057907,
+                    "fmt": "3.06"
+                }
+            }
+        ],
+        "quarterlyEnterprisesValueEBITDARatio": [
+            {
+                "dataId": 102,
+                "asOfDate": "2021-03-31",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 85.738417,
+                    "fmt": "85.74"
+                }
+            },
+            {
+                "dataId": 102,
+                "asOfDate": "2021-06-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 42.830244,
+                    "fmt": "42.83"
+                }
+            },
+            {
+                "dataId": 102,
+                "asOfDate": "2021-09-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 17.779717,
+                    "fmt": "17.78"
+                }
+            }
+        ],
+        "trailingEnterprisesValueRevenueRatio": [
+            {
+                "dataId": 101,
+                "asOfDate": "2022-02-28",
+                "periodType": "TTM",
+                "reportedValue": {
+                    "raw": -0.108319,
+                    "fmt": "-0.11"
+                }
+            }
+        ],
+        "quarterlyEnterpriseValue": [
+            {
+                "dataId": 40002,
+                "asOfDate": "2021-03-31",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 454105638,
+                    "fmt": "454.11M"
+                }
+            },
+            {
+                "dataId": 40002,
+                "asOfDate": "2021-06-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 288298556,
+                    "fmt": "288.30M"
+                }
+            },
+            {
+                "dataId": 40002,
+                "asOfDate": "2021-09-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 207495337,
+                    "fmt": "207.50M"
+                }
+            }
+        ],
+        "trailingPeRatio": [
+            {
+                "dataId": 14008,
+                "asOfDate": "2022-02-25",
+                "periodType": "TTM",
+                "reportedValue": {
+                    "raw": 1.086296,
+                    "fmt": "1.09"
+                }
+            }
+        ],
+        "trailingEnterpriseValue": [
+            {
+                "dataId": 40002,
+                "asOfDate": "2022-02-25",
+                "periodType": "TTM",
+                "reportedValue": {
+                    "raw": -7327223,
+                    "fmt": "-7.33M"
+                }
+            }
+        ],
+        "quarterlyPbRatio": [
+            {
+                "dataId": 14012,
+                "asOfDate": "2021-03-31",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 5.690017,
+                    "fmt": "5.69"
+                }
+            },
+            {
+                "dataId": 14012,
+                "asOfDate": "2021-06-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 2.862216,
+                    "fmt": "2.86"
+                }
+            },
+            {
+                "dataId": 14012,
+                "asOfDate": "2021-09-30",
+                "periodType": "3M",
+                "reportedValue": {
+                    "raw": 2.762686,
+                    "fmt": "2.76"
+                }
+            }
+        ],
+        "trailingPsRatio": [
+            {
+                "dataId": 14010,
+                "asOfDate": "2022-02-25",
+                "periodType": "TTM",
+                "reportedValue": {
+                    "raw": 0.25731,
+                    "fmt": "0.26"
+                }
+            }
+        ],
+        "trailingPegRatio": [],
+        "quarterlyForwardPeRatio": [],
+        "quarterlyPegRatio": [],
+        "trailingForwardPeRatio": [],
+        "timestamp": [1617148800, 1625011200, 1632960000]
+    },
+    "meta": {
+        "symbol": "NISN",
+        "start": 493590046,
+        "end": 1646352728,
+        "timeUnit": "quarterly"
+    },
+    "loading": false,
+    "errorList": []
+}
