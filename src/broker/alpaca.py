@@ -9,6 +9,7 @@ import uuid
 import requests
 
 from src.broker.dry_run import DRY_RUN
+from src.data.td.td import get_quote
 
 
 ALPACA_URL = os.environ["ALPACA_URL"]
@@ -320,6 +321,49 @@ def get_filled_orders(start: datetime, end: datetime):
     return deduped_results
 
 
+def buy_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False):
+    _warn_for_fractional_shares(quantity)
+    _place_order({
+        "symbol": symbol,
+        "qty": quantity,
+        "side": "buy",
+        "type": "limit",
+        "limit_price": str(price),
+        # NOTE: cannot do premarket and gtc at the same time
+        "extended_hours": allow_premarket,
+        "time_in_force": "gtc" if gtc else "day",
+    })
+
+
+def sell_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False):
+    _warn_for_fractional_shares(quantity)
+    _place_order({
+        "symbol": symbol,
+        "qty": quantity,
+        "side": "sell",
+        "type": "limit",
+        "limit_price": str(price),
+        # NOTE: cannot do premarket and gtc at the same time
+        "extended_hours": allow_premarket,
+        "time_in_force": "gtc" if gtc else "day",
+    })
+
+
+def buy_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
+    quote = get_quote(symbol)
+    price = quote['ask'] + buffer
+    logging.debug(
+        f"Buying {quantity} shares of {symbol} at {price} ({quote['ask']} + {buffer})")
+    buy_limit(symbol, quantity, price, **limit_args)
+
+
+def sell_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
+    quote = get_quote(symbol)
+    price = quote['bid'] - buffer
+    logging.debug(
+        f"Buying {quantity} shares of {symbol} at {price} ({quote['bid']} - {buffer})")
+    sell_limit(symbol, quantity, price, **limit_args)
+
+
 def main():
-    logging.getLogger().setLevel(logging.DEBUG)
-    buy_symbol_market("AAPL", 1.1, algo_name=None)
+    buy_limit_thru("AAPL", 1)
