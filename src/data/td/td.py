@@ -32,13 +32,14 @@ def _should_warn_about_delay(url: str):
 
 
 def _get_data(url: str, **kwargs):
-    if os.environ.get("BROKER", "") == "td":
+    try:
+        access_token = _get_access_token()
         headers = kwargs.get("headers", {})
         headers.update({
             "Authorization": f"Bearer {_get_access_token()}",
         })
         kwargs['headers'] = headers
-    else:
+    except:
         if _should_warn_about_delay(url):
             logging.warn("TD: data will be 15m delayed")
         params = kwargs.get("params", {})
