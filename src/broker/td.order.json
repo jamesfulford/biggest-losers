@@ -1,0 +1,52 @@
+{
+    "session": "NORMAL",
+    "duration": "DAY",
+    "orderType": "LIMIT",
+    "complexOrderStrategyType": "NONE",
+    "quantity": 100.0,
+    "filledQuantity": 100.0,
+    "remainingQuantity": 0.0,
+    "requestedDestination": "AUTO",
+    "destinationLinkName": "NITE",
+    "price": 28.0,
+    "orderLegCollection": [
+        {
+            "orderLegType": "EQUITY",
+            "legId": 1,
+            "instrument": {
+                "assetType": "EQUITY",
+                "cusip": "53814L108",
+                "symbol": "LTHM"
+            },
+            "instruction": "BUY",
+            "positionEffect": "OPENING",
+            "quantity": 100.0
+        }
+    ],
+    "orderStrategyType": "SINGLE",
+    "orderId": 5609066619,
+    "cancelable": false,
+    "editable": false,
+    "status": "FILLED",
+    "enteredTime": "2021-12-05T03:00:14+0000",
+    "closeTime": "2021-12-06T14:30:02+0000",
+    "tag": "API_TOS_ADMIN:KEY: Ctrl O",
+    "accountId": 279989255,
+    "orderActivityCollection": [
+        {
+            "activityType": "EXECUTION",
+            "executionType": "FILL",
+            "quantity": 100.0,
+            "orderRemainingQuantity": 0.0,
+            "executionLegs": [
+                {
+                    "legId": 1,
+                    "quantity": 100.0,
+                    "mismarkedQuantity": 0.0,
+                    "price": 27.67,
+                    "time": "2021-12-06T14:30:02+0000"
+                }
+            ]
+        }
+    ]
+}

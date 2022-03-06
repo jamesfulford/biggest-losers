@@ -1,0 +1,18 @@
+{
+    "shortQuantity": 0.0,
+    "averagePrice": 6.325,
+    "currentDayProfitLoss": 0.0,
+    "currentDayProfitLossPercentage": 0.0,
+    "longQuantity": 1.0,
+    "settledLongQuantity": 0.0,
+    "settledShortQuantity": 0.0,
+    "instrument": {
+        "assetType": "EQUITY",
+        "cusip": "82968B103",
+        "symbol": "SIRI"
+    },
+    "marketValue": 6.33,
+    "maintenanceRequirement": 1.9,
+    "currentDayCost": 6.33,
+    "previousSessionLongQuantity": 0.0
+}

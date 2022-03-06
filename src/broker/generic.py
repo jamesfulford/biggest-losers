@@ -23,7 +23,7 @@ elif broker_name == "td":
     get_positions = td.get_positions
     get_account = td.get_account
     get_filled_orders = td.get_filled_orders
-    # TODO: cancel all orders
+    cancel_all_orders = td.cancel_all_orders
 elif broker_name == "pizzalabs":
     import src.broker.pizzalabs as pizzalabs
     buy_symbol_at_close = pizzalabs.buy_symbol_at_close

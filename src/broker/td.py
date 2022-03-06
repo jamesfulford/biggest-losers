@@ -4,6 +4,7 @@ import logging
 import os
 from typing import List, Union
 import requests
+from src.data.td.td import get_quote
 
 
 from src.pathing import get_paths
@@ -32,7 +33,7 @@ def _get_headers():
 
 def _log_response(response: requests.Response):
     logging.debug(
-        f"TD: {response.status_code} {response.url} => {response.text}")
+        f"TD: {response.status_code} {response.request.method} {response.url} => {response.text}")
 
 
 def _warn_for_fractional_shares(quantity: float):
@@ -41,9 +42,19 @@ def _warn_for_fractional_shares(quantity: float):
             f"quantity {quantity} is not an integer, broker will use fractional shares")
 
 
-def _get(url: str, **kwargs):
-    response = requests.get(
-        "https://api.tdameritrade.com" + url, **kwargs, headers=_get_headers())
+def _build_account_specific_base_url(url: str, account_id: Union[str, None] = None) -> str:
+    if not account_id:
+        account_id = get_account_id()
+    return f"/v1/accounts/{account_id}{url}"
+
+
+def _get(url: str, **kwargs) -> requests.Response:
+    return _request(url, "GET", **kwargs)
+
+
+def _request(url: str, method: str, **kwargs) -> requests.Response:
+    response = requests.request(
+        method, "https://api.tdameritrade.com" + url, **kwargs, headers=_get_headers())
     _log_response(response)
     response.raise_for_status()
     return response
@@ -56,61 +67,6 @@ def _get(url: str, **kwargs):
 def _build_account(account):
     """
     Map TD API account to a dict similar to Alpaca API account
-    {
-        "securitiesAccount": {
-            "type": "CASH",
-            "accountId": "279989255",
-            "roundTrips": 0,
-            "isDayTrader": false,
-            "isClosingOnlyRestricted": false,
-            "initialBalances": {
-                "accruedInterest": 0,
-                "cashAvailableForTrading": 123.45,
-                "cashAvailableForWithdrawal": 123.45,
-                "cashBalance": 123.45,
-                "bondValue": 0,
-                "cashReceipts": 0,
-                "liquidationValue": 150.0,
-                "longOptionMarketValue": 0,
-                "longStockValue": 26.55,
-                "moneyMarketFund": 0,
-                "mutualFundValue": 0,
-                "shortOptionMarketValue": 0,
-                "shortStockValue": 0,
-                "isInCall": false,
-                "unsettledCash": 0,
-                "cashDebitCallValue": 0,
-                "pendingDeposits": 0,
-                "accountValue": 150.0
-            },
-            "currentBalances": {
-                "accruedInterest": 0,
-                "cashBalance": 123.45,
-                "cashReceipts": 0,
-                "longOptionMarketValue": 0,
-                "liquidationValue": 150.0,
-                "longMarketValue": 26.55,
-                "moneyMarketFund": 0,
-                "savings": 0,
-                "shortMarketValue": 0,
-                "pendingDeposits": 0,
-                "cashAvailableForTrading": 123.45,
-                "cashAvailableForWithdrawal": 123.45,
-                "cashCall": 0,
-                "longNonMarginableMarketValue": 123.45,
-                "totalCash": 123.45,
-                "shortOptionMarketValue": 0,
-                "mutualFundValue": 0,
-                "bondValue": 0,
-                "cashDebitCallValue": 0,
-                "unsettledCash": 0
-            },
-            "projectedBalances": {
-                "cashAvailableForTrading": 123.45,
-                "cashAvailableForWithdrawal": 123.45
-            }
-        }
-    }
     """
     account_type = account['securitiesAccount']["type"]
 
@@ -139,10 +95,8 @@ def _build_account(account):
 
 
 def get_account(account_id: str = None):
-    if not account_id:
-        account_id = get_account_id()
-
-    response = _get(f"/v1/accounts/{account_id}")
+    response = _get(_build_account_specific_base_url(
+        "", account_id=account_id))
 
     return _build_account(response.json())
 
@@ -188,58 +142,7 @@ def _get_average_fill_price(order):
 def _build_order(order):
     """
     Map TD API order to a dict similar to Alpaca API order
-    {
-        "session": "NORMAL",
-        "duration": "DAY",
-        "orderType": "LIMIT",
-        "complexOrderStrategyType": "NONE",
-        "quantity": 100.0,
-        "filledQuantity": 100.0,
-        "remainingQuantity": 0.0,
-        "requestedDestination": "AUTO",
-        "destinationLinkName": "NITE",
-        "price": 28.0,
-        "orderLegCollection": [
-            {
-            "orderLegType": "EQUITY",
-            "legId": 1,
-            "instrument": {
-                "assetType": "EQUITY",
-                "cusip": "53814L108",
-                "symbol": "LTHM"
-            },
-            "instruction": "BUY",
-            "positionEffect": "OPENING",
-            "quantity": 100.0
-            }
-        ],
-        "orderStrategyType": "SINGLE",
-        "orderId": 5609066619,
-        "cancelable": false,
-        "editable": false,
-        "status": "FILLED",
-        "enteredTime": "2021-12-05T03:00:14+0000",
-        "closeTime": "2021-12-06T14:30:02+0000",
-        "tag": "API_TOS_ADMIN:KEY: Ctrl O",
-        "accountId": 279989255,
-        "orderActivityCollection": [
-            {
-            "activityType": "EXECUTION",
-            "executionType": "FILL",
-            "quantity": 100.0,
-            "orderRemainingQuantity": 0.0,
-            "executionLegs": [
-                {
-                "legId": 1,
-                "quantity": 100.0,
-                "mismarkedQuantity": 0.0,
-                "price": 27.67,
-                "time": "2021-12-06T14:30:02+0000"
-                }
-            ]
-            }
-        ]
-    }
+    Assumes order has been filled.
     """
     if len(order.get('orderLegCollection', [])) != 1:
         logging.warning(f"{order['orderId']} has multiple legs, skipping")
@@ -275,24 +178,6 @@ def _build_order(order):
 def _build_position(position):
     """
     Map TD API position to a dict similar to Alpaca API position
-    {
-        "shortQuantity": 0.0,
-        "averagePrice": 6.325,
-        "currentDayProfitLoss": 0.0,
-        "currentDayProfitLossPercentage": 0.0,
-        "longQuantity": 1.0,
-        "settledLongQuantity": 0.0,
-        "settledShortQuantity": 0.0,
-        "instrument": {
-            "assetType": "EQUITY",
-            "cusip": "82968B103",
-            "symbol": "SIRI"
-        },
-        "marketValue": 6.33,
-        "maintenanceRequirement": 1.9,
-        "currentDayCost": 6.33,
-        "previousSessionLongQuantity": 0.0
-    }
     """
     return {
         "symbol": position["instrument"]["symbol"],
@@ -302,10 +187,7 @@ def _build_position(position):
 
 
 def get_positions(account_id: str = None):
-    if not account_id:
-        account_id = get_account_id()
-
-    response = _get(f"/v1/accounts/{account_id}", params={
+    response = _get(_build_account_specific_base_url("", account_id=account_id), params={
         'fields': 'positions'
     })
 
@@ -328,20 +210,13 @@ def get_positions(account_id: str = None):
 
 
 def _place_order(body: dict, account_id: Union[str, None] = None):
-    if not account_id:
-        account_id = get_account_id()
-
     logging.debug(f"_place_order: {json.dumps(body, sort_keys=True)}")
 
     if DRY_RUN:
         logging.info(f"DRY_RUN: _place_order({body=})")
         return
 
-    response = requests.post(
-        f"https://api.tdameritrade.com/v1/accounts/{account_id}/orders", json=body, headers=_get_headers())
-    _log_response(response)
-    response.raise_for_status()
-    return response
+    return _request(_build_account_specific_base_url("/orders", account_id=account_id), "POST", json=body)
 
 
 def normalize_symbol(symbol: str):
@@ -465,8 +340,6 @@ def print_accounts_summary():
 
         print(
             f" {'*' if is_primary else ' '}{account_info['displayName']:<16} {'MARGIN' if is_margin else '':<6} '{account['id']}' {equity=:>10.2f} {cash=:>10.2f}")
-        # print(account_info["accountId"], account_info['displayName'],
-        #       account_info['authorizations']['marginTrading'], account['equity'])
 
 
 try:
@@ -478,141 +351,7 @@ except KeyError as e:
     exit(1)
 
 
-def _get_price_rounded(quote: dict, price_key: str):
-    return round(quote[price_key], quote['digits'])
-
-
-def get_quotes(symbols: List[str]):
-    """
-    "NRGU": {
-        "52WkHigh": 356.0,
-        "52WkLow": 85.89,
-        "askId": "P",
-        "askPrice": 339.9,
-        "askSize": 300,
-        "assetMainType": "EQUITY",
-        "assetType": "EQUITY",
-        "bidId": "P",
-        "bidPrice": 327.72,
-        "bidSize": 100,
-        "bidTick": " ",
-        "closePrice": 330.0,
-        "cusip": "06367V105",
-        "delayed": false,
-        "description": "MicroSectors U.S. Big Oil Index 3X Leveraged ETN",
-        "digits": 2,
-        "divAmount": 0.0,
-        "divDate": "",
-        "divYield": 0.0,
-        "exchange": "p",
-        "exchangeName": "PACIFIC",
-        "highPrice": 356.0,
-        "lastId": "P",
-        "lastPrice": 337.99,
-        "lastSize": 0,
-        "lowPrice": 327.0,
-        "marginable": true,
-        "mark": 337.99,
-        "markChangeInDouble": 7.99,
-        "markPercentChangeInDouble": 2.4212,
-        "nAV": 0.0,
-        "netChange": 7.99,
-        "netPercentChangeInDouble": 2.4212,
-        "openPrice": 340.55,
-        "peRatio": 0.0,
-        "quoteTimeInLong": 1646172261975,
-        "realtimeEntitled": true,
-        "regularMarketLastPrice": 337.99,
-        "regularMarketLastSize": 4,
-        "regularMarketNetChange": 7.99,
-        "regularMarketPercentChangeInDouble": 2.4212,
-        "regularMarketTradeTimeInLong": 1646169000002,
-        "securityStatus": "Normal",
-        "shortable": true,
-        "symbol": "NRGU",
-        "totalVolume": 257805,
-        "tradeTimeInLong": 1646172091728,
-        "volatility": 0.2284
-    }
-    """
-    response = _get(f"/v1/marketdata/quotes", params={
-        "symbol": ",".join(symbols)
-    })
-
-    quotes = {}
-    for symbol, quote in response.json().items():
-        quotes[symbol] = {
-            "ask": _get_price_rounded(quote, 'askPrice'),
-            "bid": _get_price_rounded(quote, 'bidPrice'),
-            "spread": round(quote['askPrice'] - quote['bidPrice'], quote['digits']),
-            "day_candle": {
-                "open": _get_price_rounded(quote, 'openPrice'),
-                "high": _get_price_rounded(quote, 'highPrice'),
-                "low": _get_price_rounded(quote, 'lowPrice'),
-                "close": _get_price_rounded(quote, 'closePrice'),
-                "volume": quote['totalVolume'],
-            },
-        }
-
-    return quotes
-
-
-def get_quote(symbol: str) -> dict:
-    """
-    """
-    return get_quotes([symbol])[symbol]
-
-
 def get_user_info():
-    """
-    {
-        "userId" : "jamespfulford",
-        "userCdDomainId" : "A000000085603460",
-        "primaryAccountId" : "279989255",
-        "lastLoginTime" : "2022-03-01T22:16:17+0000",
-        "tokenExpirationTime" : "2022-03-01T22:49:28+0000",
-        "loginTime" : "2022-03-01T22:19:28+0000",
-        "accessLevel" : "CUS",
-        "stalePassword" : false,
-        "professionalStatus" : "NON_PROFESSIONAL",
-        "quotes" : {
-            "isNyseDelayed" : false,
-            "isNasdaqDelayed" : false,
-            "isOpraDelayed" : false,
-            "isAmexDelayed" : false,
-            "isCmeDelayed" : true,
-            "isIceDelayed" : true,
-            "isForexDelayed" : true
-        },
-        "exchangeAgreements" : {
-            "OPRA_EXCHANGE_AGREEMENT" : "ACCEPTED",
-            "NASDAQ_EXCHANGE_AGREEMENT" : "ACCEPTED",
-            "NYSE_EXCHANGE_AGREEMENT" : "ACCEPTED"
-        },
-        "accounts" : [
-            {
-                "accountId" : "252321094",
-                "displayName" : "margin",
-                "accountCdDomainId" : "A000000093786939",
-                "company" : "AMER",
-                "segment" : "AMER",
-                "acl" : "BPCCDRDTDWESF7G1G3G5G7GKGLH1H3H5LTM1MAPNQSRFSDTETFTOTTUAURXBXNXO",
-                "authorizations" : {
-                    "apex" : false,
-                    "levelTwoQuotes" : false,
-                    "stockTrading" : true,
-                    "marginTrading" : true,
-                    "streamingNews" : false,
-                    "optionTradingLevel" : "NONE",
-                    "streamerAccess" : true,
-                    "advancedMargin" : true,
-                    "scottradeAccount" : false
-                }
-            },
-            ...
-        ]
-    }
-    """
     return _get("/v1/userprincipals").json()
 
 
@@ -642,17 +381,13 @@ def update_watchlist(target_name: str, symbols: List[str]):
         }, symbols)),
     }
     if not w:
-        print(f"Creating watchlist {target_name}")
-        r = requests.post(
-            f"https://api.tdameritrade.com/v1/accounts/{primary_account_id}/watchlists", json=new_watchlist, headers=_get_headers())
-        _log_response(r)
-        r.raise_for_status()
+        logging.info(f"Creating watchlist {target_name}")
+        _request(_build_account_specific_base_url("/watchlists",
+                 account_id=primary_account_id), "POST", json=new_watchlist)
         return
 
-    r = requests.put(
-        f"https://api.tdameritrade.com/v1/accounts/{w['accountId']}/watchlists/{w['watchlistId']}", json=new_watchlist, headers=_get_headers())
-    _log_response(r)
-    r.raise_for_status()
+    _request(_build_account_specific_base_url(
+        f"/watchlists/{w['watchlistId']}", account_id=w['accountId']), "POST", json=new_watchlist)
 
 
 def _round_price(price: float) -> float:
@@ -717,5 +452,27 @@ def sell_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_arg
     sell_limit(symbol, quantity, price, **limit_args)
 
 
+def cancel_order(order_id: str, account_id: Union[str, None] = None):
+    return _request(_build_account_specific_base_url(f"/orders/{order_id}", account_id=account_id), "DELETE")
+
+
+def _get_open_orders(account_id: Union[str, None] = None):
+    """
+    Gets all orders.
+    This is TD-specific format, not mapped to shared open-order json format
+    """
+    orders = _get(_build_account_specific_base_url(
+        "/orders", account_id=account_id)).json()
+    # TODO: is more logic neccessary here? statuses are not really explained, nor is default /orders behavior.
+    return list(filter(lambda o: o['status'] not in ('CANCELED'), orders))
+
+
+def cancel_all_orders(account_id: Union[str, None] = None):
+    orders = _get_open_orders(account_id=account_id)
+    for order in orders:
+        cancel_order(order['orderId'], account_id=account_id)
+
+
 def main():
-    pass
+    # buy_symbol_market("AAPL", 1)
+    cancel_all_orders()

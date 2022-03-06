@@ -1,0 +1,46 @@
+{
+    "userId": "jamespfulford",
+    "userCdDomainId": "A0000...",
+    "primaryAccountId": "5555555",
+    "lastLoginTime": "2022-03-01T22:16:17+0000",
+    "tokenExpirationTime": "2022-03-01T22:49:28+0000",
+    "loginTime": "2022-03-01T22:19:28+0000",
+    "accessLevel": "CUS",
+    "stalePassword": false,
+    "professionalStatus": "NON_PROFESSIONAL",
+    "quotes": {
+        "isNyseDelayed": false,
+        "isNasdaqDelayed": false,
+        "isOpraDelayed": false,
+        "isAmexDelayed": false,
+        "isCmeDelayed": true,
+        "isIceDelayed": true,
+        "isForexDelayed": true
+    },
+    "exchangeAgreements": {
+        "OPRA_EXCHANGE_AGREEMENT": "ACCEPTED",
+        "NASDAQ_EXCHANGE_AGREEMENT": "ACCEPTED",
+        "NYSE_EXCHANGE_AGREEMENT": "ACCEPTED"
+    },
+    "accounts": [
+        {
+            "accountId": "5555555",
+            "displayName": "margin",
+            "accountCdDomainId": "A0000...",
+            "company": "AMER",
+            "segment": "AMER",
+            "acl": "asdfaerasdfasd",
+            "authorizations": {
+                "apex": false,
+                "levelTwoQuotes": false,
+                "stockTrading": true,
+                "marginTrading": true,
+                "streamingNews": false,
+                "optionTradingLevel": "NONE",
+                "streamerAccess": true,
+                "advancedMargin": true,
+                "scottradeAccount": false
+            }
+        }
+    ]
+}
