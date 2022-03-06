@@ -39,3 +39,19 @@ def get_filled_orders(*args, **kwargs):
 
 def cancel_all_orders() -> None:
     logging.info(f"Canceled all orders")
+
+
+def buy_limit(*args, **kwargs):
+    logging.info(f"buy_limit: {args=} {kwargs=}")
+
+
+def sell_limit(*args, **kwargs):
+    logging.info(f"sell_limit: {args=} {kwargs=}")
+
+
+def buy_limit_thru(*args, **kwargs):
+    logging.info(f"buy_limit_thru: {args=} {kwargs=}")
+
+
+def sell_limit_thru(*args, **kwargs):
+    logging.info(f"sell_limit_thru: {args=} {kwargs=}")
