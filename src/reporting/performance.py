@@ -167,10 +167,14 @@ def write_performance_csv(environment):
     )
 
 
-if __name__ == "__main__":
+def main():
+    for trade in get_trades('paper'):
+        print(f"{trade['symbol']},{trade['opened_at'].strftime('%H:%M')},{trade['closed_at'].strftime('%H:%M')},{trade['bought_price']},{trade['sold_price']},{trade['quantity']},{trade['roi']:>5.0%}")
 
-    for environment in ["paper", "prod", "td-cash", "cash1", "intrac1"]:
-        logging.info(f"Dumping performance csv for {environment}...")
-        print()
-        write_performance_csv(environment)
-        print()
+# if __name__ == "__main__":
+
+    # for environment in ["paper", "prod", "td-cash", "cash1", "intrac1"]:
+    #     logging.info(f"Dumping performance csv for {environment}...")
+    #     print()
+    #     write_performance_csv(environment)
+    #     print()
