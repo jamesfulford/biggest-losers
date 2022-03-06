@@ -1,25 +1,5 @@
 
 """
-Scan:
-When to start? (Alpaca allows 4am, TD allows 7am)
-- 100k? (for data collection)
-- < $5
-- sort by volume/float ratio
-- TAKE TOP 5 (or less)
-
-Entry:
-- limit-thru order (buffer needs to be better than 0.05), allow premarket
-- DATA: 1 share
-- later: 20% (100%/5)
-
-NEED TO COLLECT DATA, need to keep order intentions
-
-Exit:
-- 5% up take-profit
-- Sell all at 12pm (cancel orders, liquidate positions)
-- Sell if falls off scanner?
-
-
 - [X] Do scanning
 - [X] Make sure buying stock don't already own
 - [X] Record intentions
@@ -34,20 +14,24 @@ Exit:
 - [X] hook up to alpaca paper
 - [X] fill in is_stock cache
 - [X] assert PDT
+- [x] make sure that the account is day-trade-able. (at least 25K margin account)
+- [x] TD: cancel all orders
+- [x] add limit order support for brokers
 
-- [ ] 5% up bracket profit
-- [ ] add limit orders (to support premarket)
-- [ ] sizing? 20% of account?
-- [ ] sell at 9:38?
-- [ ] falls off the list, do we sell then, at 12pm, or at +5%
-- [ ] if buy, up 5%, sell, does it buy back if it shows back up on the list? go up 5, sell, buy, go up 5, sell, buy, etc.
-- [ ] make sure that the account is day-trade-able. (at least 25K margin account)
-- [ ] TD: cancel all orders
-- [ ] schedule cache updating beforehand
-- [ ]
+- [ ] 5% up limit order (wait for order to fill? or place bracket order?)
+- [ ] only play when entry is good (VWAP, RSI/ema crossings)
+- [ ] sizing: 100% of account for margin
+- [ ] sizing: 20% (?) of account for cash
+- [ ] limit-thru entry orders (buffer needs to be better than 0.05)
+- [ ] limit-thru exit orders (at 12pm)
+- [ ] enable pre-market trading
+- [ ] sell at 9:38? don't start until 9:38? (Mummy)
+- [ ] when symbol falls off the scanner, do we sell immediately? (default: no)
+- [ ] play more than 1 ticker at a time? (if so, how does sizing work?)
 
 Questions We Have to be Answers By Data
 - how often do members of the list change? (how many total stocks show up from 9:30-12)
+    - ANSWER: top 5 => 14 stocks
 - what is best time to buy for max profit at end
 - how should sizing work
     size down? 20, 15, 10, 5...
