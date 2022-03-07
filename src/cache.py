@@ -10,7 +10,7 @@ def _get_cache_path(key: str) -> str:
     return os.path.join(get_paths()["data"]["cache"]["dir"], key)
 
 
-@lru_cache(maxsize=100)
+# @lru_cache(maxsize=100)
 def read_json_cache(key: str):
     path = _get_cache_path(key)
     try:

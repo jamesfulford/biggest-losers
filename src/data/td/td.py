@@ -1,9 +1,12 @@
-from datetime import datetime
+from datetime import date, datetime
+from functools import lru_cache
 import json
 import logging
 import os
-from typing import List
+from time import sleep
+from typing import List, Union
 import requests
+from src.cache import read_json_cache, write_json_cache
 
 from src.pathing import get_paths
 
@@ -32,13 +35,22 @@ def _should_warn_about_delay(url: str):
 
 
 def _get_data(url: str, **kwargs):
+    logging.info("fetching TD fundamental data")
     try:
         access_token = _get_access_token()
         headers = kwargs.get("headers", {})
         headers.update({
-            "Authorization": f"Bearer {_get_access_token()}",
+            "Authorization": f"Bearer {access_token}",
         })
         kwargs['headers'] = headers
+        response = requests.get(
+            "https://api.tdameritrade.com" + url, **kwargs)
+        if response.status_code == 429:
+            logging.info("Rate limited, waiting...")
+            sleep(5)
+            return _get_data(url, **kwargs)
+        _log_response(response)
+        response.raise_for_status()
     except:
         if _should_warn_about_delay(url):
             logging.warn("TD: data will be 15m delayed")
@@ -47,11 +59,15 @@ def _get_data(url: str, **kwargs):
             "apikey": _get_consumer_key(),
         })
         kwargs['params'] = params
+        response = requests.get(
+            "https://api.tdameritrade.com" + url, **kwargs)
+        if response.status_code == 429:
+            logging.info("Rate limited, waiting...")
+            sleep(5)
+            return _get_data(url, **kwargs)
+        _log_response(response)
+        response.raise_for_status()
 
-    response = requests.get(
-        "https://api.tdameritrade.com" + url, **kwargs)
-    _log_response(response)
-    response.raise_for_status()
     return response
 
 #
@@ -145,82 +161,53 @@ def get_quote(symbol: str) -> dict:
 # Fundamentals
 #
 
+def _get_fundamentals_cache_key(symbol: str, day: date):
+    return f"fundamentals_{symbol}_{day.isoformat()}"
+
+
 def get_fundamentals(symbols: List[str]) -> dict:
-    chunks = [symbols[x:x+100] for x in range(0, len(symbols), 100)]
+    """
+    Fetches TD fundamental data for all symbols provided. Cached based on day fetched.
+    Passing `day` will cause the cache lookup to be based on that day.
+    """
+    day = date.today()
 
     fundamentals = {}
+
+    # Check cache
+    symbols_to_fetch = []
+    for symbol in symbols:
+        key = _get_fundamentals_cache_key(symbol, day)
+        data = read_json_cache(key)
+        if data:
+            fundamentals[symbol] = data
+        else:
+            symbols_to_fetch.append(symbol)
+
+    # Fetch in chunks
+    chunks = [symbols_to_fetch[x:x+100]
+              for x in range(0, len(symbols_to_fetch), 100)]
     for chunk in chunks:
         fundamentals.update(_get_fundamentals(chunk))
-    return fundamentals
+
+    # Write cache
+    for symbol, data in fundamentals.items():
+        key = _get_fundamentals_cache_key(symbol, day)
+        write_json_cache(key, data)
+
+    # map values
+    new_fundamentals = {}
+    for symbol, r in fundamentals.items():
+        new_fundamentals[symbol] = _build_fundamental(r)
+    return new_fundamentals
 
 
 def _get_fundamentals(symbols: List[str]):
-    """
-    {
-        "AAPL": {
-            "fundamental": {
-                "symbol": "AAPL",
-                "high52": 182.94,
-                "low52": 116.21,
-                "dividendAmount": 0.88,
-                "dividendYield": 0.54,
-                "dividendDate": "2022-02-04 00:00:00.000",
-                "peRatio": 27.09501,
-                "pegRatio": 0.431242,
-                "pbRatio": 37.07428,
-                "prRatio": 7.03984,
-                "pcfRatio": 23.80739,
-                "grossMarginTTM": 43.01906,
-                "grossMarginMRQ": 43.76377,
-                "netProfitMarginTTM": 26.57914,
-                "netProfitMarginMRQ": 27.93981,
-                "operatingMarginTTM": 30.90032,
-                "operatingMarginMRQ": 33.47291,
-                "returnOnEquity": 145.5673,
-                "returnOnAssets": 27.35279,
-                "returnOnInvestment": 44.18407,
-                "quickRatio": 0.99799,
-                "currentRatio": 1.03781,
-                "interestCoverage": 942.9091,
-                "totalDebtToCapital": 63.06065,
-                "ltDebtToEquity": 148.2358,
-                "totalDebtToEquity": 170.714,
-                "epsTTM": 6.02325,
-                "epsChangePercentTTM": 62.83015,
-                "epsChangeYear": 24.76506,
-                "epsChange": 0,
-                "revChangeYear": 0,
-                "revChangeTTM": 28.62223,
-                "revChangeIn": 48.68642,
-                "sharesOutstanding": 16319441000,
-                "marketCapFloat": 16308,
-                "marketCap": 2663333,
-                "bookValuePerShare": 0,
-                "shortIntToFloat": 0,
-                "shortIntDayToCover": 0,
-                "divGrowthRate3Year": 0,
-                "dividendPayAmount": 0.22,
-                "dividendPayDate": "2022-02-10 00:00:00.000",
-                "beta": 1.19054,
-                "vol1DayAvg": 87065060,
-                "vol10DayAvg": 87065056,
-                "vol3MonthAvg": 2089220340
-            },
-            "cusip": "037833100",
-            "symbol": "AAPL",
-            "description": "Apple Inc. - Common Stock",
-            "exchange": "NASDAQ",
-            "assetType": "EQUITY"
-        },
-    """
     response = _get_data("/v1/instruments", params={
         "symbol": ",".join(symbols),
         "projection": "fundamental"
     })
-    fundamentals = {}
-    for symbol, r in response.json().items():
-        fundamentals[symbol] = _build_fundamental(r)
-    return fundamentals
+    return response.json()
 
 
 def _build_fundamental(fundamental_response: dict) -> dict:

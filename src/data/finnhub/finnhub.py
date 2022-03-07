@@ -86,6 +86,8 @@ def _convert_candles_format(response_json, resolution):
     try:
         return _convert_candles_format_logic(response_json, resolution)
     except KeyError:
+        logging.warning(
+            f"Finnhub get_candles response format was unexpected: {response_json}")
         return None
 
 

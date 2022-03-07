@@ -71,36 +71,51 @@ def _get_stats(symbol: str):
 #
 
 
-def _parse_previous_report_date(data: dict) -> date:
-    return date.fromisoformat(
-        data["defaultKeyStatistics"]["sharesShortPreviousMonthDate"]["fmt"])
+def _parse_previous_report_date(data: dict) -> Union[date, None]:
+    try:
+        return date.fromisoformat(
+            data["defaultKeyStatistics"]["sharesShortPreviousMonthDate"]["fmt"])
+    except:
+        return None
 
 
-def _parse_current_report_date(data: dict) -> date:
-    return date.fromisoformat(
-        data["defaultKeyStatistics"]["dateShortInterest"]["fmt"])
+def _parse_current_report_date(data: dict) -> Union[date, None]:
+    try:
+        return date.fromisoformat(
+            data["defaultKeyStatistics"]["dateShortInterest"]["fmt"])
+    except:
+        return None
 
 
 def _build_short_interest_format_from_previous_data(data: dict, key: str):
-    return {
-        "shares_short": data["defaultKeyStatistics"]["sharesShortPriorMonth"]["raw"],
+    try:
+        shares_short = data.get("defaultKeyStatistics", {}).get(
+            "sharesShortPriorMonth", {}).get("raw", None)
 
-        "report_date": _parse_previous_report_date(data),
-        "_from_previous_report": True,
-        "_cache_entry_key": key,
-    }
+        return {
+            "shares_short": shares_short,
+
+            "report_date": _parse_previous_report_date(data),
+            "_from_previous_report": True,
+            "_cache_entry_key": key,
+        }
+    except:
+        return None
 
 
 def _build_short_interest_format(data: dict, key: str):
-    return {
-        "shares_short": data["defaultKeyStatistics"]["sharesShort"]["raw"],
+    try:
+        return {
+            "shares_short": data["defaultKeyStatistics"]["sharesShort"]["raw"],
 
-        "previous_report": _build_short_interest_format_from_previous_data(data, key),
+            "previous_report": _build_short_interest_format_from_previous_data(data, key),
 
-        "report_date": _parse_current_report_date(data),
-        "_from_previous_report": False,
-        "_cache_entry_key": key,
-    }
+            "report_date": _parse_current_report_date(data),
+            "_from_previous_report": False,
+            "_cache_entry_key": key,
+        }
+    except:
+        return None
 
 
 def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
@@ -127,11 +142,18 @@ def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
         data = read_json_cache(key)
 
         if not data:
-            print(key)
+            print(key, data)
             exit()
 
         previous_report_date = _parse_previous_report_date(data)
+        if not previous_report_date:  # could be because was not trading yet
+            # TODO: if current report still works out, return that instead
+            logging.warning(f"{previous_report_date=}")
+            return None
         current_report_date = _parse_current_report_date(data)
+        if not current_report_date:
+            logging.warning(f"{current_report_date=}")
+            return None
         time_between_reports = (current_report_date - previous_report_date)
         estimated_next_report_date = current_report_date + time_between_reports
 

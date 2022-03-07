@@ -58,7 +58,7 @@ def enrich_tickers_with_indicators(day: date, tickers: list[dict], indicators: d
             ticker[indicator_name] = indicator(daily_candles)
         new_tickers.append(ticker)
 
-    if not new_tickers:
+    if tickers and not new_tickers:
         logging.warning(
             f"enrich_tickers_with_indicators: all {len(tickers)} tickers on {day} were filtered out when getting last {n} candles. Is the cache up to date?")
 
