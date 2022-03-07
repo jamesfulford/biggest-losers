@@ -21,6 +21,7 @@ function run () {
     if [ "$RUN_DAEMON" != "" ]; then
         daemon="-d"
     fi
+    CONTAINER_NAME=${CONTAINER_NAME:-"$ENV_NAME-$action"}
     docker run -i --rm \
         --env-file "$env_file" \
         --env "GIT_COMMIT=$GIT_COMMIT" \
@@ -29,7 +30,7 @@ function run () {
         -v "$DATA_DIR":/data \
         -v "$APP_DIR":/app \
         $daemon \
-        --name $ENV_NAME-$RANDOM \
+        --name "$CONTAINER_NAME" \
         "talib-py-runner" "$@"
 }
 
