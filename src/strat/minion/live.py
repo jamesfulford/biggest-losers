@@ -112,7 +112,7 @@ def execute_phases(symbol: str):
 
     position = get_current_position(symbol)
     logging.info(
-        f"{cash=} position={json.dumps(position, sort_keys=True, indent=2)}")
+        f"{cash=} position={json.dumps(position, sort_keys=True)}")
 
     #
     # Execution Phase
