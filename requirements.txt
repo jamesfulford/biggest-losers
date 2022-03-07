@@ -1,4 +1,3 @@
-requests
-numpy
-ta-lib
 ta
+ta-lib
+requests
