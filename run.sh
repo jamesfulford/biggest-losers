@@ -22,7 +22,9 @@ function run () {
         daemon="-d"
     fi
     CONTAINER_NAME=${CONTAINER_NAME:-"$ENV_NAME-$action"}
-    docker run -i --rm \
+    docker kill $CONTAINER_NAME >/dev/null 2>/dev/null || true
+    docker rm $CONTAINER_NAME >/dev/null 2>/dev/null || true
+    docker run -i \
         --env-file "$env_file" \
         --env "GIT_COMMIT=$GIT_COMMIT" \
         --env "DRY_RUN=$DRY_RUN" \
