@@ -42,7 +42,6 @@ Questions We Have to be Answers By Data
 
 from datetime import datetime, time, timedelta
 import logging
-import os
 import sys
 
 from requests.exceptions import HTTPError
@@ -64,7 +63,7 @@ def next_minute_mark(dt: datetime) -> datetime:
 
 
 def should_continue():
-    return os.environ["FORCE_LIVE"] or now().time() < time(12, 0)
+    return now().time() < time(12, 0)
 
 
 def loop(scanner: str):
