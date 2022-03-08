@@ -162,7 +162,7 @@ def place_oto(
 
 def place_oco(
     symbol: str,
-    quantity: float,
+    quantity: int,
     take_profit_limit: float,
     stop_loss_stop: float,
     stop_loss_limit: float = None,
@@ -210,7 +210,7 @@ def _build_position(raw_position):
     return {
         "symbol": raw_position["symbol"],
         "qty": float(raw_position["qty"]),
-        "avg_entry_price": float(raw_position["avg_entry_price"]),
+        "avg_price": float(raw_position["avg_entry_price"]),
     }
 
 
