@@ -1,13 +1,12 @@
 from datetime import date
 import logging
 
-from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
+from src.criteria import is_stock
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.trading_day import generate_trading_days
 from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
 from src.csv_dump import write_csv
-from src.data.polygon.grouped_aggs import get_today_grouped_aggs
 from src.scan.utils.rank import rank_candidates_by
 
 
@@ -21,22 +20,17 @@ from src.scan.utils.rank import rank_candidates_by
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
 
-    # TODO: when live, use 'c', when backtest, use 'h'?
     for ticker in tickers:
-        ticker["peak_percentage"] = (ticker['h'] - ticker['o']) / ticker['o']
+        ticker["percent_change"] = (ticker['c'] - ticker['o']) / ticker['o']
 
-    tickers = list(filter(lambda t: t["peak_percentage"] > 2, tickers))
+    tickers = list(filter(lambda t: t["percent_change"] > 2, tickers))
 
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
-        "is_etf": is_etf,
-        "is_right": is_right,
         "is_stock": is_stock,
-        "is_unit": is_unit,
-        "is_warrant": is_warrant,
     }))
 
     tickers = rank_candidates_by(
-        tickers, lambda t: -t['peak_percentage'])
+        tickers, lambda t: -t['percent_change'])
 
     return tickers
 
@@ -94,6 +88,7 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
     )
 
 
+# TODO: do the h->c mangling for supernova backtesting
 def prepare_csv():
     from src.pathing import get_paths
 
