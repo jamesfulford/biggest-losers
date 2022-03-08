@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import logging
 from time import sleep
 
@@ -20,3 +21,7 @@ def wait_until(t):
             f"{market_time} is before {t}, waiting {seconds_remaining} seconds")
 
         sleep(min(seconds_remaining, 60))
+
+
+def get_next_minute_mark(dt: datetime) -> datetime:
+    return dt - timedelta(microseconds=dt.microsecond, seconds=dt.second) + timedelta(minutes=1)
