@@ -3,14 +3,13 @@ from datetime import date, datetime, time, timedelta
 import logging
 from typing import Callable
 
-from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
+from src.criteria import is_stock
 from src.data.finnhub.finnhub import get_candles
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, extract_from_n_candles_ago
 from src.trading_day import MARKET_TIMEZONE, generate_trading_days
 from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
-from src.csv_dump import write_csv
 from src.scan.utils.rank import rank_candidates_by
 
 
