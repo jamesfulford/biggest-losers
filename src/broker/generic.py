@@ -16,6 +16,8 @@ if broker_name == "alpaca":
     buy_limit_thru = alpaca.buy_limit_thru
     sell_limit_thru = alpaca.sell_limit_thru
 
+    place_oco = alpaca.place_oco
+
     get_account = alpaca.get_account
     get_positions = alpaca.get_positions
     get_filled_orders = alpaca.get_filled_orders
@@ -33,6 +35,8 @@ elif broker_name == "td":
     buy_limit_thru = td.buy_limit_thru
     sell_limit_thru = td.sell_limit_thru
 
+    place_oco = td.place_oco
+
     get_account = td.get_account
     get_positions = td.get_positions
     get_filled_orders = td.get_filled_orders
@@ -49,6 +53,8 @@ elif broker_name == "pizzalabs":
     sell_limit = pizzalabs.sell_limit
     buy_limit_thru = pizzalabs.buy_limit_thru
     sell_limit_thru = pizzalabs.sell_limit_thru
+
+    place_oco = pizzalabs.place_oco
 
     get_account = pizzalabs.get_account
     get_positions = pizzalabs.get_positions

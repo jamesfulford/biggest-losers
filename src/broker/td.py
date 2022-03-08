@@ -473,6 +473,62 @@ def cancel_all_orders(account_id: Union[str, None] = None):
         cancel_order(order['orderId'], account_id=account_id)
 
 
+def place_oco(
+    symbol: str,
+    quantity: float,
+    take_profit_limit: float,
+    stop_loss_stop: float,
+    stop_loss_limit: float = None,
+    account_id: Union[str, None] = None,
+):
+    symbol = normalize_symbol(symbol)
+    _warn_for_fractional_shares(quantity)
+
+    stop_loss_order = {
+        "orderType": "STOP",
+        "session": "NORMAL",
+        "duration": "GOOD_TILL_CANCEL",
+        "orderStrategyType": "SINGLE",
+        "stopPrice": str(_round_price(stop_loss_stop)),
+        "orderLegCollection": [
+            {
+                "instruction": "SELL",
+                "quantity": quantity,
+                "instrument": {
+                    "symbol": symbol,
+                    "assetType": "EQUITY"
+                }
+            }
+        ]
+    }
+    if stop_loss_limit:
+        stop_loss_order['price'] = str(_round_price(stop_loss_limit))
+        stop_loss_order['orderType'] = "STOP_LIMIT"
+    _place_order({
+        "orderStrategyType": "OCO",
+        "childOrderStrategies": [
+            {
+                "orderType": "LIMIT",
+                "session": "NORMAL",
+                "price": str(_round_price(take_profit_limit)),
+                "duration": "GOOD_TILL_CANCEL",
+                "orderStrategyType": "SINGLE",
+                "orderLegCollection": [
+                    {
+                        "instruction": "SELL",
+                        "quantity": quantity,
+                        "instrument": {
+                            "symbol": symbol,
+                            "assetType": "EQUITY"
+                        }
+                    }
+                ]
+            },
+            stop_loss_order
+        ]
+    }, account_id=account_id)
+
+
 def main():
     # buy_symbol_market("AAPL", 1)
     cancel_all_orders()

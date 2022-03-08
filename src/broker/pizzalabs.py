@@ -55,3 +55,7 @@ def buy_limit_thru(*args, **kwargs):
 
 def sell_limit_thru(*args, **kwargs):
     logging.info(f"sell_limit_thru: {args=} {kwargs=}")
+
+
+def place_oco(*args, **kwargs):
+    logging.info(f"place_oco: {args=} {kwargs=}")
