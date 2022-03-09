@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
+import logging
 import sys
 
 from src.broker.generic import get_filled_orders
@@ -10,8 +10,11 @@ def main():
     target_environment_name = next(
         filter(lambda s: not s.startswith("-"), sys.argv), None)
 
-    start = datetime(2021, 1, 1)
+    start = datetime(2022, 1, 1)
     end = datetime.now() + timedelta(days=10)
+
+    logging.info(
+        f"Dumping filled orders in {target_environment_name=} ({start} to {end})...")
 
     filled_orders = get_filled_orders(start, end)
 
@@ -27,3 +30,5 @@ def main():
             side = order["side"]
             s = f"{now.strftime('%Y-%m-%d')},{now.strftime('%H:%M:%S')},{ticker},{quantity},{price},{side.upper()}\n"
             f.write(s)
+
+    logging.info(f"Done. Wrote {len(filled_orders)} orders to {path}")

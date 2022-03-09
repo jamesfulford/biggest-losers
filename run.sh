@@ -147,7 +147,7 @@ case $action in
     # Performance
     "dump-orders")
         refresh_tokens_if_needed
-        run_python -c "import src.log; import src.reporting.dump_orders"
+        run_python -c "import src.log; from src.reporting.dump_orders import main; main()" $1
         echo "(return code was $?)"
         ;;
 
