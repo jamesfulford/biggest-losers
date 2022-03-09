@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 import json
 import logging
 import os
@@ -6,9 +6,9 @@ from typing import List, Union
 import requests
 from src.data.td.td import get_quote
 
-
 from src.pathing import get_paths
 from src.broker.dry_run import DRY_RUN
+from src.trading_day import MARKET_TIMEZONE
 
 
 def get_account_id():
@@ -145,30 +145,105 @@ def _build_order(order):
     Assumes order has been filled.
     """
     if len(order.get('orderLegCollection', [])) != 1:
+        # TODO: resolve multi-leg orders
         logging.warning(f"{order['orderId']} has multiple legs, skipping")
         return None
 
     instruction = order['orderLegCollection'][0]
 
-    if "orderActivityCollection" not in order:
-        logging.warning(
-            f"{order['orderId']} has no orderActivityCollection, skipping")
-        return None
+    order_type_map = {
+        'LIMIT': 'LIMIT',
+        'MARKET': 'MARKET',
+        'STOP': 'STOP',
+        'STOP_LIMIT': 'STOP_LIMIT',
+        'TRAILING_STOP': 'TRAILING_STOP',
 
-    average_fill_price = _get_average_fill_price(order)
+        'MARKET_ON_CLOSE': 'MARKET',  # tif=cls
 
-    return {
-        'id': str(order['orderId']),
-        'account_id': str(order['accountId']),  # TD-specific
-        'status': order['status'].lower(),
-        'symbol': instruction["instrument"]["symbol"].replace("+", ".WS"),
-        'filled_qty': order['filledQuantity'],
-        'filled_avg_price': average_fill_price,
-        'side': instruction["instruction"],
-        # "%Y-%m-%dT%H:%M:%S.%fZ"
-        'filled_at': order["closeTime"].replace("+0000", ".000Z"),
-        'submitted_at': order["enteredTime"].replace("+0000", ".000Z"),
+        # no mapping to Alpaca
+        'TRAILING_STOP_LIMIT': 'UNKNOWN',
+        'EXERCISE': 'UNKNOWN',  # probably options
     }
+    order_type = order_type_map.get(order["orderType"], "UNKNOWN")
+    if order_type == "UNKNOWN":
+        logging.warning(
+            f"{order['orderId']} has unexpected order type {order['orderType']}")
+
+    duration_to_tif_map = {
+        'DAY': 'DAY',
+        'GOOD_TILL_CANCEL': 'GTC',
+        'FILL_OR_KILL': 'FILL_OR_KILL',
+    }
+    tif = duration_to_tif_map.get(order["duration"], "day")
+    if order['orderType'] == 'MARKET_ON_CLOSE':
+        tif = 'cls'
+
+    status_map = {
+        'ACCEPTED': 'ACCEPTED',
+        # happens outside market hours (saw at 10:30pm)
+        'PENDING_ACTIVATION': 'ACCEPTED',
+        'FILLED': "FILLED",
+        'QUEUED': "NEW",
+        'CANCELED': "CANCELED",
+        'EXPIRED': 'EXPIRED',
+        'REPLACED': 'REPLACED',
+        'PENDING_CANCEL': 'PENDING_CANCEL',
+        'PENDING_REPLACE': 'PENDING_REPLACE',
+        'REJECTED': 'REJECTED',
+
+        # not sure what these mean or how they are mapped to Alpaca's statuses
+        # https://alpaca.markets/docs/trading/orders/#order-lifecycle
+        'WORKING': 'UNKNOWN',
+        'AWAITING_PARENT_ORDER': 'UNKNOWN',
+        'AWAITING_CONDITION': 'UNKNOWN',
+        'AWAITING_MANUAL_REVIEW': 'UNKNOWN',
+        'AWAITING_UR_OUT': 'UNKNOWN',
+    }
+    status = status_map.get(order["status"], "UNKNOWN")
+    if status == "UNKNOWN":
+        logging.warning(
+            f"{order['orderId']} has unexpected status {order['status']}")
+
+    new_order = {
+        'id': str(order['orderId']),
+        'symbol': instruction["instrument"]["symbol"].replace("+", ".WS"),
+        'qty': order["quantity"],
+
+        'side': instruction["instruction"],
+        'type': order_type,
+        'limit_price': order.get("price", None),
+        'stop_price': order.get("stopPrice", None),
+        'tif': tif,
+        'status': status,
+
+        'submitted_at': datetime.strptime(
+            order["enteredTime"].replace("+0000", ".000Z"), "%Y-%m-%dT%H:%M:%S.%fZ")
+        .replace(tzinfo=timezone.utc)
+        .astimezone(MARKET_TIMEZONE),
+
+        'account_id': str(order['accountId']),  # TD-specific
+    }
+
+    if order['status'] == "FILLED":
+
+        if "orderActivityCollection" not in order:
+            logging.warning(
+                f"filled order {order['orderId']} has no orderActivityCollection, skipping")
+            return None
+
+        average_fill_price = _get_average_fill_price(order)
+
+        new_order.update({
+            'filled_qty': order['filledQuantity'],
+            'filled_avg_price': average_fill_price,
+            # "%Y-%m-%dT%H:%M:%S.%fZ"
+            'filled_at': datetime.strptime(
+                order["closeTime"].replace("+0000", ".000Z"), "%Y-%m-%dT%H:%M:%S.%fZ")
+            .replace(tzinfo=timezone.utc)
+            .astimezone(MARKET_TIMEZONE),
+        })
+
+    return new_order
 
 #
 # Positions
@@ -342,15 +417,6 @@ def print_accounts_summary():
             f" {'*' if is_primary else ' '}{account_info['displayName']:<16} {'MARGIN' if is_margin else '':<6} '{account['id']}' {equity=:>10.2f} {cash=:>10.2f}")
 
 
-try:
-    get_account_id()
-except KeyError as e:
-    logging.fatal(
-        f"cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
-    print_accounts_summary()
-    exit(1)
-
-
 def get_user_info():
     return _get("/v1/userprincipals").json()
 
@@ -456,21 +522,24 @@ def cancel_order(order_id: str, account_id: Union[str, None] = None):
     return _request(_build_account_specific_base_url(f"/orders/{order_id}", account_id=account_id), "DELETE")
 
 
-def _get_open_orders(account_id: Union[str, None] = None):
+def get_open_orders(account_id: Union[str, None] = None):
     """
     Gets all orders.
     This is TD-specific format, not mapped to shared open-order json format
     """
     orders = _get(_build_account_specific_base_url(
-        "/orders", account_id=account_id)).json()
-    # TODO: is more logic neccessary here? statuses are not really explained, nor is default /orders behavior.
-    return list(filter(lambda o: o['status'] not in ('CANCELED'), orders))
+        "/orders", account_id=account_id), params={
+            'fromEnteredTime': (date.today() - timedelta(days=90)).isoformat(),
+            'toEnteredTime': date.today().isoformat()
+    }).json()
+    orders = list(filter(lambda o: o['cancelable'], orders))
+    return list(map(_build_order, orders))
 
 
 def cancel_all_orders(account_id: Union[str, None] = None):
-    orders = _get_open_orders(account_id=account_id)
+    orders = get_open_orders(account_id=account_id)
     for order in orders:
-        cancel_order(order['orderId'], account_id=account_id)
+        cancel_order(order['id'], account_id=account_id)
 
 
 def place_oco(
@@ -530,5 +599,13 @@ def place_oco(
 
 
 def main():
-    # buy_symbol_market("AAPL", 1)
     cancel_all_orders()
+
+
+try:
+    get_account_id()
+except KeyError as e:
+    logging.fatal(
+        f"cannot find TD_ACCOUNT_ID environment variable. Set TD_ACCOUNT_ID environment variable to one of these:")
+    print_accounts_summary()
+    exit(1)

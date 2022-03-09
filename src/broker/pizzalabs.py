@@ -59,3 +59,8 @@ def sell_limit_thru(*args, **kwargs):
 
 def place_oco(*args, **kwargs):
     logging.info(f"place_oco: {args=} {kwargs=}")
+
+
+def get_open_orders(*args, **kwargs):
+    logging.info(f"get_open_orders: {args=} {kwargs=}")
+    return []

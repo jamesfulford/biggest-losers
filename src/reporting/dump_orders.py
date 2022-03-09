@@ -10,8 +10,6 @@ def main():
     target_environment_name = next(
         filter(lambda s: not s.startswith("-"), sys.argv), None)
 
-    MARKET_TZ = ZoneInfo("America/New_York")
-
     start = datetime(2021, 1, 1)
     end = datetime.now() + timedelta(days=10)
 
@@ -22,11 +20,7 @@ def main():
     with open(path, "w") as f:
         f.write("Date,Time,Symbol,Quantity,Price,Side\n")
         for order in filled_orders:
-            now = (
-                datetime.strptime(order["filled_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-                .replace(tzinfo=timezone.utc)
-                .astimezone(MARKET_TZ)
-            )
+            now = order["filled_at"]
             ticker = order["symbol"]
             quantity = order["filled_qty"]
             price = order["filled_avg_price"]

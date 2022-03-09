@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import sleep
 from typing import Union
 import uuid
@@ -10,6 +10,7 @@ import requests
 
 from src.broker.dry_run import DRY_RUN
 from src.data.td.td import get_quote
+from src.trading_day import MARKET_TIMEZONE
 
 
 ALPACA_URL = os.environ["ALPACA_URL"]
@@ -27,8 +28,8 @@ def _log_response(response: requests.Response):
         f"ALPACA: {response.status_code} {response.url} => {response.text}")
 
 
-def _get_alpaca(url):
-    response = requests.get(ALPACA_URL + url, headers=APCA_HEADERS)
+def _get_alpaca(url, **kwargs):
+    response = requests.get(ALPACA_URL + url, **kwargs, headers=APCA_HEADERS)
     _log_response(response)
     if response.status_code == 429:
         logging.info("Rate limited, waiting...")
@@ -267,6 +268,46 @@ def _build_account(account):
 def get_account():
     return _build_account(_get_alpaca("/v2/account"))
 
+#
+# Orders
+#
+
+
+def _build_order(order: dict) -> dict:
+    new_order = {
+        "id": order["id"],
+        "symbol": order["symbol"],
+
+        "qty": float(order["qty"]),
+        # NOTE: if we do notional orders, qty will be null
+
+        "side": order["side"].upper(),  # BUY, SELL
+        # MARKET, LIMIT, STOP, STOP_LIMIT, TRAILING_STOP
+        "type": order["type"].upper(),
+        "limit_price": float(order["limit_price"]) if order["limit_price"] else None,
+        "stop_price": float(order["stop_price"]) if order["stop_price"] else None,
+
+        # DAY, GTC, FILL_OR_KILL, IMMEDIATE_OR_CANCEL
+        "tif": order["time_in_force"].upper(),
+
+        # https://alpaca.markets/docs/trading/orders/#order-lifecycle
+        "status": order["status"].upper(),
+        "submitted_at": datetime.strptime(
+            order["submitted_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
+        ),
+    }
+    if order['status'] == 'filled':
+        new_order.update({
+            "filled_qty": float(order['filled_qty']),
+            "filled_avg_price": float(order['filled_avg_price']),
+            "filled_at": datetime.strptime(
+                order["filled_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            .replace(tzinfo=timezone.utc)
+            .astimezone(MARKET_TIMEZONE),
+        })
+
+    return new_order
+
 
 def get_filled_orders(start: datetime, end: datetime):
     # inclusive (API is exclusive)
@@ -318,7 +359,16 @@ def get_filled_orders(start: datetime, end: datetime):
     # should already be sorted, but put this here to be safe
     deduped_results.sort(key=lambda x: x["submitted_at"])
 
-    return deduped_results
+    return list(map(_build_order, deduped_results))
+
+
+def get_open_orders():
+    results = _get_alpaca(f"/v2/orders", params={'status': 'open'})
+
+    # should already be sorted, but put this here to be safe
+    results.sort(key=lambda x: x["submitted_at"])
+
+    return list(map(_build_order, results))
 
 
 def buy_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False):
@@ -366,4 +416,4 @@ def sell_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_arg
 
 
 def main():
-    buy_limit_thru("AAPL", 1)
+    cancel_all_orders()

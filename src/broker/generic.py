@@ -21,6 +21,7 @@ if broker_name == "alpaca":
     get_account = alpaca.get_account
     get_positions = alpaca.get_positions
     get_filled_orders = alpaca.get_filled_orders
+    get_open_orders = alpaca.get_open_orders
 
     cancel_all_orders = alpaca.cancel_all_orders
 elif broker_name == "td":
@@ -40,6 +41,7 @@ elif broker_name == "td":
     get_account = td.get_account
     get_positions = td.get_positions
     get_filled_orders = td.get_filled_orders
+    get_open_orders = td.get_open_orders
 
     cancel_all_orders = td.cancel_all_orders
 elif broker_name == "pizzalabs":
@@ -59,6 +61,7 @@ elif broker_name == "pizzalabs":
     get_account = pizzalabs.get_account
     get_positions = pizzalabs.get_positions
     get_filled_orders = pizzalabs.get_filled_orders
+    get_open_orders = pizzalabs.get_open_orders
 
     cancel_all_orders = pizzalabs.cancel_all_orders
 else:
