@@ -178,7 +178,7 @@ def execute_phases(scanner: str):
                 f"Waiting for {len(open_orders)} orders to fill ({symbols_added_set})")
             sleep(1)
 
-        place_ocos(up=1.02, down=0.90)
+        place_ocos(up=1.02, down=0.95)
 
 
 def main():
