@@ -1,5 +1,6 @@
 import requests
 import logging
+import math
 from src.broker.generic import get_positions, place_oco, get_open_orders
 
 
@@ -43,7 +44,25 @@ def place_ocos(up: float, down: float, positions=None):
     logging.info("Done placing OCOs.")
 
 
+def round_up(price: float) -> float:
+    if price > 1:
+        price = price * 100
+        return (math.ceil(price))/100
+    else:
+        price = price * 10_000
+        return (math.ceil(price))/10_000
+
+
+def round_down(price: float) -> float:
+    if price > 1:
+        price = price * 100
+        return (math.floor(price))/100
+    else:
+        price = price * 10_000
+        return (math.floor(price))/10_000
+
+
 def place_oco_for_position(position: dict, up: float, down: float) -> None:
-    print(position)
+
     place_oco(position["symbol"], position["qty"],
-              position['avg_price'] * up, position['avg_price'] * down)
+              round_up(position['avg_price'] * up), round_down(position['avg_price'] * down))
