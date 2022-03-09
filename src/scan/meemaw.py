@@ -92,28 +92,33 @@ def filter_candidates_on_day(tickers: list, today: date, candle_getter: Callable
     tickers = list(filter(lambda t: t['relative_volume'], tickers))
 
     if not shallow_scan:
-        # Above the VWAP on 1m chart
-        for ticker in tickers:
-            ticker['vwap_1m'] = get_vwap(
-                candle_getter(ticker["T"], "1", today, today))
-        tickers = list(filter(lambda t: t['c'] > t['vwap_1m'], tickers))
-
         # Highest volume first
         tickers.sort(key=lambda t: t['v'], reverse=True)
 
-        # Short Interest
-        # (done last to save very restricted API call quota)
+        # only compute tickers necessary (top_n), less quota usage
         new_tickers = []
         for ticker in tickers:
+            candles_1m = candle_getter(ticker["T"], "1", today, today)
+            ticker['vwap_1m'] = get_vwap(candles_1m)
+
+            # Above the VWAP on 1m chart
+            if not (ticker['c'] > ticker['vwap_1m']):
+                continue
+
+            # Short Interest
+            # (done last to save very restricted API call quota)
             short_data = get_short_interest(ticker["T"], today)
-            if short_data:
-                ticker["shares_short"] = short_data["shares_short"]
-                ticker["short_interest"] = ticker["shares_short"] / \
-                    ticker["float"]
-                if ticker["short_interest"] > min_short_interest:
-                    new_tickers.append(ticker)
-                    if len(new_tickers) >= top_n:
-                        break
+            if not short_data:
+                continue
+            ticker["shares_short"] = short_data["shares_short"]
+            ticker["short_interest"] = ticker["shares_short"] / \
+                ticker["float"]
+            if not (ticker["short_interest"] > min_short_interest):
+                continue
+
+            new_tickers.append(ticker)
+            if len(new_tickers) >= top_n:
+                break
         tickers = new_tickers
 
     return tickers
