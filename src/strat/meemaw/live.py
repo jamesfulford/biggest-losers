@@ -161,11 +161,12 @@ def execute_phases(scanner: str):
         new_tickers.append(ticker)
     tickers = new_tickers
 
-    symbols_added_set = buy_symbols(f"{ALGO_NAME}_{scanner}", tickers,
-                                    positions=positions, metadata={})
+    symbols_added_set = buy_symbols(ALGO_NAME, tickers,
+                                    positions=positions, metadata={
+                                        "scanner": scanner,
+                                    })
 
     if symbols_added_set:
-        # TODO: push this to a separate thread so we don't block scanning or other logic or hold up
         while True:
             open_orders = get_open_orders()
             open_orders = [o for o in open_orders if o['symbol']
