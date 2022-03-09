@@ -11,13 +11,6 @@ from src.csv_dump import write_csv
 from src.scan.utils.rank import rank_candidates_by
 
 
-#
-# _on_day: used for LIVE and BACKTEST
-# - all filtering logic should be here
-# - all critical indicators should be enriched in here
-#
-# Some tips:
-# - try to filter on OHLCV first before getting daily candles or calculating indicators
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
     tickers = list(enrich_tickers_with_indicators(today, tickers, {
@@ -25,16 +18,11 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
         "days_ago_close": extract_from_n_candles_ago("c", 6),
     }, n=6))
     for ticker in tickers:
-        # TODO: in backtest, use 'h', when live use 'c'?
         percent_change_days_ago = (ticker["c"]-ticker["days_ago_close"]
                                    )/ticker["days_ago_close"]
         ticker["percent_change_days_ago"] = percent_change_days_ago
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
-        # "is_etf": is_etf,
-        # "is_right": is_right,
         "is_stock": is_stock,
-        # "is_unit": is_unit,
-        # "is_warrant": is_warrant,
     }))
     tickers = list(
         filter(lambda t: t["percent_change_days_ago"] > .1, tickers))
@@ -56,10 +44,6 @@ def build_row(candidate: dict):
         # ticker insights
         "T": candidate['T'],
         "is_stock": candidate['is_stock'],
-        # "is_etf": candidate['is_etf'],
-        # "is_warrant": candidate['is_warrant'],
-        # "is_unit": candidate['is_unit'],
-        # "is_right": candidate['is_right'],
 
         # day_of_action stats
         "o": candidate["o"],
@@ -103,8 +87,6 @@ def prepare_csv():
     path = get_paths()["data"]["outputs"]["rollercoasters_csv"]
 
     start, end = get_cache_prepared_date_range_with_leadup_days(0)
-    start = max(start, date(2021, 1, 1))  # TODO: undo
-    end = min(end, date(2021, 12, 31))  # TODO: undo
 
     logging.info(f"start: {start}")
     logging.info(f"end: {end}")

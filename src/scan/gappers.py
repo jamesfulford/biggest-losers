@@ -107,8 +107,6 @@ def prepare_csv():
     path = get_paths()["data"]["outputs"]["gappers_csv"]
 
     start, end = get_cache_prepared_date_range_with_leadup_days(0)
-    start = max(start, date(2021, 1, 1))  # TODO: undo
-    end = min(end, date(2021, 12, 31))  # TODO: undo
 
     logging.info(f"start: {start}")
     logging.info(f"end: {end}")

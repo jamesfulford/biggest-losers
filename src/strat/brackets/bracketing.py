@@ -52,8 +52,7 @@ def main():
     # 1: market-order entry
     #
 
-    # TODO: do nominal Alpaca order with percentage of current balance
-    # (for other brokers, use current_price from FinnHub and do nominal calculation on our side)
+    # TODO: sizing
     entry_order = buy_symbol_market(symbol, 1)
 
     wait_until(get_market_open_on_day(market_today))
