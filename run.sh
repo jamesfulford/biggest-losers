@@ -4,7 +4,6 @@ ENV_NAME=`basename $current_dir`
 PARENT_DIR=`dirname $current_dir`
 
 APP_DIR=$current_dir
-# TODO: work out pathing for local development and multiple data dirs (remote-environments folder)
 DATA_DIR=$PARENT_DIR/$ENV_NAME-data
 
 log_path=$DATA_DIR/logs/run.log
@@ -124,7 +123,6 @@ case $action in
 
     # Strategy: daily bracketing on NRGU
     "bracketing")
-        # TODO: refresh TD tokens continuously when TD support added for bracketing
         run_python -c 'import src.log; from src.strat.bracketing.bracketing import main; main()'
         ;;
 

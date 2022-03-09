@@ -17,8 +17,8 @@ def get_trades(environment_name):
 
     # enrich trade with intentions recorded at time of trade opening
     for trade in trades:
-
         try:
+            # TODO: add intentions from JSONL for a given algorithm
             opening_day_intentions = get_intentions_by_day(
                 environment_name, trade["opened_at"].date()
             )
@@ -168,13 +168,6 @@ def write_performance_csv(environment):
 
 
 def main():
+    # TODO: write csvs, given environments in sys.argv
     for trade in sorted(get_trades('paper'), key=lambda t: t["opened_at"]):
         print(f"{trade['symbol']},{trade['opened_at'].date().isoformat()},{trade['opened_at'].strftime('%H:%M')},{trade['closed_at'].strftime('%H:%M')},{trade['bought_price']},{trade['sold_price']},{trade['quantity']},{trade['roi']:.1%}")
-
-# if __name__ == "__main__":
-
-    # for environment in ["paper", "prod", "td-cash", "cash1", "intrac1"]:
-    #     logging.info(f"Dumping performance csv for {environment}...")
-    #     print()
-    #     write_performance_csv(environment)
-    #     print()

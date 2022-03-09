@@ -10,12 +10,12 @@ def is_stock(ticker, day: date = None) -> bool:
 
 
 def is_etf(ticker, day: date = None) -> bool:
-    # "ETN" -> can take longer to clear
+    # "ETN" -> can take longer to clear?
     return is_ticker_one_of(ticker, ["ETF", "ETN"], day=day)
 
 
 def is_warrant(ticker, day: date = None) -> bool:
-    # TODO: "ADRW" -> Polygon showed 0 on 2022-01-15, let's save a request
+    # NOTE: "ADRW" -> Polygon showed 0 on 2022-01-15, let's save a request
     return is_ticker_one_of(ticker, ["WARRANT"], day=day)
 
 
@@ -24,7 +24,7 @@ def is_warrant_format(ticker: str) -> bool:
 
 
 def is_right(ticker, day: date = None) -> bool:
-    # TODO: "ADRR"
+    # NOTE: "ADRR"
     return is_ticker_one_of(ticker, ["RIGHT"], day=day)
 
 

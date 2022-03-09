@@ -36,8 +36,6 @@ source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourc
 
 
 # TODO: account for time and timezones in crontab entries
-# - cls orders (buy) needs to happen before 3:50pm Market Time
-# - sell orders need to happen day after for avoiding Pattern Day Trader limitations
 function assert_crontab_entry_exists() {
     local entry="$1"
     local grep_ready_entry=`echo "$entry" | python3 -c "import sys;print(sys.stdin.read().replace('.', '\\.'))"`  # replace . with \., for escaping in grep

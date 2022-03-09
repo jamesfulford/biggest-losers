@@ -14,7 +14,6 @@ def get_polygon_api_key():
     return os.environ["POLYGON_API_KEY"]
 
 
-# TODO: then, pay for "Stocks Starter" to remove ratelimit
 # TODO: refactor grouped_aggs, get_candles to use these helpers
 def _get_polygon(url: str, **kwargs):
     while True:
@@ -48,7 +47,6 @@ def _get_polygon_with_next_url_pagination(url: str, **initial_kwargs):
 #
 @lru_cache(maxsize=100)
 def get_tickers_by_type(t: str, day: date):
-    # TODO: add to cache primer script
     # assuming will not change intraday, would hate to rebuild this cache every time
     should_cache = day <= today()
     cache_key = f"tickers_{t}_{day}"
