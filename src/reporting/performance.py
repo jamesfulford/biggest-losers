@@ -168,8 +168,8 @@ def write_performance_csv(environment):
 
 
 def main():
-    for trade in get_trades('paper'):
-        print(f"{trade['symbol']},{trade['opened_at'].strftime('%H:%M')},{trade['closed_at'].strftime('%H:%M')},{trade['bought_price']},{trade['sold_price']},{trade['quantity']},{trade['roi']:>5.0%}")
+    for trade in sorted(get_trades('paper'), key=lambda t: t["opened_at"]):
+        print(f"{trade['symbol']},{trade['opened_at'].date().isoformat()},{trade['opened_at'].strftime('%H:%M')},{trade['closed_at'].strftime('%H:%M')},{trade['bought_price']},{trade['sold_price']},{trade['quantity']},{trade['roi']:.1%}")
 
 # if __name__ == "__main__":
 
