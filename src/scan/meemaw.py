@@ -1,8 +1,5 @@
-from multiprocessing import Pool
 import os
 from typing import Callable
-import ta
-import pandas as pd
 from datetime import date, datetime, time, timedelta
 import logging
 from src import jsonl_dump
@@ -32,16 +29,6 @@ from src.data.td.td import get_fundamentals
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
     return filter_candidates_on_day(tickers, today, shallow_scan=not skip_cache)
-
-
-def get_vwap(candles):
-    highs = pd.Series(list(map(lambda c: float(c["high"]), candles)))
-    lows = pd.Series(list(map(lambda c: float(c["low"]), candles)))
-    closes = pd.Series(list(map(lambda c: float(c["close"]), candles)))
-    volumes = pd.Series(list(map(lambda c: float(c["volume"]), candles)))
-    values = ta.volume.volume_weighted_average_price(
-        highs, lows, closes, volumes)
-    return values.tolist()[-1]
 
 
 def filter_candidates_on_day(tickers: list, today: date, candle_getter: Callable = get_candles, shallow_scan=False):
@@ -98,13 +85,6 @@ def filter_candidates_on_day(tickers: list, today: date, candle_getter: Callable
         # only compute tickers necessary (top_n), less quota usage
         new_tickers = []
         for ticker in tickers:
-            candles_1m = candle_getter(ticker["T"], "1", today, today)
-            ticker['vwap_1m'] = get_vwap(candles_1m)
-
-            # Above the VWAP on 1m chart
-            if not (ticker['c'] > ticker['vwap_1m']):
-                continue
-
             # Short Interest
             # (done last to save very restricted API call quota)
             short_data = get_short_interest(ticker["T"], today)
