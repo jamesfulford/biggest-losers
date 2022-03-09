@@ -1,11 +1,24 @@
 import requests
 import logging
-from src.broker.generic import get_positions, place_oco
+from src.broker.generic import get_positions, place_oco, get_open_orders
 
 
 def place_ocos(up: float, down: float, positions=None):
     if positions is None:
         positions = get_positions()
+
+    if not positions:
+        return
+
+    open_orders = get_open_orders()
+    symbols_with_open_sell_orders = set(
+        [order['symbol'] for order in open_orders if order['side'] == 'sell'])
+
+    positions = list(
+        filter(lambda p: p['symbol'] not in symbols_with_open_sell_orders, positions))
+
+    if not positions:
+        return
 
     logging.info(
         f"Placing OCOs ({up-1:.1%} up, {1-down:.1%} down) for {len(positions)} positions...")
