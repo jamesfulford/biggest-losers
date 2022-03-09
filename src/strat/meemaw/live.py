@@ -70,7 +70,7 @@ ALGO_NAME = "meemaw"
 
 
 def should_continue():
-    return now().time() < time(12, 0)
+    return now().time() < time(15, 59)
 
 
 def loop(scanner: str):
