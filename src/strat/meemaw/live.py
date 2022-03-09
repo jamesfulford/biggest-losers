@@ -40,16 +40,19 @@ Questions We Have to be Answers By Data
 - able to buy the dip?
 """
 
-from datetime import timedelta
+from datetime import time, timedelta
 import logging
 import sys
+from time import sleep
 
 from requests.exceptions import HTTPError
+from src.broker.generic import get_open_orders
 from src.strat.entries.market import buy_symbols
+from src.strat.exits.oco import place_ocos
 from src.strat.utils.pdt import assert_pdt
 from src.strat.utils.scanners import get_scanner
 
-from src.trading_day import is_during_market_hours, now, today
+from src.trading_day import now, today
 from src.wait import get_next_minute_mark, wait_until
 
 from src.broker.generic import get_positions
@@ -59,7 +62,7 @@ ALGO_NAME = "meemaw"
 
 
 def should_continue():
-    return is_during_market_hours(now())
+    return now().time() < time(12, 0)
 
 
 def loop(scanner: str):
@@ -88,8 +91,23 @@ def execute_phases(scanner: str):
     tickers = scan_for_tickers(today(), skip_cache=True)
     tickers = tickers[:1]
 
-    buy_symbols(f"{ALGO_NAME}_{scanner}", tickers,
-                positions=positions, metadata={})
+    symbols_added_set = buy_symbols(f"{ALGO_NAME}_{scanner}", tickers,
+                                    positions=positions, metadata={})
+
+    if symbols_added_set:
+        # TODO: push this to a separate thread so we don't block scanning or other logic or hold up
+        while True:
+            open_orders = get_open_orders()
+            open_orders = [o for o in open_orders if o['symbol']
+                           in symbols_added_set]
+            if not open_orders:
+                # all orders submitted earlier are now filled
+                break
+            logging.info(
+                f"Waiting for {len(open_orders)} orders to fill ({symbols_added_set})")
+            sleep(1)
+
+        place_ocos(up=1.01, down=0.95)
 
 
 def main():
