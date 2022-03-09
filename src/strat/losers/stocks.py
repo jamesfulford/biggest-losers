@@ -1,7 +1,7 @@
 from datetime import date, datetime
 import os
 
-from src.intention import record_intentions
+from src.intention import log_intentions
 from src.criteria import is_stock
 
 from src.strat.losers.logic import buy_biggest_losers, sell_biggest_losers_at_open
@@ -65,8 +65,7 @@ def main():
             **filter_criteria_kwargs,
             warrant_criteria=lambda c: is_stock(c["T"], day=today),
         )
-        record_intentions(today, order_intentions, metadata={
-            "strategy_name": strategy_name,
+        log_intentions(strategy_name, order_intentions, metadata={
             **filter_criteria_kwargs,
             "git_commit": os.environ.get("GIT_COMMIT", ""),
         })

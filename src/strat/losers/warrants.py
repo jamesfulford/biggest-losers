@@ -2,7 +2,7 @@ from datetime import date, datetime
 import os
 from src.strat.losers.stocks import get_biggest_loser_filter_criteria_kwargs
 
-from src.intention import record_intentions
+from src.intention import log_intentions
 from src.criteria import is_warrant
 from src.broker.generic import buy_symbol_market
 
@@ -46,8 +46,7 @@ def main():
             buy_function=lambda symbol, quantity: buy_symbol_market(
                 symbol, quantity),
         )
-        record_intentions(today, order_intentions, metadata={
-            "strategy_name": strategy_name,
+        log_intentions(strategy_name, order_intentions, metadata={
             **filter_criteria_kwargs,
             "git_commit": os.environ.get("GIT_COMMIT", ""),
         })

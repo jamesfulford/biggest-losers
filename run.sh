@@ -186,20 +186,21 @@ case $action in
         ;;
 
     "analyze-performance")
-        run_python performance.py
+        run_python -c "import src.log; from src.reporting.performance import main; main()" "$@"
         ;;
 
     "build-drive-outputs")
         echo "Getting data (including trade intentions, cache, and orders csvs) from server..."
         ./run.sh sync-data
 
-        echo
-        echo "Building backtesting csvs..."
-        ./run.sh prepare-csvs
+        # echo
+        # echo "Building backtesting csvs..."
+        # ./run.sh prepare-csvs
 
         echo
         echo "Analyzing performance..."
-        ./run.sh analyze-performance
+        ./run.sh analyze-performance --algoname meemaw --environments paper
+        ./run.sh analyze-performance --algoname minion --environments rothira,margin
         ;;
     
     "deploy")

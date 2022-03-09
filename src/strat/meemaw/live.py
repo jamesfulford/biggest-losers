@@ -20,7 +20,7 @@
 - [x] 2% up limit order (wait for order to fill)
 - [x] only play when entry is good (VWAP, RSI/sma crossings)
 - [x] short interest: previous_report_date=None handling (assume 32 days, remove log)
-- [ ] update reporting scripts to join intentions and orders
+- [x] update reporting scripts to join intentions and orders
 - [ ] sizing: 100% of account for margin
 - [ ] sizing: 20% (?) of account for cash
 - [ ] limit-thru entry orders (buffer needs to be better than 0.05)
