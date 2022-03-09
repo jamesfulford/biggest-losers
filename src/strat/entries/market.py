@@ -6,6 +6,9 @@ from src.intention import log_intentions
 
 
 def buy_symbols(algo_name: str, tickers: list, positions=None, metadata=None) -> Set[str]:
+    if not tickers:
+        return
+
     if not metadata:
         metadata = {}
 
