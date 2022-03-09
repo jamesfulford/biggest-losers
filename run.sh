@@ -62,12 +62,12 @@ function refresh_tokens() {
 }
 
 function refresh_tokens_if_needed() {
-    if [ ! -f $DATA_DIR/inputs/td-token/output/token.json ]; then
-        echo "(no need to refresh tokens)"
+    if [[ `cat $env_file` == *"BROKER=td"* ]]; then
+        echo "Refreshing tokens..."
+        refresh_tokens || fail_script "Failed to refresh tokens"
         return
     fi
-    echo "Refreshing tokens..."
-    refresh_tokens || fail_script "Failed to refresh tokens"
+    echo "(no need to refresh tokens)"
 }
 
 action="$1"
