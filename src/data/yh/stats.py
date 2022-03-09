@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 import logging
 import os
+from pprint import pprint
 from typing import Union
 import requests
 
@@ -145,21 +146,15 @@ def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
             print(key, data)
             exit()
 
+        # if None, could be because was not trading yet
         previous_report_date = _parse_previous_report_date(data)
-        if not previous_report_date:  # could be because was not trading yet
-            # TODO: if current report still works out, return that instead
-            logging.warning(f"{previous_report_date=}")
-            return None
         current_report_date = _parse_current_report_date(data)
         if not current_report_date:
             logging.warning(f"{current_report_date=}")
             return None
-        time_between_reports = (current_report_date - previous_report_date)
+        time_between_reports = (
+            current_report_date - previous_report_date) if previous_report_date else timedelta(days=32)
         estimated_next_report_date = current_report_date + time_between_reports
-
-        if time_between_reports.days > 32:
-            logging.info(
-                f"get_short_interest: {time_between_reports.days=}  ({previous_report_date} to {current_report_date})")
 
         # A: in current report range: stop scrolling, we have the data
         if day >= current_report_date and day < estimated_next_report_date:
@@ -167,8 +162,8 @@ def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
 
         # B: if prior to current report:
         if day < current_report_date:
-            # B.1: if previous report applies: stop scrolling, we have the data
-            if day >= previous_report_date:
+            # B.1: if previous report exists and applies: stop scrolling, we have the data
+            if previous_report_date and day >= previous_report_date:
                 return _build_short_interest_format_from_previous_data(data, key)
 
             # B.2: if previous report does not apply:
@@ -184,7 +179,7 @@ def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
 
             # B.2.2: no prior cache entry; return None
             logging.warn(
-                f"get_short_interest: insufficient cache data to get short info for {symbol} on {day}. Use reports on or after {previous_report_date}.")
+                f"get_short_interest: insufficient cache data to get short info for {symbol} on {day}. Use reports on or after {previous_report_date=}.")
             return None
 
         # C: if we expect a report now or soon:
@@ -204,12 +199,16 @@ def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
 
 
 def main():
-    print({
-        "date(2022, 1, 1)": get_short_interest("AAPL", date(2022, 1, 1)),
-        "date(2022, 1, 13)": get_short_interest("AAPL", date(2022, 1, 13)),
-        "date(2022, 1, 14)": get_short_interest("AAPL", date(2022, 1, 14))['report_date'],
-        "date(2022, 1, 15)": get_short_interest("AAPL", date(2022, 1, 15))['report_date'],
-        "date(2022, 2, 14)": get_short_interest("AAPL", date(2022, 2, 14))['report_date'],
-        "date(2022, 2, 15)": get_short_interest("AAPL", date(2022, 2, 15))['report_date'],
-        "date(2022, 2, 16)": get_short_interest("AAPL", date(2022, 2, 16))['report_date'],
-    })
+    for day in [
+        date(2022, 1, 1),
+        date(2022, 1, 13),
+        date(2022, 1, 14),
+        date(2022, 1, 15),
+        date(2022, 2, 14),
+        date(2022, 2, 15),
+        date(2022, 2, 16),
+    ]:
+        short_interest = get_short_interest("SBFM", day)
+
+        print(day, 'short_interest report_date:',
+              short_interest['report_date'] if short_interest else None)
