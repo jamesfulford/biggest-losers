@@ -169,7 +169,7 @@ def execute_phases(scanner: str):
 
     if symbols_added_set:
         await_buy_order_settling(symbols_added_set)
-        place_ocos(up=1.02, down=0.95)
+        place_ocos(up=1.02, down=0.94)
 
 
 def main():
