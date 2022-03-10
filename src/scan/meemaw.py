@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Callable, cast
 from datetime import date, datetime, time, timedelta
 import logging
 from src import jsonl_dump
@@ -11,7 +11,7 @@ from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle
 from src.trading_day import MARKET_TIMEZONE, generate_trading_days
-from src.data.polygon.grouped_aggs import get_cache_prepared_date_range_with_leadup_days
+from src.data.polygon.grouped_aggs import Ticker, get_cache_prepared_date_range_with_leadup_days
 from src.data.finnhub.finnhub import get_candles
 
 
@@ -31,7 +31,18 @@ def get_all_candidates_on_day(today: date, skip_cache=False):
     return filter_candidates_on_day(tickers, today, shallow_scan=not skip_cache)
 
 
-def filter_candidates_on_day(tickers: list, today: date, candle_getter: Callable = get_candles, shallow_scan=False):
+class Candidate(Ticker):
+    open_to_close_change: float
+    is_stock: bool
+    percent_change: float
+    c_1d: float
+    relative_volume: float
+    shares_short: int
+    short_interest: float
+    float: int
+
+
+def filter_candidates_on_day(provided_tickers: list[Ticker], today: date, _candle_getter: Callable = get_candles, shallow_scan=False) -> list[Candidate]:
     max_close_price = 5
     min_volume = 100_000
     min_open_to_close_change = 0
@@ -40,8 +51,12 @@ def filter_candidates_on_day(tickers: list, today: date, candle_getter: Callable
     min_short_interest = 0.02
     top_n = 1
 
+    tickers = provided_tickers  # typing doesn't like re-typing function parameters
+
     tickers = list(filter(lambda t: t["c"] < max_close_price, tickers))
     tickers = list(filter(lambda t: t["v"] > min_volume, tickers))
+
+    tickers = cast(list[Candidate], tickers)
 
     for ticker in tickers:
         ticker["open_to_close_change"] = (
@@ -54,12 +69,11 @@ def filter_candidates_on_day(tickers: list, today: date, candle_getter: Callable
     }))
 
     tickers = list(enrich_tickers_with_indicators(today, tickers, {
-        "c-1d": from_yesterday_candle("c"),
-        "v-1d": from_yesterday_candle("v"),
+        "c_1d": from_yesterday_candle("c"),
     }, n=2))
     for ticker in tickers:
         ticker["percent_change"] = (
-            ticker["c"] - ticker["c-1d"]) / ticker["c-1d"]
+            ticker["c"] - ticker["c_1d"]) / ticker["c_1d"]
     tickers = list(
         filter(lambda t: t["percent_change"] > min_percent_change, tickers))
 
@@ -133,7 +147,7 @@ def backtest_on_day(day: date, output_path: str):
     # NOTE: mangling daily candles so close is high
     # so the %up filter won't lock out if the price was high at some point
     for ticker in tickers:
-        ticker['_c'] = ticker['c']
+        # ticker['_c'] = ticker['c']
         ticker['c'] = ticker['h']
     tickers = filter_candidates_on_day(tickers, day, shallow_scan=True)
     logging.info(f"processing {len(tickers)} tickers for {day}")

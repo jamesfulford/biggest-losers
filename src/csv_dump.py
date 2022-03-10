@@ -1,8 +1,9 @@
 from datetime import datetime, date
 import logging
+from typing import Any, Iterable, Optional
 
 
-def serialize(v):
+def serialize(v: Any) -> str:
     t = type(v)
     if t == str:
         return v
@@ -21,7 +22,7 @@ def serialize(v):
         return str(v)
 
 
-def write_csv(path, lines, headers=None):
+def write_csv(path: Optional[str], lines: Iterable[dict], headers: Optional[list[str]] = None):
     # TODO: handle `lines` as a generator
     # so server doesn't run out of memory
     lines = list(lines)

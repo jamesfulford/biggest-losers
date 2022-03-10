@@ -1,14 +1,13 @@
 from datetime import date
 import logging
-from typing import Callable
+from typing import Callable, Iterable
 import numpy as np
-from talib.abstract import Function
 
-from src.data.polygon.grouped_aggs import get_last_n_candles
+from src.data.polygon.grouped_aggs import TickerLike, get_last_n_candles
 from src.trading_day import previous_trading_day
 
 
-def use_indicator(indicator: Function, **kwargs):
+def use_indicator(indicator, **kwargs):
     def _talib_use(candles: list[dict]):
         inputs = {
             "open": np.array(list(map(lambda c: float(c["o"]), candles))),
@@ -39,7 +38,7 @@ def from_yesterday_candle(key: str):
     return extract_from_n_candles_ago(key, 1)
 
 
-def enrich_tickers_with_indicators(day: date, tickers: list[dict], indicators: dict[str, Callable], n=15):
+def enrich_tickers_with_indicators(day: date, tickers: list[TickerLike], indicators: dict[str, Callable], n=15) -> Iterable[TickerLike]:
     """
     Fetches last `n` daily candles and uses those to calculate provided indicators.
     Last value from each indicator is added to each ticker.

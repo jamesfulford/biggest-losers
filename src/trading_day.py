@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, date
+import logging
+from typing import Optional, cast
 from zoneinfo import ZoneInfo
 
 #
@@ -8,7 +10,7 @@ from zoneinfo import ZoneInfo
 # TODO: holidays (usually handled elsewhere dynamically), days to skip (also usually handled elsewhere)
 
 
-def next_trading_day(day: date):
+def next_trading_day(day: date) -> date:
     while day <= date.today() + timedelta(
         days=100
     ):  # instead of infinite loop, give None
@@ -16,12 +18,16 @@ def next_trading_day(day: date):
         if day.weekday() < 5:
             return day
 
+    raise ValueError(f"next_trading_day: {day=} is too far in the future")
 
-def previous_trading_day(day: date):
+
+def previous_trading_day(day: date) -> date:
     while day >= date(2000, 1, 1):  # instead of infinite loop, give None
         day = day - timedelta(days=1)
         if day.weekday() < 5:
             return day
+
+    raise ValueError(f"previous_trading_day: {day=} is too far in the past")
 
 
 def today_or_next_trading_day(d: date):
@@ -54,25 +60,25 @@ def generate_trading_days(start: date, end: date):
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
 
-def now(d: datetime = None) -> datetime:
+def now(d: Optional[datetime] = None) -> datetime:
     if d is None:
         d = datetime.now()
     return d.astimezone(MARKET_TIMEZONE)
 
 
-def today(d: datetime = None) -> date:
+def today(d: Optional[datetime] = None) -> date:
     if d is None:
         d = datetime.now()
     return now(d).date()
 
 
-def get_market_open_on_day(d: date) -> datetime:
+def get_market_open_on_day(d: date) -> Optional[datetime]:
     if d.weekday() >= 5:
         return None
     return datetime(d.year, d.month, d.day, 9, 30, 0, 0, MARKET_TIMEZONE)
 
 
-def get_market_close_on_day(d: date) -> datetime:
+def get_market_close_on_day(d: date) -> Optional[datetime]:
     if d.weekday() >= 5:
         return None
     return datetime(d.year, d.month, d.day, 16, 0, 0, 0, MARKET_TIMEZONE)
@@ -86,7 +92,7 @@ def get_last_market_open(d: datetime) -> datetime:
         not today_open or today_open > d
     ):  # weekend, or today's open has not happened yet
         # open of previous trading day
-        return get_market_open_on_day(previous_trading_day(d.date()))
+        return cast(datetime, get_market_open_on_day(previous_trading_day(d.date())))
     else:
         return today_open
 
@@ -99,7 +105,7 @@ def get_last_market_close(d: datetime) -> datetime:
         not today_close or today_close > d
     ):  # weekend, or today's close has not happened yet
         # close of previous trading day
-        return get_market_close_on_day(previous_trading_day(d.date()))
+        return cast(datetime, get_market_close_on_day(previous_trading_day(d.date())))
     else:
         return today_close
 

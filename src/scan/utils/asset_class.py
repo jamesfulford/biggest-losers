@@ -1,9 +1,11 @@
 
 from datetime import date
-from typing import Callable
+from typing import Callable, Iterable
+
+from src.data.polygon.grouped_aggs import TickerLike
 
 
-def enrich_tickers_with_asset_class(day: date, tickers: list[dict], classes: dict[str, Callable]):
+def enrich_tickers_with_asset_class(day: date, tickers: list[TickerLike], classes: dict[str, Callable]) -> Iterable[TickerLike]:
     """
     Adds keys of `classes` to each ticker in `tickers`.
     Ticker is skipped if no classes evaluate to true.

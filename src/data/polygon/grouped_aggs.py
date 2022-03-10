@@ -1,6 +1,7 @@
 from datetime import date, datetime
 import logging
 import time
+from typing import Optional, Tuple, TypeVar, TypedDict, cast
 import requests
 from functools import lru_cache
 
@@ -23,9 +24,35 @@ from src.trading_day import (
 )
 
 
-def get_grouped_aggs_cache_key(day: date):
+def get_grouped_aggs_cache_key(day: date) -> str:
     return f'grouped_aggs_{day.strftime("%Y-%m-%d")}'
 
+
+class Ticker(TypedDict):
+    T: str
+    o: float
+    h: float
+    l: float
+    c: float
+    v: int  # NOTE: often is a float
+    n: int
+    vw: float
+
+
+TickerLike = TypeVar("TickerLike", bound=Ticker)
+
+
+def _build_ticker(ticker: dict) -> Ticker:
+    return {
+        "T": ticker["T"],
+        "o": ticker["o"],
+        "h": ticker["h"],
+        "l": ticker["l"],
+        "c": ticker["c"],
+        "v": int(ticker["v"]),
+        "n": int(ticker["n"]),
+        "vw": ticker["vw"],
+    }
 
 #
 # Cache usage:
@@ -37,7 +64,7 @@ def get_grouped_aggs_cache_key(day: date):
 #
 
 
-def _cache_is_missing_days(start: date, end: date):
+def _cache_is_missing_days(start: date, end: date) -> bool:
     day = start
     while day <= end:
         if not read_json_cache(get_grouped_aggs_cache_key(day)):
@@ -50,7 +77,7 @@ def get_cache_entry_refresh_time(day: date) -> datetime:
     return now(get_entry_time(get_grouped_aggs_cache_key(day)))
 
 
-def _should_skip_clearing_cache(start: date, end: date):
+def _should_skip_clearing_cache(start: date, end: date) -> bool:
     # if partial cache is more recent than last close, we can continue
     try:
         last_cache_refresh_started_time = get_cache_entry_refresh_time(
@@ -78,14 +105,14 @@ def _should_skip_clearing_cache(start: date, end: date):
         return False
 
 
-def _refetch_cache(start: date, end: date):
+def _refetch_cache(start: date, end: date) -> None:
     day = start
     while day <= end:
         fetch_grouped_aggs_with_cache(day)
         day = next_trading_day(day)
 
 
-def get_current_cache_range():
+def get_current_cache_range() -> Optional[Tuple[date, date]]:
     entries = get_matching_entries("grouped_aggs_")
     if not entries or len(entries) < 2:
         return None
@@ -98,7 +125,7 @@ def get_current_cache_range():
     )
 
 
-def get_cache_prepared_date_range_with_leadup_days(days: int):
+def get_cache_prepared_date_range_with_leadup_days(days: int) -> Tuple[date, date]:
     assert days >= 0
     cache_range = get_current_cache_range()
     assert cache_range, "cache must be prepared"
@@ -124,9 +151,17 @@ def prepare_cache_grouped_aggs(start: date, end: date) -> None:
         logging.info("cache is all present, will not refetch")
 
 
+class GroupedAggsResponse(TypedDict):
+    results: list[Ticker]
+
+
+class EnrichedGroupedAggsResponse(GroupedAggsResponse):
+    tickermap: dict[str, Ticker]
+
+
 # TODO: add lru_cache honoring skip_cache
 # @lru_cache(maxsize=30)
-def fetch_grouped_aggs_with_cache(day: date, skip_cache=False):
+def fetch_grouped_aggs_with_cache(day: date, skip_cache=False) -> GroupedAggsResponse:
     should_cache = day != date.today()
     if skip_cache:
         should_cache = False
@@ -146,7 +181,7 @@ def fetch_grouped_aggs_with_cache(day: date, skip_cache=False):
     return data
 
 
-def fetch_grouped_aggs(day: date):
+def fetch_grouped_aggs(day: date) -> GroupedAggsResponse:
     strftime = day.strftime("%Y-%m-%d")
     logging.info(f"fetching grouped aggs for {strftime}")
 
@@ -169,11 +204,12 @@ def fetch_grouped_aggs(day: date):
         return data
 
 
-def _enrich_grouped_aggs(grouped_aggs):
-    grouped_aggs["tickermap"] = {}
-    for ticker in grouped_aggs["results"]:
-        grouped_aggs["tickermap"][ticker["T"]] = ticker
-    return grouped_aggs
+def _enrich_grouped_aggs(grouped_aggs: GroupedAggsResponse) -> EnrichedGroupedAggsResponse:
+    enriched_grouped_aggs = cast(EnrichedGroupedAggsResponse, grouped_aggs)
+    enriched_grouped_aggs["tickermap"] = {}
+    for ticker in enriched_grouped_aggs["results"]:
+        enriched_grouped_aggs["tickermap"][ticker["T"]] = ticker
+    return enriched_grouped_aggs
 
 
 #
@@ -181,19 +217,8 @@ def _enrich_grouped_aggs(grouped_aggs):
 #
 
 
-@lru_cache(maxsize=30)
-def get_last_trading_day_grouped_aggs(today: date):
-    yesterday = previous_trading_day(today)
-    yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
-    while "results" not in yesterday_raw_grouped_aggs:
-        yesterday = previous_trading_day(yesterday)
-        yesterday_raw_grouped_aggs = fetch_grouped_aggs_with_cache(yesterday)
-
-    return _enrich_grouped_aggs(yesterday_raw_grouped_aggs)
-
-
 # TODO: add lru_cache honoring skip_cache
-def get_today_grouped_aggs(today: date, skip_cache=False):
+def get_today_grouped_aggs(today: date, skip_cache=False) -> Optional[EnrichedGroupedAggsResponse]:
     today_raw_grouped_aggs = fetch_grouped_aggs_with_cache(
         today, skip_cache=skip_cache)
 
@@ -206,7 +231,7 @@ def get_today_grouped_aggs(today: date, skip_cache=False):
 
 
 @lru_cache(maxsize=130)
-def get_today_grouped_aggs_from_cache(today: date):
+def get_today_grouped_aggs_from_cache(today: date) -> Tuple[bool, Optional[EnrichedGroupedAggsResponse]]:
     """
     Returns (cache_hit_bool, grouped_aggs)
     If no cache hit, grouped_aggs is None
@@ -225,7 +250,7 @@ def get_today_grouped_aggs_from_cache(today: date):
     return True, _enrich_grouped_aggs(cache)
 
 
-def get_last_n_candles(today: date, ticker: str, n: int = 14) -> list[dict]:
+def get_last_n_candles(today: date, ticker: str, n: int = 14) -> Optional[list[Ticker]]:
     """
     returns last n candles for a given ticker, with entry [0] being the most recent.
     if returned None, indicates:
@@ -254,7 +279,7 @@ def get_last_n_candles(today: date, ticker: str, n: int = 14) -> list[dict]:
     return list(candles)
 
 
-def get_last_2_candles(today: date, ticker: str):
+def get_last_2_candles(today: date, ticker: str) -> Optional[Tuple[Ticker, Ticker]]:
     last_2_candles = get_last_n_candles(today, ticker, n=2)
     if not last_2_candles:
         return None
@@ -262,7 +287,7 @@ def get_last_2_candles(today: date, ticker: str):
     return candle, candle_yesterday
 
 
-def get_spy_change(today):
+def get_spy_change(today) -> Optional[float]:
     last_2_candles = get_last_2_candles(today, "SPY")
     if not last_2_candles:
         return None
