@@ -5,7 +5,9 @@ from src.strat.meemaw.settle import await_buy_order_settling
 from src.strat.utils.scanners import get_scanner
 from src.trading_day import today
 
-ALGO_NAME = "scan_and_buy_market"
+import os
+
+ALGO_NAME = os.environ.get("ALGO_NAME", "scan_and_buy_market")
 
 
 #
@@ -17,6 +19,6 @@ def main():
 
     tickers = get_scanner(scanner)(today(), skip_cache=True)
 
-    symbols = buy_symbols(f"{ALGO_NAME}_{scanner}", tickers,
+    symbols = buy_symbols(f"{ALGO_NAME}", tickers,
                           metadata={"scanner": scanner})
     await_buy_order_settling(symbols)
