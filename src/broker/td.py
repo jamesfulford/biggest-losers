@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 import json
 import logging
 import os
-from typing import Union
+from typing import Optional, cast
 import requests
 from src.data.td.td import get_quote
 
@@ -42,7 +42,7 @@ def _warn_for_fractional_shares(quantity: float):
             f"quantity {quantity} is not an integer, broker will use fractional shares")
 
 
-def _build_account_specific_base_url(url: str, account_id: Union[str, None] = None) -> str:
+def _build_account_specific_base_url(url: str, account_id: Optional[str] = None) -> str:
     if not account_id:
         account_id = get_account_id()
     return f"/v1/accounts/{account_id}{url}"
@@ -94,7 +94,7 @@ def _build_account(account):
     }
 
 
-def get_account(account_id: str = None):
+def get_account(account_id: Optional[str] = None):
     response = _get(_build_account_specific_base_url(
         "", account_id=account_id))
 
@@ -110,7 +110,7 @@ def get_accounts():
 #
 # Orders
 #
-def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
+def get_filled_orders(start: datetime, end: datetime, account_id: Optional[str] = None):
     if not account_id:
         account_id = get_account_id()
 
@@ -122,6 +122,7 @@ def get_filled_orders(start: datetime, end: datetime, account_id: str = None):
 
     filled_orders = list(
         filter(bool, list(map(_build_order, response.json()))))
+    filled_orders = cast(list[dict], filled_orders)
     filled_orders.sort(key=lambda x: x['filled_at'])
     return filled_orders
 
@@ -139,7 +140,7 @@ def _get_average_fill_price(order):
     return total_cost / total_quantity
 
 
-def _build_order(order):
+def _build_order(order) -> Optional[dict]:
     """
     Map TD API order to a dict similar to Alpaca API order
     Assumes order has been filled.
@@ -261,7 +262,7 @@ def _build_position(position):
     }
 
 
-def get_positions(account_id: str = None):
+def get_positions(account_id: Optional[str] = None):
     response = _get(_build_account_specific_base_url("", account_id=account_id), params={
         'fields': 'positions'
     })
@@ -284,7 +285,7 @@ def get_positions(account_id: str = None):
 #
 
 
-def _place_order(body: dict, account_id: Union[str, None] = None):
+def _place_order(body: dict, account_id: Optional[str] = None):
     logging.debug(f"_place_order: {json.dumps(body, sort_keys=True)}")
 
     if DRY_RUN:
@@ -301,7 +302,7 @@ def normalize_symbol(symbol: str):
     return symbol.replace('.', '/')
 
 
-def buy_symbol_at_close(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
+def buy_symbol_at_close(symbol: str, quantity: float, account_id: Optional[str] = None, algo_name: Optional[str] = None):
     symbol = normalize_symbol(symbol)
     _warn_for_fractional_shares(quantity)
     _place_order({
@@ -322,7 +323,7 @@ def buy_symbol_at_close(symbol: str, quantity: float, account_id: Union[str, Non
     }, account_id=account_id)
 
 
-def buy_symbol_market(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
+def buy_symbol_market(symbol: str, quantity: float, account_id: Optional[str] = None, algo_name: Optional[str] = None):
     symbol = normalize_symbol(symbol)
     _warn_for_fractional_shares(quantity)
     _place_order({
@@ -343,7 +344,7 @@ def buy_symbol_market(symbol: str, quantity: float, account_id: Union[str, None]
     }, account_id=account_id)
 
 
-def sell_symbol_market(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
+def sell_symbol_market(symbol: str, quantity: float, account_id: Optional[str] = None, algo_name: Optional[str] = None):
     symbol = normalize_symbol(symbol)
     _warn_for_fractional_shares(quantity)
 
@@ -365,7 +366,7 @@ def sell_symbol_market(symbol: str, quantity: float, account_id: Union[str, None
     }, account_id=account_id)
 
 
-def sell_symbol_at_open(symbol: str, quantity: float, account_id: Union[str, None] = None, algo_name: Union[str, None] = None):
+def sell_symbol_at_open(symbol: str, quantity: float, account_id: Optional[str] = None, algo_name: Optional[str] = None):
     symbol = normalize_symbol(symbol)
     _warn_for_fractional_shares(quantity)
 
@@ -406,6 +407,8 @@ def print_accounts_summary():
     for account_info in user_info["accounts"]:
         account = next(
             filter(lambda a: a['id'] == account_info["accountId"], accounts), None)
+        if not account:
+            continue
 
         is_primary = user_info['primaryAccountId'] == account_info["accountId"]
         is_margin = account_info['authorizations']['marginTrading']
@@ -460,7 +463,7 @@ def _round_price(price: float) -> float:
     return round(price, 2 if price > 1 else 4)
 
 
-def buy_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False, account_id: Union[str, None] = None):
+def buy_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False, account_id: Optional[str] = None):
     _warn_for_fractional_shares(quantity)
     _place_order({
         "orderType": "LIMIT",
@@ -481,7 +484,7 @@ def buy_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = 
     }, account_id=account_id)
 
 
-def sell_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False, account_id: Union[str, None] = None):
+def sell_limit(symbol: str, quantity: int, price: float, allow_premarket: bool = False, gtc: bool = False, account_id: Optional[str] = None):
     _warn_for_fractional_shares(quantity)
     _place_order({
         "orderType": "LIMIT",
@@ -518,11 +521,11 @@ def sell_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_arg
     sell_limit(symbol, quantity, price, **limit_args)
 
 
-def cancel_order(order_id: str, account_id: Union[str, None] = None):
+def cancel_order(order_id: str, account_id: Optional[str] = None):
     return _request(_build_account_specific_base_url(f"/orders/{order_id}", account_id=account_id), "DELETE")
 
 
-def get_open_orders(account_id: Union[str, None] = None):
+def get_open_orders(account_id: Optional[str] = None) -> list[dict]:
     """
     Gets all orders.
     This is TD-specific format, not mapped to shared open-order json format
@@ -533,10 +536,12 @@ def get_open_orders(account_id: Union[str, None] = None):
             'toEnteredTime': date.today().isoformat()
     }).json()
     orders = list(filter(lambda o: o['cancelable'], orders))
-    return list(map(_build_order, orders))
+    orders = list(map(_build_order, orders))
+    orders = cast(list[dict], list(filter(bool, orders)))
+    return orders
 
 
-def cancel_all_orders(account_id: Union[str, None] = None):
+def cancel_all_orders(account_id: Optional[str] = None):
     orders = get_open_orders(account_id=account_id)
     for order in orders:
         cancel_order(order['id'], account_id=account_id)
@@ -547,8 +552,8 @@ def place_oco(
     quantity: float,
     take_profit_limit: float,
     stop_loss_stop: float,
-    stop_loss_limit: float = None,
-    account_id: Union[str, None] = None,
+    stop_loss_limit: Optional[float] = None,
+    account_id: Optional[str] = None,
 ):
     symbol = normalize_symbol(symbol)
     _warn_for_fractional_shares(quantity)

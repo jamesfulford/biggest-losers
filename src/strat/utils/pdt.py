@@ -1,9 +1,9 @@
 import logging
-from typing import Union
+from typing import Optional
 from src.broker.generic import get_account
 
 
-def assert_pdt(account: Union[dict, None] = None):
+def assert_pdt(account: Optional[dict] = None):
     if account is None:
         account = get_account()
     logging.info(f"Checking day-trading algos can be run in this account...")

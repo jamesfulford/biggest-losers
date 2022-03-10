@@ -1,6 +1,6 @@
 from collections.abc import MutableMapping
 import logging
-from typing import Any, Mapping, Optional, Union, cast
+from typing import Any, Mapping, Optional, cast
 import argparse
 
 

@@ -2,26 +2,26 @@ from datetime import datetime, timedelta
 import logging
 import sys
 from time import sleep
-from typing import Union
+from typing import Optional, Union
 from src.broker.generic import get_open_orders
 from src.trading_day import now
 
 
-def await_buy_order_settling(symbols: Union[set, list, None] = None, deadline: Union[datetime, None] = None) -> None:
+def await_buy_order_settling(symbols: Union[set, list, None] = None, deadline: Optional[datetime] = None) -> None:
     def criteria(o): return o['side'] == 'BUY'
     if symbols:
         def criteria(o): return o['side'] == 'BUY' and o['symbol'] in symbols
     _await_order_settling(criteria, deadline)
 
 
-def await_sell_order_settling(symbols: Union[set, list, None] = None, deadline: Union[datetime, None] = None) -> None:
+def await_sell_order_settling(symbols: Union[set, list, None] = None, deadline: Optional[datetime] = None) -> None:
     def criteria(o): return o['side'] == 'SELL'
     if symbols:
         def criteria(o): return o['side'] == 'SELL' and o['symbol'] in symbols
     _await_order_settling(criteria, deadline)
 
 
-def _await_order_settling(is_order_not_ready, deadline: Union[datetime, None] = None) -> None:
+def _await_order_settling(is_order_not_ready, deadline: Optional[datetime] = None) -> None:
     if not deadline:
         deadline = now() + timedelta(seconds=10)
 

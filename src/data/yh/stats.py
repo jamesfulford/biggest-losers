@@ -1,10 +1,8 @@
 from datetime import date, timedelta
 import logging
 import os
-from pprint import pprint
-from typing import Union
+from typing import Optional, cast
 import requests
-
 from src.cache import get_matching_entries, read_json_cache, write_json_cache
 from src.trading_day import get_last_market_close, now
 
@@ -28,7 +26,7 @@ def _get_stats_cache_key(symbol: str, day: date):
     return f"yh_v3_stats_{symbol}_{day.isoformat()}"
 
 
-def _get_latest_cache_entry_key(symbol: str, day: date) -> Union[str, None]:
+def _get_latest_cache_entry_key(symbol: str, day: date) -> Optional[str]:
     entries = get_matching_entries(f"yh_v3_stats_{symbol}_")
     entries = list(filter(lambda entry: entry <=
                    _get_stats_cache_key(symbol, day), entries))
@@ -72,7 +70,7 @@ def _get_stats(symbol: str):
 #
 
 
-def _parse_previous_report_date(data: dict) -> Union[date, None]:
+def _parse_previous_report_date(data: dict) -> Optional[date]:
     try:
         return date.fromisoformat(
             data["defaultKeyStatistics"]["sharesShortPreviousMonthDate"]["fmt"])
@@ -80,7 +78,7 @@ def _parse_previous_report_date(data: dict) -> Union[date, None]:
         return None
 
 
-def _parse_current_report_date(data: dict) -> Union[date, None]:
+def _parse_current_report_date(data: dict) -> Optional[date]:
     try:
         return date.fromisoformat(
             data["defaultKeyStatistics"]["dateShortInterest"]["fmt"])
@@ -119,7 +117,7 @@ def _build_short_interest_format(data: dict, key: str):
         return None
 
 
-def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
+def get_short_interest(symbol: str, day: Optional[date] = None) -> Optional[dict]:
     """
     Get short interest for a given symbol.
     Returns None if `day` is too long ago for the cache.
@@ -131,6 +129,7 @@ def get_short_interest(symbol: str, day: date = None) -> Union[dict, None]:
 
     key = _get_latest_cache_entry_key(symbol, date.today())
     if not key:
+        key = cast(str, key)
         logging.info(
             f"get_short_interest: No entries found in cache for {symbol}, fetching...")
         data = _get_stats(symbol)

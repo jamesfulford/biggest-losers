@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 from time import sleep
-from typing import Union
+from typing import Optional
 import uuid
 
 import requests
@@ -39,7 +39,7 @@ def _get_alpaca(url, **kwargs):
     return response.json()
 
 
-def _add_feather_finance_algo_label(order: dict, algo_name: Union[str, None] = None):
+def _add_feather_finance_algo_label(order: dict, algo_name: Optional[str] = None):
     if algo_name:
         order["client_order_id"] = f"{algo_name}_FF_{uuid.uuid4()}"
     return order
@@ -51,7 +51,7 @@ def _warn_for_fractional_shares(quantity: float):
             f"quantity {quantity} is not an integer, broker will use fractional shares")
 
 
-def _place_order(body: dict, algo_name: Union[str, None] = None) -> requests.Response:
+def _place_order(body: dict, algo_name: Optional[str] = None) -> Optional[requests.Response]:
     body = _add_feather_finance_algo_label(body, algo_name=algo_name)
     logging.debug(f"_place_order: {json.dumps(body, sort_keys=True)}")
 
@@ -69,7 +69,7 @@ def _place_order(body: dict, algo_name: Union[str, None] = None) -> requests.Res
     return response.json()
 
 
-def buy_symbol_at_close(symbol: str, quantity: float, algo_name: Union[str, None] = None):
+def buy_symbol_at_close(symbol: str, quantity: float, algo_name: Optional[str] = None):
     """
     Buy a symbol at close
     """
@@ -85,7 +85,7 @@ def buy_symbol_at_close(symbol: str, quantity: float, algo_name: Union[str, None
     }, algo_name=algo_name)
 
 
-def buy_symbol_market(symbol: str, quantity: float, algo_name: Union[str, None] = None):
+def buy_symbol_market(symbol: str, quantity: float, algo_name: Optional[str] = None):
     """
     Buy a symbol now
     """
@@ -100,7 +100,7 @@ def buy_symbol_market(symbol: str, quantity: float, algo_name: Union[str, None] 
     }, algo_name=algo_name)
 
 
-def sell_symbol_market(symbol: str, quantity: float, algo_name: Union[str, None] = None):
+def sell_symbol_market(symbol: str, quantity: float, algo_name: Optional[str] = None):
     """
     Sell a symbol now
     """
@@ -115,7 +115,7 @@ def sell_symbol_market(symbol: str, quantity: float, algo_name: Union[str, None]
     }, algo_name=algo_name)
 
 
-def sell_symbol_at_open(symbol: str, quantity: float, algo_name: Union[str, None] = None):
+def sell_symbol_at_open(symbol: str, quantity: float, algo_name: Optional[str] = None):
     """
     Sell a symbol
     """
@@ -144,7 +144,7 @@ def place_oto(
     symbol: str,
     quantity: float,
     take_profit_limit: float,
-    algo_name: Union[str, None] = None
+    algo_name: Optional[str] = None
 ):
     _warn_for_fractional_shares(quantity)
 
@@ -166,8 +166,8 @@ def place_oco(
     quantity: int,
     take_profit_limit: float,
     stop_loss_stop: float,
-    stop_loss_limit: float = None,
-    algo_name: Union[str, None] = None
+    stop_loss_limit: Optional[float] = None,
+    algo_name: Optional[str] = None
 ):
     _warn_for_fractional_shares(quantity)
 

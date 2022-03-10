@@ -1,8 +1,8 @@
 import os
-from typing import Union
+from typing import Optional
 
 
-def get_paths(target_environment_name: Union[str, None] = None):
+def get_paths(target_environment_name: Optional[str] = None):
     app_dir = os.path.abspath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), '..'))
 
