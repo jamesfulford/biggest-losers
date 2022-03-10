@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 import json
 import logging
 import os
-from typing import List, Union
+from typing import Union
 import requests
 from src.data.td.td import get_quote
 
@@ -425,7 +425,7 @@ def get_watchlists():
     return _get("/v1/accounts/watchlists").json()
 
 
-def update_watchlist(target_name: str, symbols: List[str]):
+def update_watchlist(target_name: str, symbols: list[str]):
     """
     Overwrites (or creates) watchlist in primary account with given symbols.
     NOTE: TDAmeritrade does not propagate updates to TOS clients quickly. Restarting clients seems to be best.

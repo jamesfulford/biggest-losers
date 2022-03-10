@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+from typing import Any
 from zoneinfo import ZoneInfo
 from copy import copy
 from functools import lru_cache
@@ -57,7 +58,7 @@ def log_intentions(algo_name: str, intentions: list[dict], metadata: dict = {}):
 
 
 @lru_cache(maxsize=1)
-def get_intentions_by_algo(environment_name: str, algo_name: str):
+def get_intentions_by_algo(environment_name: str, algo_name: str) -> list[dict[str, Any]]:
     path = get_order_intentions_jsonl_path(
         algo_name, environment_name=environment_name)
 

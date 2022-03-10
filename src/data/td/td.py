@@ -1,10 +1,8 @@
 from datetime import date, datetime
-from functools import lru_cache
 import json
 import logging
 import os
 from time import sleep
-from typing import List, Union
 import requests
 from src.cache import read_json_cache, write_json_cache
 
@@ -75,7 +73,7 @@ def _get_data(url: str, **kwargs):
 #
 
 
-def get_quotes(symbols: List[str]):
+def get_quotes(symbols: list[str]):
     """
     "NRGU": {
         "52WkHigh": 356.0,
@@ -165,7 +163,7 @@ def _get_fundamentals_cache_key(symbol: str, day: date):
     return f"fundamentals_{symbol}_{day.isoformat()}"
 
 
-def get_fundamentals(symbols: List[str]) -> dict:
+def get_fundamentals(symbols: list[str]) -> dict:
     """
     Fetches TD fundamental data for all symbols provided. Cached based on day fetched.
     Passing `day` will cause the cache lookup to be based on that day.
@@ -202,7 +200,7 @@ def get_fundamentals(symbols: List[str]) -> dict:
     return new_fundamentals
 
 
-def _get_fundamentals(symbols: List[str]):
+def _get_fundamentals(symbols: list[str]):
     response = _get_data("/v1/instruments", params={
         "symbol": ",".join(symbols),
         "projection": "fundamental"

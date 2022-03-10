@@ -1,9 +1,25 @@
 from datetime import datetime
 import logging
+from typing import Iterable, Optional, TypedDict
 from zoneinfo import ZoneInfo
 
 
-def build_trade(trade_orders):
+class Trade(TypedDict):
+    symbol: str
+    opened_at: datetime
+    closed_at: datetime
+    quantity: float
+    bought_cost: float
+    sold_cost: float
+    bought_price: float
+    sold_price: float
+    price_difference: float
+    profit_loss: float
+    roi: float
+    is_win: bool
+
+
+def build_trade(trade_orders: list) -> Optional[Trade]:
     # NOTE: this function assumes every buy has 1 sell and no overlapping trades for same symbol.
     symbol = trade_orders[0]["symbol"]
 
@@ -79,7 +95,7 @@ def get_filled_orders_from_csv(path):
     return lines
 
 
-def get_closed_trades_from_orders_csv(path, build_trade=build_trade):
+def get_closed_trades_from_orders_csv(path, build_trade=build_trade) -> Iterable[Trade]:
     filled_orders = get_filled_orders_from_csv(path)
     # group orders by symbol, then build trades for each set of orders that bring quantity to 0
     for trade_orders in group_orders_by_trade(filled_orders):
