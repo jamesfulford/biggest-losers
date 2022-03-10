@@ -57,6 +57,7 @@ from src.broker.generic import get_open_orders
 from src.data.finnhub.finnhub import get_candles
 from src.strat.entries.market import buy_symbols
 from src.strat.exits.oco import place_ocos
+from src.strat.meemaw.settle import await_buy_order_settling
 from src.strat.utils.pdt import assert_pdt
 from src.strat.utils.scanners import get_scanner
 
@@ -167,17 +168,7 @@ def execute_phases(scanner: str):
                                     })
 
     if symbols_added_set:
-        while True:
-            open_orders = get_open_orders()
-            open_orders = [o for o in open_orders if o['symbol']
-                           in symbols_added_set]
-            if not open_orders:
-                # all orders submitted earlier are now filled
-                break
-            logging.info(
-                f"Waiting for {len(open_orders)} orders to fill ({symbols_added_set})")
-            sleep(1)
-
+        await_buy_order_settling(symbols_added_set)
         place_ocos(up=1.02, down=0.95)
 
 

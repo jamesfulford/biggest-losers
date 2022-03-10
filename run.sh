@@ -130,6 +130,16 @@ case $action in
     "minion")
         run_python -c 'import src.log; from src.strat.minion.live import main; main()'
         ;;
+    
+    # Supernovas
+    "supernovas")
+        refresh_tokens_if_needed
+        echo "Entering..."
+        run_python -c "import src.log; from src.strat.scan_and_buy_market.enter import main; main()" "supernovas"
+        echo
+        echo "Setting up exit..."
+        run_python -c "import src.log; from src.strat.scan_and_buy_market.egress import main; main()" 1.1 0.9
+        ;;
 
     # Operations
     "rotate-logs")
