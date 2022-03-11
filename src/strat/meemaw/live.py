@@ -46,13 +46,13 @@ Questions We Have to be Answers By Data
 from datetime import time, timedelta
 import logging
 import sys
+from typing import cast
 import numpy as np
 import pandas as pd
 from talib.abstract import RSI
 
 from requests.exceptions import HTTPError
 import ta
-from src.broker.generic import get_open_orders
 from src.data.finnhub.finnhub import get_candles
 from src.strat.entries.market import buy_symbols
 from src.strat.exits.oco import place_ocos
@@ -64,6 +64,8 @@ from src.trading_day import now, previous_trading_day, today
 from src.wait import get_next_minute_mark, wait_until
 
 from src.broker.generic import get_positions
+
+from src.scan.meemaw import Candidate as MeemawCandidate
 
 
 ALGO_NAME = "meemaw"
@@ -113,6 +115,12 @@ def get_rsi_and_sma(candles, timeperiod=14, sma_period=20):
     return rsi_line[-1], rsi_sma
 
 
+class MeemawSelectedCandidate(MeemawCandidate):
+    vwap_1m: float
+    rsi: float
+    rsi_sma: float
+
+
 def execute_phases(scanner: str):
     rsi_overbought_level = 80
 
@@ -126,10 +134,12 @@ def execute_phases(scanner: str):
 
     # Execution Phase
     wait_until(next_minute)
-
     day = today()
-    tickers = scan_for_tickers(day, skip_cache=True)
+
+    tickers = scan_for_tickers()
     tickers = tickers[:1]
+
+    tickers = cast(list[MeemawSelectedCandidate], tickers)
 
     new_tickers = []
     for ticker in tickers:
@@ -174,7 +184,7 @@ def execute_phases(scanner: str):
 def main():
     assert_pdt()
 
-    scanner = sys.argv[1]
+    scanner = "meemaw"
     logging.info(f"Starting live scanning with scanner '{scanner}'")
     loop(scanner)
 

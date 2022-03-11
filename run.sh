@@ -114,7 +114,7 @@ case $action in
         ;;
 
     "meemaw")
-        run_python -c 'import src.log;from src.strat.meemaw.live import main; main()' meemaw
+        run_python -c 'import src.log;from src.strat.meemaw.live import main; main()'
         ;;
 
     "clear-account")

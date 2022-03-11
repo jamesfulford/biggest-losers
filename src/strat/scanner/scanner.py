@@ -2,11 +2,13 @@ import sys
 from datetime import datetime, timedelta
 import logging
 from pprint import pformat
+from typing import cast
 
 from requests.exceptions import HTTPError
 from src.strat.utils.scanners import get_scanner
+from src.scan.meemaw import Candidate as MeemawCandidate
 
-from src.trading_day import now, today
+from src.trading_day import now
 from src.wait import wait_until
 
 
@@ -47,15 +49,16 @@ def execute_phases(scanner: str):
     #
     # Scan
     #
-    day = today()
-    tickers = scan_for_tickers(day, skip_cache=True)
+    tickers = scan_for_tickers()
 
     if scanner == "rollercoasters":
+        tickers = cast(list[dict], tickers)
         print("-"*20, "oOo", now().strftime("%H:%M"), "oOo", "-"*20)
         for candidate in tickers[:10]:
             print(
                 f"{candidate['T'] : ^10} \t| {candidate['c'] : ^10} \t| {candidate['v']/1000000 :>10.2f}M \t| {candidate['percent_change_days_ago'] : .0%}")
     elif scanner == "meemaw":
+        tickers = cast(list[MeemawCandidate], tickers)
         print("-"*20, "oOo", now().strftime("%H:%M"), "oOo", "-"*20)
         for candidate in tickers[:10]:
             print(
@@ -63,9 +66,6 @@ def execute_phases(scanner: str):
     else:
         print("WARNING: no pretty printer found for scanner", scanner)
         for candidate in tickers[:10]:
-            del candidate['t']
-            del candidate['is_stock']
-            del candidate['n']
             print(pformat(candidate, compact=True, depth=1).replace("\n", ""))
 
     wait_until(next_interval_start)

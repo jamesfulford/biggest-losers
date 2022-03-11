@@ -3,7 +3,6 @@ import sys
 from src.strat.entries.market import buy_symbols
 from src.strat.meemaw.settle import await_buy_order_settling
 from src.strat.utils.scanners import get_scanner
-from src.trading_day import today
 
 import os
 
@@ -17,7 +16,7 @@ def main():
     scanner = sys.argv[1]
     logging.info(f"Scanning with scanner '{scanner}'...")
 
-    tickers = get_scanner(scanner)(today(), skip_cache=True)
+    tickers = get_scanner(scanner)()
 
     symbols = buy_symbols(f"{ALGO_NAME}", tickers,
                           metadata={"scanner": scanner})
