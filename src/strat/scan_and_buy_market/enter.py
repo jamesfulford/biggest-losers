@@ -18,6 +18,8 @@ def main():
 
     tickers = get_scanner(scanner)()
 
-    symbols = buy_symbols(f"{ALGO_NAME}", tickers,
-                          metadata={"scanner": scanner})
+    # TODO: equal apportionment for all tickers
+    symbols = buy_symbols(ALGO_NAME, tickers,
+                          metadata={"scanner": scanner},
+                          exponential_apportionment_ratio=0.99)
     await_buy_order_settling(symbols)

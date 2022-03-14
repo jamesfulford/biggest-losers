@@ -63,7 +63,7 @@ from src.strat.utils.scanners import get_scanner
 from src.trading_day import now, previous_trading_day, today
 from src.wait import get_next_minute_mark, wait_until
 
-from src.broker.generic import get_positions
+from src.broker.generic import get_positions, get_account
 
 from src.scan.meemaw import Candidate as MeemawCandidate
 
@@ -130,6 +130,7 @@ def execute_phases(scanner: str):
     wait_until(next_minute - timedelta(seconds=5))
 
     positions = get_positions()
+    account = get_account()
     scan_for_tickers = get_scanner(scanner)
 
     # Execution Phase
@@ -171,10 +172,11 @@ def execute_phases(scanner: str):
         new_tickers.append(ticker)
     tickers = new_tickers
 
-    symbols_added_set = buy_symbols(ALGO_NAME, tickers,
-                                    positions=positions, metadata={
-                                        "scanner": scanner,
-                                    })
+    symbols_added_set = buy_symbols(ALGO_NAME,
+                                    tickers,
+                                    positions=positions, account=account,
+                                    metadata={"scanner": scanner},
+                                    exponential_apportionment_ratio=0.75)
 
     if symbols_added_set:
         await_buy_order_settling(symbols_added_set)
