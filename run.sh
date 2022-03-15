@@ -210,7 +210,7 @@ case $action in
         echo
         echo "Analyzing performance..."
         ./run.sh analyze-performance --algoname meemaw --environments paper
-        ./run.sh analyze-performance --algoname minion --environments rothira,margin
+        ./run.sh analyze-performance --algoname minion --environments margin
         ;;
     
     "deploy")
