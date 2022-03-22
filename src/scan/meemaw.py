@@ -25,6 +25,8 @@ from src.data.finnhub.finnhub import get_candles
 
 from src.data.td.td import get_fundamentals
 
+LEADUP_PERIOD = 1
+
 
 def get_all_candidates_on_day(today: date, skip_cache=False):
     tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
@@ -70,7 +72,7 @@ def filter_candidates_on_day(provided_tickers: list[Ticker], today: date, _candl
 
     tickers = list(enrich_tickers_with_indicators(today, tickers, {
         "c_1d": from_yesterday_candle("c"),
-    }, n=2))
+    }, n=LEADUP_PERIOD + 1))
     for ticker in tickers:
         ticker["percent_change"] = (
             ticker["c"] - ticker["c_1d"]) / ticker["c_1d"]
@@ -116,106 +118,3 @@ def filter_candidates_on_day(provided_tickers: list[Ticker], today: date, _candl
         tickers = new_tickers
 
     return tickers
-
-
-def main():
-    output_path = '/tmp/meemaw_candidates.jsonl'
-    try:
-        os.remove(output_path)
-    except:
-        pass
-
-    start, end = get_cache_prepared_date_range_with_leadup_days(0)
-    # earliest we can get short interest data for
-    start = max(start, date(2022, 1, 14))
-    end = min(end, date(2022, 3, 4))  # asap
-
-    logging.info(f"start: {start}")
-    logging.info(f"end: {end}")
-    logging.info(
-        f"estimated trading days: {len(list(generate_trading_days(start, end)))}")
-
-    for day in generate_trading_days(start, end):
-        backtest_on_day(day, output_path)
-
-
-def backtest_on_day(day: date, output_path: str):
-    #
-    # Pre-scan pass on daily candles to slim down the number of candidates
-    #
-    tickers = get_all_tickers_on_day(day, skip_cache=False)
-    # NOTE: mangling daily candles so close is high
-    # so the %up filter won't lock out if the price was high at some point
-    for ticker in tickers:
-        # ticker['_c'] = ticker['c']
-        ticker['c'] = ticker['h']
-    tickers = filter_candidates_on_day(tickers, day, shallow_scan=True)
-    logging.info(f"processing {len(tickers)} tickers for {day}")
-
-    symbol_to_candles = {}
-    for ticker in tickers:
-        symbol = ticker["T"]
-        candles = get_candles(symbol, "1", day, day)
-        if not candles:
-            logging.warn(f"no candles for {symbol} on {day}, {candles=}")
-            continue
-        symbol_to_candles[symbol] = candles
-    tickers = list(filter(lambda t: t["T"] in symbol_to_candles, tickers))
-
-    # simulate intraday daily candles as they develop minute-by-minute
-    # (pay attention to how we call filter_candidates_on_day)
-    current_time = datetime(day.year, day.month,
-                            day.day, 4, 0).astimezone(MARKET_TIMEZONE)
-    while current_time.time() < time(16, 0):
-        current_time += timedelta(minutes=1)
-
-        # build map of symbol to candles visible at current_time
-        symbol_to_current_candles = {}
-        for symbol, candles in symbol_to_candles.items():
-            symbol_to_current_candles[symbol] = list(
-                filter(lambda c: c["datetime"] < current_time, candles))
-
-        # build simulated intraday candles
-        daily_candles = []
-        for ticker in tickers:
-            symbol = ticker['T']
-            # respects current time
-            current_candles = symbol_to_current_candles[symbol]
-            d_candle = {
-                "T": symbol,
-                'v': 0,
-            }
-            for candle in current_candles:
-                # TODO: how do daily candles in polygon API work before market open?
-                # TODO: are candles start-of-minute or end-of-minute? (>= or >)
-                if candle['datetime'].time() >= time(9, 30):
-                    if 'o' not in d_candle:
-                        d_candle['o'] = candle['open']
-
-                    d_candle['h'] = max(
-                        d_candle.get('h', 0), candle['high'])
-                    d_candle['l'] = min(
-                        d_candle.get('l', 1e9), candle['low'])
-
-                d_candle['c'] = candle['close']
-                d_candle['v'] += candle['volume']
-
-            if current_candles:  # at least 1 candle occurred
-                daily_candles.append(d_candle)
-
-        # filter candidates, record results
-        if current_time.time() > time(9, 30):
-            returned_tickers = filter_candidates_on_day(
-                daily_candles, day, lambda s, t, st, en: symbol_to_current_candles[s])
-
-            if returned_tickers:
-                jsonl_dump.append_jsonl(output_path, [{
-                    "now": current_time,
-                    "ticker": ticker,
-                } for ticker in returned_tickers])
-
-# 1. pre-scan to find candidates we *might* be interested in (float, high enough volume by EOD, 'h' is high enough)
-# 2. get 1m candles for each candidate on each day
-# 3. build partial D candles (c=current close, o=day's open, h=day's high so far, l=day's low so far, v=cumulative sum of volume)
-# 4. feed partial D candles to filter_candidates_on_day
-# 5. print it out

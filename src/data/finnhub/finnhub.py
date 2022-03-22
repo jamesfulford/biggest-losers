@@ -2,6 +2,7 @@ import logging
 import time
 import os
 from datetime import datetime, date, timedelta
+from typing import Optional, TypedDict, Union
 from zoneinfo import ZoneInfo
 
 import requests
@@ -14,7 +15,27 @@ FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
 
-def get_candles(symbol: str, resolution: str, start: date, end: date, skip_cache=False):
+class CandleIntraday(TypedDict):
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+    t: int
+    datetime: datetime
+
+
+class CandleInterday(TypedDict):
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int
+    t: int
+    datetime: datetime
+
+
+def get_candles(symbol: str, resolution: str, start: date, end: date, skip_cache=False) -> Optional[list[Union[CandleInterday, CandleIntraday]]]:
     """
     Fetches candles from Finnhub.io for `symbol` with `resolution`-sized candles (1 = 1m candles, 5 = 5m candles, D = daily, etc.)
     from `start` date to `end` date, including both days. (if both are same day, it fetches for that day)
@@ -82,7 +103,7 @@ def _is_intraday(resolution: str):
     return resolutions.index(resolution) < resolutions.index("D")
 
 
-def _convert_candles_format(response_json, resolution):
+def _convert_candles_format(response_json, resolution) -> Optional[list[Union[CandleInterday, CandleIntraday]]]:
     try:
         return _convert_candles_format_logic(response_json, resolution)
     except KeyError:
@@ -91,7 +112,7 @@ def _convert_candles_format(response_json, resolution):
         return None
 
 
-def _convert_candles_format_logic(response_json, resolution):
+def _convert_candles_format_logic(response_json, resolution) -> list[Union[CandleInterday, CandleIntraday]]:
     """
     Converting finnhub format to more useful format: array of candle dictionaries
     """

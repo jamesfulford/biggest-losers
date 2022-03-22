@@ -1,6 +1,6 @@
 
 import logging
-from typing import Optional
+from typing import Iterable, Optional
 import json
 import datetime
 
@@ -12,8 +12,7 @@ class DateTimeEncoder(json.JSONEncoder):
             return obj.isoformat()
 
 
-def append_jsonl(path: Optional[str], lines: list[dict]):
-    lines = list(lines)
+def append_jsonl(path: Optional[str], lines: Iterable[dict]):
     if not lines:
         logging.warning(f"no lines to write to csv {path}")
 
