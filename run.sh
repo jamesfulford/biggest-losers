@@ -179,6 +179,14 @@ case $action in
         ./run.sh prepare-cache
         # preparing csvs costs lots of memory, so let's not do it on tiny droplet server
         ;;
+    
+    #
+    #
+    #
+    "record-chronicle")
+        run_python -c "import src.log; from src.backtest.chronicle.record import main; main()" $1
+        ;;
+
     #
     # Client Operations (across environments/accounts)
     #
