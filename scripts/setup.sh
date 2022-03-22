@@ -15,6 +15,7 @@ mkdir -p $DATA_DIR/inputs
 mkdir -p $DATA_DIR/outputs
 mkdir -p $DATA_DIR/logs
 mkdir -p $DATA_DIR/cache
+mkdir -p $DATA_DIR/chronicles
 
 # utility for handling error messages less verbosely in bash
 function fail_script() {

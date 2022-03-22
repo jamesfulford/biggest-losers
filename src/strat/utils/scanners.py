@@ -11,6 +11,7 @@ from src.trading_day import today
 
 CandleGetter = Callable[[str, str, date, date], list[CandleIntraday]]
 ScannerFilter = Callable[[list[Ticker], date, CandleGetter], list[Ticker]]
+Scanner = Callable[[], list[Ticker]]
 
 
 def _get_scanner_module(scanner: str) -> ModuleType:
@@ -18,7 +19,7 @@ def _get_scanner_module(scanner: str) -> ModuleType:
     return import_module("src.scan." + scanner)
 
 
-def get_scanner(scanner: str) -> Callable[[], list[Ticker]]:
+def get_scanner(scanner: str) -> Scanner:
     module = _get_scanner_module(scanner)
 
     def get_scan_results():
