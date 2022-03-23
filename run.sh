@@ -172,12 +172,12 @@ case $action in
         ;;
 
     "prepare-cache")
-        run_python prepare_cache.py --end today --start end-2y  # polygon free tier limits data to 2 years back
+        run_python prepare_cache.py $@
         ;;
 
     "collector-nightly")
-        ./run.sh prepare-cache
-        # preparing csvs costs lots of memory, so let's not do it on tiny droplet server
+        ./run.sh prepare-cache --end today --start end-2y # polygon free tier limits data to 2 years back
+        # TODO: build chronicles? rerun some backtests?
         ;;
     
     #
