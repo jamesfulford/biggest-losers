@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 import logging
-import time
+from time import sleep
 from typing import Optional, Tuple, TypeVar, TypedDict, cast
 import requests
 from functools import lru_cache
@@ -20,6 +20,7 @@ from src.trading_day import (
     next_trading_day,
     now,
     previous_trading_day,
+    today,
     today_or_next_trading_day,
 )
 
@@ -162,7 +163,12 @@ class EnrichedGroupedAggsResponse(GroupedAggsResponse):
 # TODO: add lru_cache honoring skip_cache
 # @lru_cache(maxsize=30)
 def fetch_grouped_aggs_with_cache(day: date, skip_cache=False) -> GroupedAggsResponse:
-    should_cache = day != date.today()
+    # TODO: allow caching after 4pm
+    should_cache = True
+    if day == today():
+        # if after close, allow caching, otherwise don't
+        should_cache = now().time() > time(16, 0)
+
     if skip_cache:
         should_cache = False
 
@@ -196,7 +202,7 @@ def fetch_grouped_aggs(day: date) -> GroupedAggsResponse:
         )
         if response.status_code == 429:
             logging.info("Rate limit exceeded, waiting...")
-            time.sleep(10)
+            sleep(10)
             continue
         response.raise_for_status()
 
