@@ -1,36 +1,16 @@
-import os
-from typing import Callable, cast
-from datetime import date, datetime, time, timedelta
-import logging
-from src import jsonl_dump
+from typing import cast
+from datetime import date
 
 from src.criteria import is_stock
-from src.data.finnhub.finnhub import get_candles
 from src.data.yh.stats import get_short_interest
-from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle
-from src.trading_day import MARKET_TIMEZONE, generate_trading_days
-from src.data.polygon.grouped_aggs import Ticker, get_cache_prepared_date_range_with_leadup_days
-from src.data.finnhub.finnhub import get_candles
-
-
-#
-# _on_day: used for LIVE and BACKTEST
-# - all filtering logic should be here
-# - all critical indicators should be enriched in here
-#
-# Some tips:
-# - try to filter on OHLCV first before getting daily candles or calculating indicators
-
+from src.strat.utils.prescanner import build_prescanner_with_empty_candle_getter, with_high_bias_prescan_strategy, with_kwargs
+from src.strat.utils.scanners import CandleGetter, ScannerFilter
+from src.data.polygon.grouped_aggs import Ticker
 from src.data.td.td import get_fundamentals
 
 LEADUP_PERIOD = 1
-
-
-def get_all_candidates_on_day(today: date, skip_cache=False):
-    tickers = get_all_tickers_on_day(today, skip_cache=skip_cache)
-    return filter_candidates_on_day(tickers, today, shallow_scan=not skip_cache)
 
 
 class Candidate(Ticker):
@@ -44,7 +24,8 @@ class Candidate(Ticker):
     float: int
 
 
-def filter_candidates_on_day(provided_tickers: list[Ticker], today: date, _candle_getter: Callable = get_candles, shallow_scan=False) -> list[Candidate]:
+# TODO: for added fields, make idempotent (so we can rely just on scanner)
+def scanner(provided_tickers: list[Ticker], today: date, _candle_getter: CandleGetter, shallow_scan=False) -> list[Candidate]:
     max_close_price = 5
     min_volume = 100_000
     min_open_to_close_change = 0
@@ -99,6 +80,7 @@ def filter_candidates_on_day(provided_tickers: list[Ticker], today: date, _candl
         tickers.sort(key=lambda t: t['v'], reverse=True)
 
         # only compute tickers necessary (top_n), less quota usage
+        # TODO: achieve this using `yield` by changing Scanners to return iterators?
         new_tickers = []
         for ticker in tickers:
             # Short Interest
@@ -118,3 +100,14 @@ def filter_candidates_on_day(provided_tickers: list[Ticker], today: date, _candl
         tickers = new_tickers
 
     return tickers
+
+
+prescanner = with_high_bias_prescan_strategy(
+    with_kwargs(
+        build_prescanner_with_empty_candle_getter(
+            # cast: list[Candidate] -> list[Ticker], mypy/Python doesn't understand that `Candidate` is a subtype of `Ticker`
+            cast(ScannerFilter, scanner)
+        ),
+        shallow_scan=True,
+    )
+)

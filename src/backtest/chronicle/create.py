@@ -1,3 +1,4 @@
+import argparse
 from copy import deepcopy
 from datetime import date, datetime, time, timedelta
 import logging
@@ -5,10 +6,11 @@ import os
 from typing import Callable, Iterable, Optional, TypedDict, cast, get_args
 from src import jsonl_dump
 from src.data.finnhub.finnhub import CandleIntraday, get_candles
-from src.data.polygon.grouped_aggs import Ticker, TickerLike, get_cache_prepared_date_range_with_leadup_days
+from src.data.polygon.grouped_aggs import Ticker, TickerLike, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
+from src.pathing import get_paths
 
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
-from src.strat.utils.scanners import CandleGetter, ScannerFilter, get_leadup_period, get_scanner_filter
+from src.strat.utils.scanners import CandleGetter, PrescannerFilter, ScannerFilter, get_leadup_period, get_prescanner_filter, get_scanner_filter
 from src.trading_day import MARKET_TIMEZONE, generate_trading_days
 
 
@@ -21,18 +23,23 @@ class HistoricalChronicleEntry(ChronicleEntry):
     true_ticker: Ticker
 
 
+# TODO: to parallelize, need to synchronize cache read/writes by cache key to avoid potential data corruption issues
+# (or demand that parallelization only be by day, then only sync when cross day boundaries? case a: float/short interest (sync). case b: yesterday's 1m candles (no sync). case c: monday of this week's 1m candles (sync))
 def build_daily_candle_from_1m_candles(symbol: str, candles: list[CandleIntraday]) -> Optional[Ticker]:
     if not candles:
+        return None
+
+    opening_candle = next(
+        filter(lambda c: c["datetime"].time() >= time(9, 30), candles), None)
+    if not opening_candle:
         return None
 
     high = 0
     low = 1e9
     volume = 0
-    close = candles[0]['close']
-    o = None
+    close = opening_candle['close']
+    o = opening_candle['open']
     for candle in candles:
-        # TODO: how do daily candles in polygon API work before market open? (adjust dcandle below)
-        # TODO: are candles start-of-minute or end-of-minute? (>= or >)
         if candle['datetime'].time() >= time(9, 30):
             if not o:
                 o = candle['open']
@@ -45,13 +52,13 @@ def build_daily_candle_from_1m_candles(symbol: str, candles: list[CandleIntraday
 
     dcandle: Ticker = {
         "T": symbol,
-        "o": o if o else candles[0]['open'],
+        "o": o,
         "h": high,
         "l": low,
         "c": close,
         "v": int(volume),
 
-        # obvously wrong so nobody uses these:
+        # obvously wrong values so that nobody uses them
         "vw": 0,
         "n": 0,
     }
@@ -69,27 +76,7 @@ def get_1m_candles_by_symbol(symbols: list[str], day: date) -> dict[str, list[Ca
     return symbol_to_candles
 
 
-def with_high_bias_prescan_strategy(scanner: ScannerFilter):
-    """
-    Use to map 'h' to 'c' so scanners biased toward highs (e.g. has to be 5% up from previous day close) can cast a wider net during prescanning.
-    """
-
-    def _prescanner(tickers: list[Ticker], day: date, candle_getter: CandleGetter, **kwargs) -> list[Ticker]:
-        for ticker in tickers:
-            ticker['c'] = ticker['h']
-        tickers = scanner(tickers, day, candle_getter, **kwargs)
-        return tickers
-
-    return _prescanner
-
-
-def with_shallow_scan_true(f: Callable):
-    def _scanner(*args, **kwargs):
-        return f(*args, **kwargs, shallow_scan=True)
-    return _scanner
-
-
-def backtest_on_day(day: date, scanner_filter: ScannerFilter, pre_scanner_filter: ScannerFilter,
+def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter: PrescannerFilter,
                     end_time=time(16, 0), start_invoking_time=time(9, 30)
                     ) -> Iterable[HistoricalChronicleEntry]:
     tickers = get_all_tickers_on_day(day, skip_cache=False)
@@ -97,8 +84,7 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, pre_scanner_filter
     # Pre-scan pass on daily candles to slim down the number of candidates
     # (assume that prescanner will mutate tickers, so we need to copy)
     mangled_tickers = deepcopy(tickers)
-    mangled_tickers = pre_scanner_filter(
-        mangled_tickers, day, lambda _1, _2, _3, _4: [])
+    mangled_tickers = prescanner_filter(mangled_tickers, day)
 
     prescan_passed_symbols = set(map(lambda t: t['T'], mangled_tickers))
     tickers = list(
@@ -117,9 +103,12 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, pre_scanner_filter
     tickers = list(filter(lambda t: t["T"] in symbol_to_candles, tickers))
 
     # TODO: 1m candles from finnhub are unadjusted, but some data used by scanners are! (e.g. previous day candle) How to handle this?
+    # MAYBE: check ticker (in tickers), compare to 9:30 1m candle, use that ratio to adjust finnhub as we go?
+
+    # TODO: instead of end_time and starting at 4am, pass in a time iterator so we can do every 5m, 30m, premarket, aftermarket, etc.
 
     # simulate intraday daily candles as they develop minute-by-minute
-    # (pay attention to how we call filter_candidates_on_day)
+    # (pay attention to how we call scanner)
     current_time = datetime(day.year, day.month,
                             day.day, 4, 0).astimezone(MARKET_TIMEZONE)
     while current_time.time() < end_time:
@@ -153,34 +142,46 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, pre_scanner_filter
                 yield entry
 
 
+def get_scanner_backtest_chronicle_path(scanner: str, cache_built_date: date, commit_id: Optional[str] = None):
+    if not commit_id:
+        commit_id = os.environ.get("GIT_COMMIT", "dev")
+
+    path = get_paths()['data']['dir']
+
+    return os.path.join(
+        path, 'chronicles', scanner, 'backtest', f'{cache_built_date.isoformat()}-{commit_id}.jsonl')
+
+
 def main():
-    # TODO: use argparse
-    scanner = "meemaw"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("scanner", type=str)
+    args = parser.parse_args()
 
-    scanner_filter = get_scanner_filter(scanner)
+    scanner_name = args.scanner
+    scanner_filter = get_scanner_filter(scanner_name)
+    prescanner_filter = get_prescanner_filter(scanner_name)
+    leadup_period = get_leadup_period(scanner_name)
 
-    # TODO: define pre_scanner in each scanner module, don't use these assumptions here for all
-    pre_scanner_filter = with_shallow_scan_true(
-        with_high_bias_prescan_strategy(scanner_filter))
+    start, end = get_cache_prepared_date_range_with_leadup_days(leadup_period)
+    logging.info(f"start: {start}")
+    logging.info(f"end: {end}")
+    logging.info(
+        f"estimated trading days: {len(list(generate_trading_days(start, end)))}")
+    cache_built_day = get_cache_entry_refresh_time(end).date()
+    logging.info(f"cache built time: {cache_built_day}")
 
-    # TODO: adjust other scanners to follow the format needed for the above functions
-    leadup_period = get_leadup_period(scanner)
-
-    # TODO: pathing
-    output_path = "/tmp/meemaw.jsonl"
+    output_path = get_scanner_backtest_chronicle_path(
+        scanner_name, cache_built_day)
+    try:
+        os.makedirs(os.path.dirname(output_path))
+    except:
+        pass
     try:
         os.remove(output_path)
     except:
         pass
 
-    start, end = get_cache_prepared_date_range_with_leadup_days(leadup_period)
-
-    logging.info(f"start: {start}")
-    logging.info(f"end: {end}")
-    logging.info(
-        f"estimated trading days: {len(list(generate_trading_days(start, end)))}")
-
     for day in generate_trading_days(start, end):
         candidates = backtest_on_day(
-            day, scanner_filter, pre_scanner_filter=pre_scanner_filter)
+            day, scanner_filter, prescanner_filter=prescanner_filter)
         jsonl_dump.append_jsonl(output_path, cast(Iterable[dict], candidates))
