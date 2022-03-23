@@ -110,7 +110,7 @@ case $action in
     # Strategy: meemaw
     "meemaw-prepare")
         run_python -c 'import src.log;from src.strat.meemaw.fill_symbol_details_cache import main; main()'
-        run_python prepare_cache.py --start end-3d --end today
+        run_python prepare_cache.py --start end-1d --end today
         ;;
 
     "meemaw")
