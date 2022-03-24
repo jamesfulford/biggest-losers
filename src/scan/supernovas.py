@@ -13,22 +13,23 @@ LEADUP_PERIOD = 0
 
 
 class Candidate(Ticker):
-    percent_change: float
+    open_to_close_change: float
 
 
 def scanner(provided_tickers: list[Ticker], today: date, _candle_getter: CandleGetter) -> list[Candidate]:
     tickers = cast(list[Candidate], provided_tickers)
     for ticker in tickers:
-        ticker["percent_change"] = (ticker['c'] - ticker['o']) / ticker['o']
+        ticker["open_to_close_change"] = (
+            ticker['c'] - ticker['o']) / ticker['o']
 
-    tickers = list(filter(lambda t: t["percent_change"] > 2, tickers))
+    tickers = list(filter(lambda t: t["open_to_close_change"] > 2, tickers))
 
     tickers = list(enrich_tickers_with_asset_class(today, tickers, {
         "is_stock": is_stock,
     }))
 
     tickers = rank_candidates_by(
-        tickers, lambda t: -t['percent_change'])
+        tickers, lambda t: -t['open_to_close_change'])
 
     return tickers
 
