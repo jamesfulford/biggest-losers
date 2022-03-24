@@ -45,6 +45,9 @@ def today_or_previous_trading_day(d: date):
 
 
 def generate_trading_days(start: date, end: date):
+    """
+    inclusive
+    """
     day = next_trading_day(previous_trading_day(start))
     while day <= end:
         yield day

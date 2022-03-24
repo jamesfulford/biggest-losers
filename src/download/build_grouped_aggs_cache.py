@@ -1,5 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import argparse
+from typing import cast
+from requests import HTTPError
 
 import src.log
 
@@ -23,7 +25,9 @@ from src.trading_day import (
 POLYGON_CALLS_PER_MINUTE = 5  # estimating fetch time
 # For reference, 2 years of download takes about 1.75 hours
 
-if __name__ == "__main__":
+
+def main():
+
     # cache info
     print("Cache Info:")
     cache_range = get_current_cache_range()
@@ -62,12 +66,13 @@ if __name__ == "__main__":
         )
 
     assert end <= market_today, "cannot query the future"
-    if end == market_today and market_now < get_market_open_on_day(market_today):
+    if end == market_today and market_now < cast(date, get_market_open_on_day(today_or_previous_trading_day(market_today))):
         print(
             "WARNING: cannot query today's data before market open, using previous trading day instead"
         )
         end = previous_trading_day(market_today)
 
+    start = market_today
     if "end-" in args.start:
         start_str = args.start.replace("end-", "")
         if start_str.endswith("d"):
@@ -84,7 +89,7 @@ if __name__ == "__main__":
             try:
                 fetch_grouped_aggs(start)  # no cache
                 break
-            except Exception as e:
+            except HTTPError as e:
                 if e.response.status_code == 403:
                     print(f"{start} is too far back, trying next trading day")
                     start = next_trading_day(start)
@@ -132,3 +137,7 @@ if __name__ == "__main__":
     print()
 
     prepare_cache_grouped_aggs(start, end)
+
+
+if __name__ == "__main__":
+    main()

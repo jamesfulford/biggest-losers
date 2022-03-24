@@ -109,8 +109,9 @@ case $action in
 
     # Strategy: meemaw
     "meemaw-prepare")
-        run_python -c 'import src.log;from src.strat.meemaw.fill_symbol_details_cache import main; main()'
-        run_python prepare_cache.py --start end-1d --end today
+        ./run.sh prepare-ticker-details-cache --end today --start end-0d
+        # TODO: read this from LOOKUP_PERIOD of scanner
+        ./run.sh prepare-grouped-aggs-cache --start end-1d --end today
         ;;
 
     "meemaw")
@@ -171,12 +172,16 @@ case $action in
         done
         ;;
 
-    "prepare-cache")
-        run_python prepare_cache.py $@
+    "prepare-grouped-aggs-cache")
+        run_python -c 'import src.log;from src.download.build_grouped_aggs_cache import main; main()' $@
+        ;;
+    
+    "prepare-ticker-details-cache")
+        run_python -c 'import src.log;from src.download.build_ticker_details_cache import main; main()' $@
         ;;
 
     "collector-nightly")
-        ./run.sh prepare-cache --end today --start end-2y # polygon free tier limits data to 2 years back
+        ./run.sh prepare-grouped-aggs-cache --end today --start end-2y # polygon free tier limits data to 2 years back
         # TODO: build chronicles? rerun some backtests?
         ;;
     
