@@ -105,7 +105,17 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
 
     # TODO: 1m candles from finnhub are unadjusted, but some data used by scanners are! (e.g. previous day candle) How to handle this?
     # MAYBE: check ticker (in tickers), compare to 9:30 1m candle, use that ratio to adjust finnhub as we go?
+    for ticker in tickers:
+        adjusted_open = ticker['o']
+        opening_unadjusted_candle = next(filter(lambda c: c['datetime'].time() >= time(
+            9, 30), symbol_to_candles[ticker['T']]))
+        unadjusted_open = opening_unadjusted_candle['open']
 
+        open_price_ratio = (adjusted_open / unadjusted_open)
+        if open_price_ratio > 1.1 or open_price_ratio < 0.9:
+            # obvious stock split
+            logging.warn(
+                f"{day} {ticker['T']} mismatch open price! {adjusted_open=} {unadjusted_open=} ratio={open_price_ratio} TODO: implement candle adjustment")
 
     # TODO: pass in a time iterator so we can control every 5m, 30m, once daily, etc.
     # NOTE: while we could simulate pre-market and after-market, we can't scan it live
