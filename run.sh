@@ -184,6 +184,14 @@ case $action in
         ./run.sh prepare-grouped-aggs-cache --end today --start end-2y # polygon free tier limits data to 2 years back
         # TODO: build chronicles? rerun some backtests?
         ;;
+
+    "collector-morningly")
+        ./run.sh prepare-ticker-details-cache --end today --start end-0d
+        ;;
+    
+    "collector-sessionly")
+        ./run.sh record-chronicle meemaw,supernovas,winners
+        ;;
     
     #
     #
