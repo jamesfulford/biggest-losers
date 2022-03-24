@@ -164,12 +164,19 @@ case $action in
     # Backtesting Operations
     #
     "prepare-csvs")
-        for script in $(ls $APP_DIR/src/scan/*.py | grep -v __init__); do
-            module=`basename $script .py`
-            echo "# running $module"
-            run_python -c "import src.log; from src.scan.$module import prepare_csv; prepare_csv()"
-            echo
-        done
+        echo "UNIMPLEMENTED! prepare-csvs"
+        exit 1
+        # TODO: implement way to convert chronicles into CSVs we care about (aggregate by day? period shown?)
+        # for script in $(ls $APP_DIR/src/scan/*.py | grep -v __init__); do
+        #     module=`basename $script .py`
+        #     echo "# running $module"
+        #     run_python -c "import src.log; from src.scan.$module import prepare_csv; prepare_csv()"
+        #     echo
+        # done
+        ;;
+    
+    "create-chronicle")
+        run_python -c "import src.log; from src.backtest.chronicle.create import main; main()" "$@"
         ;;
 
     "prepare-grouped-aggs-cache")
