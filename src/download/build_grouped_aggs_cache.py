@@ -1,9 +1,9 @@
 from datetime import date, datetime, timedelta
 import argparse
+import logging
 from typing import cast
 from requests import HTTPError
-
-import src.log
+from src.cache import clear_json_cache
 
 from src.data.polygon.grouped_aggs import (
     fetch_grouped_aggs,
@@ -28,8 +28,6 @@ POLYGON_CALLS_PER_MINUTE = 5  # estimating fetch time
 
 def main():
 
-    # cache info
-    print("Cache Info:")
     cache_range = get_current_cache_range()
     if cache_range:
         cache_start = cache_range[0]
@@ -39,24 +37,26 @@ def main():
             cache_start
         ), get_cache_entry_refresh_time(cache_end)
 
-        print("\tlast refreshed:", last_refresh_time_start,
-              "to", last_refresh_time_end)
-        print("\tcache start:", cache_start)
-        print("\tcache end:", cache_end)
-        print()
+        logging.info(
+            f"cache last refreshed: {last_refresh_time_start} to {last_refresh_time_end}")
+        logging.info(f"cache start: {cache_start}")
+        logging.info(f"cache end: {cache_end}")
     else:
-        print("\tno pre-existing cache")
+        logging.info("no pre-existing cache")
 
     market_now = now()
-
     market_today = today(market_now)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--start", type=str)
     parser.add_argument("--end", type=str)
     parser.add_argument("--force", action="store_true", default=False)
-
+    parser.add_argument("--clear", action="store_true", default=False)
     args = parser.parse_args()
+
+    if args.clear:
+        logging.info("Clearing cache before re-building...")
+        clear_json_cache("polygon/grouped_aggs/")
 
     if args.end == "today":
         end = market_today
@@ -67,8 +67,8 @@ def main():
 
     assert end <= market_today, "cannot query the future"
     if end == market_today and market_now < cast(date, get_market_open_on_day(today_or_previous_trading_day(market_today))):
-        print(
-            "WARNING: cannot query today's data before market open, using previous trading day instead"
+        logging.warning(
+            "cannot query today's data before market open, using previous trading day instead"
         )
         end = previous_trading_day(market_today)
 
@@ -84,14 +84,15 @@ def main():
             start = today_or_previous_trading_day(
                 end - timedelta(days=365 * years))
 
-        print(f"checking whether API allows us to go back to {start}")
+        logging.info(f"checking whether API allows us to go back to {start}")
         while True:
             try:
                 fetch_grouped_aggs(start)  # no cache
                 break
             except HTTPError as e:
                 if e.response.status_code == 403:
-                    print(f"{start} is too far back, trying next trading day")
+                    logging.info(
+                        f"{start} is too far back, trying next trading day")
                     start = next_trading_day(start)
                     continue
                 raise e
@@ -101,26 +102,24 @@ def main():
     assert start < end
 
     # its fine if starting on a holiday, fetches it just the same
-    print("start:", start)
-    print("end:", end)
-    print()
+    logging.info(f"{start=}")
+    logging.info(f"{end=}")
 
     # estimating fetch time
     weekdays = len(list(generate_trading_days(start, end)))
-    print("weekdays:", weekdays)
+    logging.info(f"{weekdays=}")
     estimated_fetch_time = timedelta(
         minutes=weekdays / POLYGON_CALLS_PER_MINUTE)
-    print("estimated fetch time:", estimated_fetch_time)
+    logging.info(f"{estimated_fetch_time=}")
     estimated_end = market_now + estimated_fetch_time
-    print("estimated end:", estimated_end)
-    print()
+    logging.info(f"{estimated_end=}")
 
     # Do not allow cache building during market hours, since it consumes all our rate limit
     # (I'm OK with quota consumption involved in `start` value interpretation.)
     if not args.force:
         if is_during_market_hours(market_now):
-            print(
-                "ERROR: market is currently open, cache preparation not allowed (consumes quota). Exiting."
+            logging.error(
+                "market is currently open, cache preparation not allowed (consumes quota). Exiting."
             )
             # (if we were OK with quota consumption, we would want to make sure no splits are applied between beginning and end of fetching)
             exit(1)
@@ -128,13 +127,12 @@ def main():
         if is_during_market_hours(
             estimated_end + timedelta(minutes=1)
         ):  # +1m => cushion
-            print(
-                "ERROR: market will be open when cache preparation completes, cache preparation not allowed (consumes quota). Exiting."
+            logging.error(
+                "market will be open when cache preparation completes, cache preparation not allowed (consumes quota). Exiting."
             )
             exit(1)
 
-    print("checking if update needed...")
-    print()
+    logging.info("checking if update needed...")
 
     prepare_cache_grouped_aggs(start, end)
 

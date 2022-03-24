@@ -188,7 +188,7 @@ case $action in
         ;;
 
     "collector-nightly")
-        ./run.sh prepare-grouped-aggs-cache --end today --start end-2y # polygon free tier limits data to 2 years back
+        ./run.sh prepare-grouped-aggs-cache --end today --start end-2y --clear # polygon free tier limits data to 2 years back
         ./run.sh prepare-ticker-details-cache --end today --start end-2y # match grouped-aggs cache
 
         # TODO: check at 9:00am, cancel this job if it's still running
