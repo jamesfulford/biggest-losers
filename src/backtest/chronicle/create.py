@@ -78,7 +78,7 @@ def get_1m_candles_by_symbol(symbols: list[str], day: date) -> dict[str, list[Ca
 
 
 def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter: PrescannerFilter,
-                    end_time=time(16, 0), start_invoking_time=time(9, 30)
+                    end_time=time(16, 0)
                     ) -> Iterable[HistoricalChronicleEntry]:
     tickers = get_all_tickers_on_day(day)
 
@@ -106,12 +106,14 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
     # TODO: 1m candles from finnhub are unadjusted, but some data used by scanners are! (e.g. previous day candle) How to handle this?
     # MAYBE: check ticker (in tickers), compare to 9:30 1m candle, use that ratio to adjust finnhub as we go?
 
-    # TODO: instead of end_time and starting at 4am, pass in a time iterator so we can do every 5m, 30m, premarket, aftermarket, etc.
+
+    # TODO: pass in a time iterator so we can control every 5m, 30m, once daily, etc.
+    # NOTE: while we could simulate pre-market and after-market, we can't scan it live
 
     # simulate intraday daily candles as they develop minute-by-minute
     # (pay attention to how we call scanner)
     current_time = datetime(day.year, day.month,
-                            day.day, 4, 0).astimezone(MARKET_TIMEZONE)
+                            day.day, 9, 29).astimezone(MARKET_TIMEZONE)
     while current_time.time() < end_time:
         current_time += timedelta(minutes=1)
 
@@ -127,20 +129,19 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
         daily_candles = [d for d in daily_candles if d]
 
         # filter candidates, record results
-        if current_time.time() >= start_invoking_time:
-            returned_tickers = scanner_filter(
-                daily_candles,
-                day,
-                lambda s, t, st, en: symbol_to_current_candles[s]
-            )
+        returned_tickers = scanner_filter(
+            daily_candles,
+            day,
+            lambda s, t, st, en: symbol_to_current_candles[s]
+        )
 
-            for ticker in returned_tickers:
-                entry: HistoricalChronicleEntry = {
-                    "now": current_time,
-                    "ticker": ticker,
-                    "true_ticker": symbol_to_true_ticker[ticker['T']]
-                }
-                yield entry
+        for ticker in returned_tickers:
+            entry: HistoricalChronicleEntry = {
+                "now": current_time,
+                "ticker": ticker,
+                "true_ticker": symbol_to_true_ticker[ticker['T']]
+            }
+            yield entry
 
 
 def get_scanner_backtest_chronicle_path(scanner: str, cache_built_date: date, commit_id: Optional[str] = None):
