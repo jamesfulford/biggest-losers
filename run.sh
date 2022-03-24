@@ -223,7 +223,7 @@ case $action in
     # Client Operations (across environments/accounts)
     #
     "sync-data")
-        # ./scripts/deploy/sync-collector-data-back.sh collector
+        ./scripts/deploy/sync-collector-data-back.sh collector
 
         for e in paper prod cash1 margin rothira; do
             echo
