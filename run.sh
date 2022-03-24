@@ -175,6 +175,10 @@ case $action in
         # done
         ;;
     
+    "cache-migrate-v1-to-v2")
+        run_python -c "import src.log; from src.caching.migrate import main; main()"
+        ;;
+    
     "create-chronicle")
         run_python -c "import src.log; from src.backtest.chronicle.create import main; main()" "$@"
         ;;
