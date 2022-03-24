@@ -16,7 +16,6 @@ from src.pathing import get_paths
 
 
 def should_continue():
-    return True  # TODO
     return now().time() < time(16, 0)
 
 
