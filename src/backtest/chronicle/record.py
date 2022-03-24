@@ -40,16 +40,15 @@ def execute_phases(scanner_filters: dict[str, ScannerFilter]):
     for scanner_name, scanner_filter in scanner_filters.items():
         logging.info(f"Scanning {scanner_name}")
         copied_tickers = deepcopy(tickers)
-        # TODO: remove this cast, get_candles and CandleGetter types not aligned
-        # call it intraday_candle_getter
-        candidates = scanner_filter(
-            copied_tickers, day, cast(CandleGetter, get_candles))
 
         try:
-            os.makedirs(os.path.dirname(
-                get_scanner_live_chronicle_path(scanner_name, day)))
-        except FileExistsError:
-            pass
+            # TODO: remove this cast, get_candles and CandleGetter types not aligned
+            # call it intraday_candle_getter
+            candidates = scanner_filter(
+                copied_tickers, day, cast(CandleGetter, get_candles))
+        except Exception as e:
+            logging.exception(f"Scanner {scanner_name} failed, skipping...")
+            continue
 
         jsonl_dump.append_jsonl(get_scanner_live_chronicle_path(scanner_name, day), ({
             "now": next_min,
@@ -78,6 +77,14 @@ def main():
         scanner_name: get_scanner_filter(scanner_name)
         for scanner_name in scanner_names
     }
+
+    # pre-create folders
+    for scanner_name in scanner_filters.keys():
+        chronicle_path = get_scanner_live_chronicle_path(scanner_name, today())
+        try:
+            os.makedirs(os.path.dirname(chronicle_path))
+        except FileExistsError:
+            pass
 
     logging.info(f"Recording live data for {scanner_names}")
 
