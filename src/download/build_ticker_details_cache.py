@@ -46,11 +46,11 @@ def main():
     logging.info("Started updating symbol details cache")
     for day in generate_trading_days(start, end):
         logging.info(f"Updating symbol details cache for {day}")
-        is_stock("AAPL", day=day)
-        is_etf("SPY", day=day)
-        is_warrant("ADRW", day=day)
-        is_right("ADRR", day=day)
-        is_unit("ADRU", day=day)
+        is_stock("ZZZZZ", day=day)
+        is_etf("ZZZZZ", day=day)
+        is_warrant("ZZZZZ", day=day)
+        is_right("ZZZZZ", day=day)
+        is_unit("ZZZZZ", day=day)
 
     logging.info("Ending updating symbol details cache")
 
