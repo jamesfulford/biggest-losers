@@ -50,7 +50,7 @@ def _get_polygon_with_next_url_pagination(url: str, **initial_kwargs):
 def get_tickers_by_type(t: str, day: date):
     # assuming will not change intraday, would hate to rebuild this cache every time
     should_cache = day <= today()
-    cache_key = f"tickers_{t}_{day}"
+    cache_key = f"polygon/ticker_details/{t}_{day}"
 
     if should_cache:
         cached = read_json_cache(cache_key)

@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Callable
 from src.data.polygon.grouped_aggs import Ticker
 from src.strat.utils.scanners import PrescannerFilter, ScannerFilter
 

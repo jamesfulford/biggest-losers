@@ -34,9 +34,8 @@ def delete_json_cache(key: str) -> None:
 
 
 def clear_json_cache(substring: str) -> None:
-    for key in os.listdir(get_paths()["data"]["cache"]["dir"]):
-        if substring in key:
-            delete_json_cache(key)
+    for key in get_matching_entries(substring):
+        delete_json_cache(key)
 
 
 def get_entry_time(key: str) -> datetime:
@@ -44,9 +43,18 @@ def get_entry_time(key: str) -> datetime:
     return datetime.fromtimestamp(os.path.getctime(path))
 
 
-def get_matching_entries(substring: str) -> list:
+def get_matching_entries(substring: str) -> list[str]:
+    cache_dir = get_paths()["data"]["cache"]["dir"]
+
+    file_subdir = os.path.dirname(substring)
+    file_filename_part = os.path.basename(substring)
+
+    target_dir = os.path.join(
+        cache_dir,
+        file_subdir,
+    )
     return [
-        key
-        for key in os.listdir(get_paths()["data"]["cache"]["dir"])
-        if substring in key
+        os.path.join(file_subdir, key)
+        for key in os.listdir(target_dir)
+        if key.startswith(file_filename_part)
     ]

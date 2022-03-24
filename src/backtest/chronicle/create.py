@@ -3,14 +3,14 @@ from copy import deepcopy
 from datetime import date, datetime, time, timedelta
 import logging
 import os
-from typing import Callable, Iterable, Optional, TypedDict, cast, get_args
+from typing import Iterable, Optional, TypedDict, cast
 from src import jsonl_dump
 from src.data.finnhub.finnhub import CandleIntraday, get_candles
-from src.data.polygon.grouped_aggs import Ticker, TickerLike, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
+from src.data.polygon.grouped_aggs import Ticker, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
 from src.pathing import get_paths
 
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
-from src.strat.utils.scanners import CandleGetter, PrescannerFilter, ScannerFilter, get_leadup_period, get_prescanner_filter, get_scanner_filter
+from src.strat.utils.scanners import PrescannerFilter, ScannerFilter, get_leadup_period, get_prescanner_filter, get_scanner_filter
 from src.trading_day import MARKET_TIMEZONE, generate_trading_days
 
 

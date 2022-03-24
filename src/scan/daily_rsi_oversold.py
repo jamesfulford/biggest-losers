@@ -1,6 +1,6 @@
 from datetime import date
 import logging
-from typing import Iterable, Type, cast
+from typing import Iterable, cast
 
 from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day

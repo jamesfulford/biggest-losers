@@ -23,11 +23,11 @@ def _fetch_stats(symbol: str):
 
 
 def _get_stats_cache_key(symbol: str, day: date):
-    return f"yh_v3_stats_{symbol}_{day.isoformat()}"
+    return f"yh_finance/v3_stats/{symbol}_{day.isoformat()}"
 
 
 def _get_latest_cache_entry_key(symbol: str, day: date) -> Optional[str]:
-    entries = get_matching_entries(f"yh_v3_stats_{symbol}_")
+    entries = get_matching_entries(f"yh_finance/v3_stats/{symbol}_")
     entries = list(filter(lambda entry: entry <=
                    _get_stats_cache_key(symbol, day), entries))
     entries.sort(key=lambda entry: date.fromisoformat(entry.split("_")[-1]))

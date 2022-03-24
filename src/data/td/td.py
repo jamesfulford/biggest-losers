@@ -160,7 +160,7 @@ def get_quote(symbol: str) -> dict:
 #
 
 def _get_fundamentals_cache_key(symbol: str, day: date):
-    return f"fundamentals_{symbol}_{day.isoformat()}"
+    return f"td/fundamentals/{symbol}_{day.isoformat()}"
 
 
 def get_fundamentals(symbols: list[str]) -> dict:

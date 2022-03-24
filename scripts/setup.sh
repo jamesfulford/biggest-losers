@@ -14,7 +14,15 @@ echo DATA_DIR $DATA_DIR
 mkdir -p $DATA_DIR/inputs
 mkdir -p $DATA_DIR/outputs
 mkdir -p $DATA_DIR/logs
+
 mkdir -p $DATA_DIR/cache
+mkdir -p $DATA_DIR/cache/finnhub/candles
+mkdir -p $DATA_DIR/cache/polygon/candles
+mkdir -p $DATA_DIR/cache/polygon/ticker_details
+mkdir -p $DATA_DIR/cache/polygon/grouped_aggs
+mkdir -p $DATA_DIR/cache/yh_finance/v3_stats
+mkdir -p $DATA_DIR/cache/td/fundamentals
+
 mkdir -p $DATA_DIR/chronicles
 
 # utility for handling error messages less verbosely in bash

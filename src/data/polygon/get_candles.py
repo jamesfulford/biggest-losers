@@ -30,9 +30,7 @@ def get_candles(
     # do not cache candles for today or in the future, since that list will change
     should_cache = not (end >= date.today())
 
-    cache_key = "polygon_candles_{}_{}_{}_{}".format(
-        symbol, resolution, start.isoformat(), end.isoformat()
-    )
+    cache_key = f"polygon/candles/{symbol}_{resolution}_{start.isoformat()}_{end.isoformat()}"
 
     if should_cache:
         cached = read_json_cache(cache_key)

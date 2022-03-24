@@ -52,9 +52,7 @@ def get_candles(symbol: str, resolution: str, start: date, end: date) -> Optiona
     # do not cache candles for today or in the future, since that list will change
     should_cache = not (end >= date.today()) and _is_intraday(resolution)
 
-    cache_key = "candles_{}_{}_{}_{}".format(
-        symbol, resolution, start.isoformat(), end.isoformat()
-    )
+    cache_key = f"finnhub/candles/{symbol}_{resolution}_{start.isoformat()}_{end.isoformat()}"
 
     if should_cache:
         cached = read_json_cache(cache_key)

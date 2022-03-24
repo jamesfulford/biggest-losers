@@ -26,7 +26,7 @@ from src.trading_day import (
 
 
 def get_grouped_aggs_cache_key(day: date) -> str:
-    return f'grouped_aggs_{day.strftime("%Y-%m-%d")}'
+    return f'polygon/grouped_aggs/{day.strftime("%Y-%m-%d")}'
 
 
 class Ticker(TypedDict):
@@ -114,15 +114,15 @@ def _refetch_cache(start: date, end: date) -> None:
 
 
 def get_current_cache_range() -> Optional[Tuple[date, date]]:
-    entries = get_matching_entries("grouped_aggs_")
+    entries = get_matching_entries("polygon/grouped_aggs/")
     if not entries or len(entries) < 2:
         return None
     entries.sort()
 
     start_entry, end_entry = entries[0], entries[-1]
     return (
-        datetime.strptime(start_entry, "grouped_aggs_%Y-%m-%d").date(),
-        datetime.strptime(end_entry, "grouped_aggs_%Y-%m-%d").date(),
+        datetime.strptime(start_entry, "polygon/grouped_aggs/%Y-%m-%d").date(),
+        datetime.strptime(end_entry, "polygon/grouped_aggs/%Y-%m-%d").date(),
     )
 
 
@@ -142,7 +142,7 @@ def prepare_cache_grouped_aggs(start: date, end: date) -> None:
     if _cache_is_missing_days(start, end):
         if not _should_skip_clearing_cache(start, end):
             logging.warning("cache is not complete and must be cleared")
-            clear_json_cache("grouped_aggs_")
+            clear_json_cache("polygon/grouped_aggs/")
         else:
             logging.info(
                 "cache is not complete, but we can continue building it")

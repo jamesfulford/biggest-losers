@@ -1,10 +1,9 @@
 from datetime import date
 from importlib import import_module
-import logging
 from types import ModuleType
 from typing import Callable, cast
-from src.data.finnhub.finnhub import CandleIntraday, get_candles
 
+from src.data.finnhub.finnhub import CandleIntraday, get_candles
 from src.data.polygon.grouped_aggs import Ticker
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.trading_day import today
