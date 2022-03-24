@@ -141,10 +141,6 @@ def get_short_interest(symbol: str, day: Optional[date] = None) -> Optional[dict
     while True:
         data = read_json_cache(key)
 
-        if not data:
-            print(key, data)
-            exit()
-
         # if None, could be because was not trading yet
         previous_report_date = _parse_previous_report_date(data)
         current_report_date = _parse_current_report_date(data)
