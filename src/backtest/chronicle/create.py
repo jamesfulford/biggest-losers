@@ -59,6 +59,7 @@ def build_daily_candle_from_1m_candles(symbol: str, candles: list[CandleIntraday
         "v": int(volume),
 
         # obvously wrong values so that nobody uses them
+        # TODO: implement VWAP field based on 1m candles (then correct README.md)
         "vw": 0,
         "n": 0,
     }

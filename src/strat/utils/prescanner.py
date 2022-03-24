@@ -28,3 +28,17 @@ def with_high_bias_prescan_strategy(scanner: PrescannerFilter) -> PrescannerFilt
         return tickers
 
     return _prescanner
+
+
+def with_low_bias_prescan_strategy(scanner: PrescannerFilter) -> PrescannerFilter:
+    """
+    Use to map 'l' to 'c' so scanners biased toward highs (e.g. has to be 5% down from previous day close) can cast a wider net during prescanning.
+    """
+
+    def _prescanner(tickers: list[Ticker], day: date, **kwargs) -> list[Ticker]:
+        for ticker in tickers:
+            ticker['c'] = ticker['l']
+        tickers = scanner(tickers, day, **kwargs)
+        return tickers
+
+    return _prescanner
