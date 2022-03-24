@@ -22,4 +22,6 @@ def main():
     symbols = buy_symbols(ALGO_NAME, tickers,
                           metadata={"scanner": scanner},
                           exponential_apportionment_ratio=0.99)
-    await_buy_order_settling(symbols)
+    logging.info(f"Symbols bought: {symbols}")
+    if symbols:
+        await_buy_order_settling(symbols)
