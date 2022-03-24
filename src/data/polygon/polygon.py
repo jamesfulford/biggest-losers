@@ -3,6 +3,7 @@ from functools import lru_cache
 import logging
 import os
 from time import sleep
+from typing import Optional
 
 import requests
 from src.cache import read_json_cache, write_json_cache
@@ -105,7 +106,7 @@ def _get_tickers_by_type_raw(t: str, day: date) -> list:
 #
 
 
-def is_ticker_type(ticker: str, t: str, day: date = None):
+def is_ticker_type(ticker: str, t: str, day: Optional[date] = None):
     if not day:
         day = today()
 
@@ -114,7 +115,7 @@ def is_ticker_type(ticker: str, t: str, day: date = None):
     return ticker in get_tickers_by_type(t, day=day)
 
 
-def is_ticker_one_of(ticker: str, types: tuple, day: date = None):
+def is_ticker_one_of(ticker: str, types: tuple, day: Optional[date] = None):
     if not day:
         logging.warning("WARNING: 'day' not provided to `is_ticker_one_of`")
     return any((
