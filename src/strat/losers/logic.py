@@ -40,7 +40,7 @@ def buy_biggest_losers(
     # Filter losers
     #
 
-    losers = get_all_candidates_on_day(today, skip_cache=True) or []
+    losers = get_all_candidates_on_day(today) or []
 
     # NOTE: if we ever need multi-day averages, we will start to need the cache to be filled
     # with enough days. If not careful, might use data with different adjustment base

@@ -41,7 +41,7 @@ def get_scanner(scanner_name: str) -> Scanner:
 
     # TODO: make everywhere calling this get the candidates themselves and apply filters instead
     def get_scan_results():
-        tickers = get_all_tickers_on_day(today(), skip_cache=True)
+        tickers = get_all_tickers_on_day(today())
         # TODO: remove this cast, get_candles and CandleGetter types not aligned
         # call it intraday_candle_getter
         return scanner_filter(tickers, today(), cast(CandleGetter, get_candles))

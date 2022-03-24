@@ -80,7 +80,7 @@ def get_1m_candles_by_symbol(symbols: list[str], day: date) -> dict[str, list[Ca
 def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter: PrescannerFilter,
                     end_time=time(16, 0), start_invoking_time=time(9, 30)
                     ) -> Iterable[HistoricalChronicleEntry]:
-    tickers = get_all_tickers_on_day(day, skip_cache=False)
+    tickers = get_all_tickers_on_day(day)
 
     # Pre-scan pass on daily candles to slim down the number of candidates
     # (assume that prescanner will mutate tickers, so we need to copy)

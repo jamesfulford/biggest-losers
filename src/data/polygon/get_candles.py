@@ -17,7 +17,6 @@ def get_candles(
     resolution: str,
     start: date,
     end: date,
-    skip_cache=False,
     adjusted=True,
 ):
     """
@@ -28,10 +27,8 @@ def get_candles(
     NOTE: we will cache adjusted candles, make sure not to compare with unadjusted or differently adjusted values.
     """
 
-    # do not cache candles in the future, since that list will change
+    # do not cache candles for today or in the future, since that list will change
     should_cache = not (end >= date.today())
-    if skip_cache:
-        should_cache = False
 
     cache_key = "polygon_candles_{}_{}_{}_{}".format(
         symbol, resolution, start.isoformat(), end.isoformat()

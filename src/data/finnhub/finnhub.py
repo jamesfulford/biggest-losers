@@ -35,7 +35,7 @@ class CandleInterday(TypedDict):
     datetime: datetime
 
 
-def get_candles(symbol: str, resolution: str, start: date, end: date, skip_cache=False) -> Optional[list[Union[CandleInterday, CandleIntraday]]]:
+def get_candles(symbol: str, resolution: str, start: date, end: date) -> Optional[list[Union[CandleInterday, CandleIntraday]]]:
     """
     Fetches candles from Finnhub.io for `symbol` with `resolution`-sized candles (1 = 1m candles, 5 = 5m candles, D = daily, etc.)
     from `start` date to `end` date, including both days. (if both are same day, it fetches for that day)
@@ -49,10 +49,8 @@ def get_candles(symbol: str, resolution: str, start: date, end: date, skip_cache
     ), "start must be under a 1 year ago (finnhub free tier)"
 
     # finnhub.io says intraday candles are unadjusted (cacheable), but not daily candles
-    # do not cache candles in the future, since that list will change
+    # do not cache candles for today or in the future, since that list will change
     should_cache = not (end >= date.today()) and _is_intraday(resolution)
-    if skip_cache:
-        should_cache = False
 
     cache_key = "candles_{}_{}_{}_{}".format(
         symbol, resolution, start.isoformat(), end.isoformat()
