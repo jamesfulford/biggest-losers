@@ -49,7 +49,10 @@ source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourc
 # https://unix.stackexchange.com/questions/458713/how-are-files-under-etc-cron-d-used
 # - must specify user (e.g. '* * * * * root <command>')
 # - filename in /etc/cron.d/ must not contain . (.crontab is only used in repo so we get syntax highlighting)
-ln -s -f $APP_DIR/schedules/$ENV_NAME.crontab /etc/cron.d/$ENV_NAME || fail_script "could not create crontab link"
+rm -f /etc/cron.d/$ENV_NAME
+cp -f $APP_DIR/schedules/$ENV_NAME.crontab /etc/cron.d/$ENV_NAME || fail_script "could not create crontab file"
+chown root /etc/cron.d/$ENV_NAME
+chmod 544 /etc/cron.d/$ENV_NAME
 
 #
 # BROKER setup
