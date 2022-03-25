@@ -197,7 +197,7 @@ case $action in
 
         # TODO: check at 9:00am, cancel this job if it's still running
         ./run.sh create-chronicle supernovas --start end-1y --end today
-        ./run.sh create-chronicle meemaw --start 2022-01-15 --end today
+        ./run.sh create-chronicle meemaw --start 2022-02-15 --end today
         ;;
 
     "collector-morningly")
