@@ -11,6 +11,7 @@ from src.data.polygon.grouped_aggs import (
     get_current_cache_range,
     prepare_cache_grouped_aggs,
 )
+from src.parse_period import add_range_args, interpret_args
 from src.trading_day import (
     generate_trading_days,
     get_market_open_on_day,
@@ -48,8 +49,7 @@ def main():
     market_today = today(market_now)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--start", type=str)
-    parser.add_argument("--end", type=str)
+    parser = add_range_args(parser)
     parser.add_argument("--force", action="store_true", default=False)
     parser.add_argument("--clear", action="store_true", default=False)
     args = parser.parse_args()
@@ -58,32 +58,9 @@ def main():
         logging.info("Clearing cache before re-building...")
         clear_json_cache("polygon/grouped_aggs/")
 
-    if args.end == "today":
-        end = market_today
-    else:
-        end = today_or_previous_trading_day(
-            datetime.strptime(args.end, "%Y-%m-%d").date()
-        )
+    start, end = interpret_args(args)
 
-    assert end <= market_today, "cannot query the future"
-    if end == market_today and market_now < cast(date, get_market_open_on_day(today_or_previous_trading_day(market_today))):
-        logging.warning(
-            "cannot query today's data before market open, using previous trading day instead"
-        )
-        end = previous_trading_day(market_today)
-
-    start = market_today
-    if "end-" in args.start:
-        start_str = args.start.replace("end-", "")
-        if start_str.endswith("d"):
-            days = int(start_str.replace("d", ""))
-            start = today_or_previous_trading_day(
-                end - timedelta(days=days))
-        elif start_str.endswith('y'):
-            years = int(start_str.replace("y", ""))
-            start = today_or_previous_trading_day(
-                end - timedelta(days=365 * years))
-
+    if (start - market_today) > timedelta(days=500):
         logging.info(f"checking whether API allows us to go back to {start}")
         while True:
             try:
@@ -96,8 +73,6 @@ def main():
                     start = next_trading_day(start)
                     continue
                 raise e
-    else:
-        start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
     assert start < end
 
