@@ -209,7 +209,11 @@ def main():
     except:
         pass
 
+    logging.info("Building chronicle...")
+
     for day in generate_trading_days(start, end):
         candidates = backtest_on_day(
             day, scanner_filter, prescanner_filter=prescanner_filter)
         jsonl_dump.append_jsonl(output_path, cast(Iterable[dict], candidates))
+
+    logging.info("Done building chronicle.")
