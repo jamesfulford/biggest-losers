@@ -76,5 +76,6 @@ esac
 #
 # assert that scripts still run, but don't execute any trades for this test
 #
+./run.sh account || fail_script "failed to access account"
 
 ./run.sh dump-orders || fail_script "failed to run dump-orders"
