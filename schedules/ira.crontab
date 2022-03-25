@@ -6,7 +6,7 @@ LOG_FILE=/root/ira-data/logs/run.log
 0 0 * * *         root cd $ENVIRONMENT_HOME_DIR && ./run.sh dump-orders >> $LOG_FILE 2>&1
 
 # td
-0,20,40 * * * 1-5 root cronitor exec JV4GCg "cd $ENVIRONMENT_HOME_DIR && ./run.sh refresh-tokens >> $LOG_FILE 2>&1"
+0,20,40 * * * 1-5 root cronitor exec 34tGjh "cd $ENVIRONMENT_HOME_DIR && ./run.sh refresh-tokens >> $LOG_FILE 2>&1"
 
 # minion
-29 13 * * 1-5     root cronitor exec PHuCpg "cd $ENVIRONMENT_HOME_DIR && ./run.sh minion >> $LOG_FILE 2>&1"
+29 13 * * 1-5     root cronitor exec cHfCaR "cd $ENVIRONMENT_HOME_DIR && ./run.sh minion >> $LOG_FILE 2>&1"
