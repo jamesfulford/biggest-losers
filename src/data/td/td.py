@@ -3,10 +3,12 @@ import json
 import logging
 import os
 from time import sleep
+from typing import Optional
 import requests
-from src.cache import read_json_cache, write_json_cache
+from src.cache import get_matching_entries, read_json_cache, write_json_cache
 
 from src.pathing import get_paths
+from src.trading_day import today
 
 
 def _get_consumer_key():
@@ -163,12 +165,23 @@ def _get_fundamentals_cache_key(symbol: str, day: date):
     return f"td/fundamentals/{symbol}_{day.isoformat()}"
 
 
-def get_fundamentals(symbols: list[str]) -> dict:
+def get_closest_cache_entry_date(symbol: str, day: date) -> Optional[date]:
+    fundamental_keys = get_matching_entries(f"td/fundamentals/{symbol}_")
+    if not fundamental_keys:
+        return None
+
+    cache_entry_days = [
+        datetime.strptime(x.split("_")[-1], '%Y-%m-%d').date() for x in fundamental_keys]
+    return sorted(cache_entry_days, key=lambda d: abs((d - day)).days)[0]
+
+
+def get_fundamentals(symbols: list[str], day: Optional[date] = None) -> dict:
     """
     Fetches TD fundamental data for all symbols provided. Cached based on day fetched.
     Passing `day` will cause the cache lookup to be based on that day.
     """
-    day = date.today()
+    if not day:
+        day = date.today()
 
     fundamentals = {}
 
@@ -251,7 +264,45 @@ def get_fundamental(symbol: str) -> dict:
     return get_fundamentals([symbol])[symbol]
 
 
+def get_floats(symbols: list[str], day: date) -> dict[str, int]:
+    """
+    Returns a dictionary of floats for each symbol.
+    Attempts to use cache entry nearest given day. If fetching latest fundamentals will be more accurate, will fetch.
+    """
+
+    # prepare our get_fundamentals calls in such a way
+    # that symbols with cache entries closer to day than today
+    planned_get_fundamental_calls_by_day: dict[Optional[date], list[str]] = {}
+    for symbol in symbols:
+        cache_date = get_closest_cache_entry_date(symbol, day)
+
+        # if cache entry exists and is before `day`
+        if cache_date and cache_date < day:
+            # and today is closer than day
+            if abs((cache_date - day).days) >= abs((cache_date - today()).days):
+                # then pretend we don't have a cache entry so we can get the latest data
+                cache_date = None
+
+        planned_get_fundamental_calls_by_day[cache_date] = planned_get_fundamental_calls_by_day.get(
+            cache_date, []) + [symbol]
+
+    # while this looks like a lot of calls, only one key (key=None) will trigger any API calls.
+    # the others will trigger cache hits.
+    floats = {}
+    for d, symbols in planned_get_fundamental_calls_by_day.items():
+        fundamentals_dict = get_fundamentals(symbols, day=d)
+        floats.update({
+            symbol: fundamental['shares']['float']
+            for symbol, fundamental in fundamentals_dict.items()
+        })
+    return floats
+
+
 def main():
+    day = date(2021, 3, 25)
+    print(get_floats(["ZYNE", "AAPL", 'VISL'], day))
+    exit()
+
     fundamentals = get_fundamentals(
         ["AAPL", "MSFT", "AMZN", "FB", "GOOG", "TSLA", "NFLX"])
     for symbol, fundamentals in fundamentals.items():

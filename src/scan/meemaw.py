@@ -8,7 +8,7 @@ from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yeste
 from src.strat.utils.prescanner import build_prescanner_with_empty_candle_getter, with_high_bias_prescan_strategy, with_kwargs
 from src.strat.utils.scanners import CandleGetter, ScannerFilter
 from src.data.polygon.grouped_aggs import Ticker
-from src.data.td.td import get_fundamentals
+from src.data.td.td import get_floats, get_fundamentals
 
 LEADUP_PERIOD = 1
 
@@ -61,11 +61,10 @@ def scanner(provided_tickers: list[Ticker], today: date, _candle_getter: CandleG
         filter(lambda t: t["percent_change"] > min_percent_change, tickers))
 
     # Low float
-    # TODO: instruct `get_fundamentals` to check cache for data nearest `day`
-    fundamentals = get_fundamentals(list(map(lambda t: t["T"], tickers)))
-    tickers = list(filter(lambda t: t["T"] in fundamentals, tickers))
+    floats = get_floats([t['T'] for t in tickers], today)
+    tickers = [t for t in tickers if t['T'] in floats]
     for ticker in tickers:
-        ticker['float'] = fundamentals[ticker['T']]['shares']['float']
+        ticker["float"] = floats[ticker['T']]
     tickers = list(
         filter(lambda t: t['float'] < max_float and t['float'] > min_float, tickers))
 
