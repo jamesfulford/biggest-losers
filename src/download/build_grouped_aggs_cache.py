@@ -60,7 +60,7 @@ def main():
 
     start, end = interpret_args(args)
 
-    if (start - market_today) > timedelta(days=500):
+    if (market_today - start) > timedelta(days=500):
         logging.info(f"checking whether API allows us to go back to {start}")
         while True:
             try:
