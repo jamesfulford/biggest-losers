@@ -7,6 +7,7 @@ from typing import Iterable, Optional, TypedDict, cast
 from src import jsonl_dump
 from src.data.finnhub.finnhub import CandleIntraday, get_candles
 from src.data.polygon.grouped_aggs import Ticker, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
+from src.parse_period import add_range_args, interpret_args
 from src.pathing import get_paths
 
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
@@ -167,6 +168,7 @@ def get_scanner_backtest_chronicle_path(scanner: str, cache_built_date: date, co
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("scanner", type=str)
+    parser = add_range_args(parser, required=False)
     args = parser.parse_args()
 
     scanner_name = args.scanner
@@ -174,9 +176,23 @@ def main():
     prescanner_filter = get_prescanner_filter(scanner_name)
     leadup_period = get_leadup_period(scanner_name)
 
-    start, end = get_cache_prepared_date_range_with_leadup_days(leadup_period)
-    logging.info(f"start: {start}")
-    logging.info(f"end: {end}")
+    cache_start, cache_end = get_cache_prepared_date_range_with_leadup_days(
+        leadup_period)
+    logging.info(f"{cache_start=} {cache_end=}")
+
+    try:
+        start, end = interpret_args(args)
+    except:
+        logging.info("Did not parse range, using cache range...")
+        start = cache_start
+        end = cache_end
+
+    # stay within cache range
+    start = max(start, cache_start)
+    end = min(end, cache_end)
+
+    logging.info(f"{start=} {end=}")
+
     logging.info(
         f"estimated trading days: {len(list(generate_trading_days(start, end)))}")
     cache_built_day = get_cache_entry_refresh_time(end).date()
