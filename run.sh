@@ -196,12 +196,8 @@ case $action in
         ./run.sh prepare-ticker-details-cache --end today --start end-2y # match grouped-aggs cache
 
         # TODO: check at 9:00am, cancel this job if it's still running
-        ./run.sh create-chronicle supernovas
-        
-        # TODO: restrict chronicle to only after 2022-01-15, not able to get short interest data before that
-        # TODO: sync short interest cache to server
-        # TODO: figure out float lookup caching and sync fundamentals cache to server
-        # ./run.sh create-chronicle meemaw
+        ./run.sh create-chronicle supernovas --start end-1y --end today
+        ./run.sh create-chronicle meemaw --start 2022-01-15 --end today
         ;;
 
     "collector-morningly")
