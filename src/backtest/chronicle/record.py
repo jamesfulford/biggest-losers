@@ -37,6 +37,7 @@ def execute_phases(scanner_filters: dict[str, ScannerFilter]):
     day = today()
     tickers = get_all_tickers_on_day(day)
 
+    # TODO: run each loop in its own process, so one slow scanner doesn't block others
     for scanner_name, scanner_filter in scanner_filters.items():
         logging.info(f"Scanning {scanner_name}")
         copied_tickers = deepcopy(tickers)
