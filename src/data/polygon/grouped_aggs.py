@@ -3,7 +3,6 @@ import logging
 from time import sleep
 from typing import Optional, Tuple, TypeVar, TypedDict, cast
 import requests
-from functools import lru_cache
 
 from src.cache import (
     clear_json_cache,
@@ -228,7 +227,6 @@ def get_today_grouped_aggs(today: date) -> Optional[EnrichedGroupedAggsResponse]
     return today_grouped_aggs
 
 
-@lru_cache(maxsize=130)
 def get_today_grouped_aggs_from_cache(today: date) -> Tuple[bool, Optional[EnrichedGroupedAggsResponse]]:
     """
     Returns (cache_hit_bool, grouped_aggs)

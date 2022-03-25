@@ -1,5 +1,4 @@
 from datetime import date
-from functools import lru_cache
 import logging
 import os
 from time import sleep
@@ -46,7 +45,6 @@ def _get_polygon_with_next_url_pagination(url: str, **initial_kwargs):
 #
 # Tickers
 #
-@lru_cache(maxsize=100)
 def get_tickers_by_type(t: str, day: date):
     # assuming will not change intraday, would hate to rebuild this cache every time
     should_cache = day <= today()
