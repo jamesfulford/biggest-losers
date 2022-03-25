@@ -205,7 +205,7 @@ case $action in
         ;;
     
     "collector-sessionly")
-        ./run.sh record-chronicle meemaw,supernovas,winners
+        ./run.sh record-chronicle supernovas,meemaw
         ;;
     
     #
