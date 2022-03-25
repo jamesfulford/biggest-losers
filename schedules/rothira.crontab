@@ -1,6 +1,6 @@
-ENVIRONMENT_NAME=prod
-ENVIRONMENT_HOME_DIR=/root/prod
-LOG_FILE=/root/prod-data/logs/run.log
+ENVIRONMENT_NAME=rothira
+ENVIRONMENT_HOME_DIR=/root/rothira
+LOG_FILE=/root/rothira-data/logs/run.log
 
 0 0 * * *         root cd $ENVIRONMENT_HOME_DIR && ./run.sh rotate-logs
 0 0 * * *         root cd $ENVIRONMENT_HOME_DIR && ./run.sh dump-orders >> $LOG_FILE 2>&1
