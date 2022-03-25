@@ -221,7 +221,7 @@ case $action in
     "sync-data")
         ./scripts/deploy/sync-collector-data-back.sh collector
 
-        for e in paper prod cash1 margin rothira; do
+        for e in paper prod cash1 margin rothira ira; do
             echo
             echo Syncing $e...
             until ./scripts/deploy/sync-data-back.sh $e; do
@@ -270,7 +270,7 @@ case $action in
         ;;
 
     "prod-deploy")
-        for e in prod cash1 margin rothira; do
+        for e in prod cash1 margin rothira ira; do
             ./run.sh deploy $e
         done
         ;;
@@ -300,7 +300,7 @@ case $action in
             return $?
         }
 
-        for e in paper prod cash1 margin rothira; do
+        for e in paper prod cash1 margin rothira ira; do
             echo
             echo "$e"
             account $e || (echo "(trying again in 30s)" && sleep 30 && account $e) || echo "ERROR with $e"
