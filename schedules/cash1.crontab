@@ -1,0 +1,11 @@
+ENVIRONMENT_NAME=cash1
+ENVIRONMENT_HOME_DIR=/root/cash1
+LOG_FILE=/root/cash1-data/logs/run.log
+
+0 0 * * *         root cd $ENVIRONMENT_HOME_DIR && ./run.sh rotate-logs
+0 0 * * *         root cd $ENVIRONMENT_HOME_DIR && ./run.sh dump-orders >> $LOG_FILE 2>&1
+
+# td
+0,20,40 * * * 1-5 root cronitor exec kkdpU9 "cd $ENVIRONMENT_HOME_DIR && ./run.sh refresh-tokens >> $LOG_FILE 2>&1"
+
+# VACANT

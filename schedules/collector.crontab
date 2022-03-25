@@ -1,0 +1,9 @@
+ENVIRONMENT_NAME=collector
+ENVIRONMENT_HOME_DIR=/root/collector
+LOG_FILE=/root/collector-data/logs/run.log
+
+0 0 * * *     root cd $ENVIRONMENT_HOME_DIR && ./run.sh rotate-logs
+
+1 20 * * 1-5  root cd $ENVIRONMENT_HOME_DIR && ./run.sh collector-nightly   >> $LOG_FILE 2>&1
+0 13 * * 1-5  root cd $ENVIRONMENT_HOME_DIR && ./run.sh collector-morningly >> $LOG_FILE 2>&1
+29 13 * * 1-5 root cd $ENVIRONMENT_HOME_DIR && ./run.sh collector-sessionly >> $LOG_FILE 2>&1

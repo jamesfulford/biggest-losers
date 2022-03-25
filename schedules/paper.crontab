@@ -1,0 +1,11 @@
+ENVIRONMENT_NAME=paper
+ENVIRONMENT_HOME_DIR=/root/paper
+LOG_FILE=/root/paper-data/logs/run.log
+
+0 0 * * *     root cd $ENVIRONMENT_HOME_DIR && ./run.sh rotate-logs
+0 0 * * *     root cd $ENVIRONMENT_HOME_DIR && ./run.sh dump-orders >> $LOG_FILE 2>&1
+
+# meemaw
+0 13 * * 1-5  root cronitor exec c2Spm8 "cd $ENVIRONMENT_HOME_DIR && ./run.sh meemaw-prepare >> $LOG_FILE 2>&1"
+29 13 * * 1-5 root cronitor exec XQKGq9 "cd $ENVIRONMENT_HOME_DIR && ./run.sh meemaw >> $LOG_FILE 2>&1"
+59 19 * * 1-5 root cronitor exec xQSGSO "cd $ENVIRONMENT_HOME_DIR && ./run.sh clear-account >> $LOG_FILE 2>&1"

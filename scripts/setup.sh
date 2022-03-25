@@ -43,19 +43,10 @@ source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourc
 #
 # docker build -t "talib-py-runner" . || fail_script "Failed to build docker container"
 
-
-# TODO: account for time and timezones in crontab entries
-function assert_crontab_entry_exists() {
-    local entry="$1"
-    local grep_ready_entry=`echo "$entry" | python3 -c "import sys;print(sys.stdin.read().replace('.', '\\.'))"`  # replace . with \., for escaping in grep
-    crontab -l | grep -q "$grep_ready_entry"
-    exit_code=$?
-    
-    if [ $exit_code -ne 0 ]; then
-        crontab -l
-        fail_script "could not find crontab entry '$entry'. Run 'EDITOR=vi crontab -e' to add it."
-    fi
-}
+#
+# crontab setup
+#
+ln -s -f $APP_DIR/schedules/$ENV_NAME.crontab /etc/cron.d/$ENV_NAME || fail_script "could not create crontab link"
 
 #
 # BROKER setup
@@ -64,8 +55,6 @@ function assert_crontab_entry_exists() {
 case $BROKER in
     "none")
         echo "BROKER=none, skipping broker setup"
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh collector-nightly >> $DATA_DIR/logs/run.log 2>&1"
-        assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
         exit 0
         ;;
     "alpaca")
@@ -84,22 +73,8 @@ case $BROKER in
         ;;
 esac
 
-
-#
-# check crontab entries (don't suggest doing locally and on server for same broker creds, can get confusing)
-#
-# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-sell >> $DATA_DIR/logs/run.log 2>&1"
-# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh biggest-loser-[a-z]*-buy >> $DATA_DIR/logs/run.log 2>&1"
-# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh dump-orders >> $DATA_DIR/logs/run.log 2>&1"
-# assert_crontab_entry_exists "cd $APP_DIR && ./run.sh rotate-logs"
-
 #
 # assert that scripts still run, but don't execute any trades for this test
 #
-# DRY_RUN=1 ./run.sh biggest-loser-stocks-buy || fail_script "failed to run biggest-loser-stocks-buy"
-# DRY_RUN=1 ./run.sh biggest-loser-stocks-sell || fail_script "failed to run biggest-loser-stocks-sell"
-
-# DRY_RUN=1 ./run.sh biggest-loser-warrants-buy || fail_script "failed to run biggest-loser-warrants-buy"
-# DRY_RUN=1 ./run.sh biggest-loser-warrants-sell || fail_script "failed to run biggest-loser-warrants-sell"
 
 ./run.sh dump-orders || fail_script "failed to run dump-orders"
