@@ -36,8 +36,11 @@ def interpret_args(args: argparse.Namespace) -> Tuple[date, date]:
         start_str = args.start.replace("end-", "")
         if start_str.endswith("d"):
             days = int(start_str.replace("d", ""))
-            start = today_or_previous_trading_day(
-                end - timedelta(days=days))
+
+            start = end
+            for _ in range(days):
+                start = previous_trading_day(start)
+
         elif start_str.endswith('y'):
             years = int(start_str.replace("y", ""))
             start = today_or_previous_trading_day(
@@ -46,7 +49,7 @@ def interpret_args(args: argparse.Namespace) -> Tuple[date, date]:
     else:
         start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    assert start < end
+    assert start <= end, f"{start=} must be before (or same as) {end=}"
 
     return start, end
 
@@ -92,13 +95,13 @@ def main():
     a.end = "today"
     start, end = interpret_args(cast(argparse.Namespace, a))
     print(start, end)
-    assert end - start <= timedelta(days=366)
-    assert end - start >= timedelta(days=364)
+    assert end - start <= timedelta(days=365 + 2)
+    assert end - start >= timedelta(days=365 - 2)
 
     # today and end-day case
     a = A()
-    a.start = "end-10d"
+    a.start = "end-10d"  # 10 trading days ago, aka 14 days ago
     a.end = "today"
     start, end = interpret_args(cast(argparse.Namespace, a))
     print(start, end)
-    assert end - start == timedelta(days=10)
+    assert end - start == timedelta(days=14)
