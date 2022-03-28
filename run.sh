@@ -109,7 +109,7 @@ case $action in
 
     # Strategy: meemaw
     "meemaw-prepare")
-        ./run.sh prepare-ticker-details-cache --end today --start end-0d
+        ./run.sh prepare-ticker-details-cache --start end-1d --end today
         # TODO: read this from LOOKUP_PERIOD of scanner
         ./run.sh prepare-grouped-aggs-cache --start end-1d --end today
         ;;
