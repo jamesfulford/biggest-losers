@@ -1,40 +1,10 @@
 
 from datetime import date
-import json
 import logging
 from typing import Iterable, Iterator, Tuple
 from itertools import chain
 
-from src.backtest.chronicle.create import ChronicleEntry
-
-from src.backtest.chronicle.create import get_scanner_backtest_chronicle_path
-from src.backtest.chronicle.record import get_scanner_live_chronicle_path
-
-
-def read_chronicle(path: str) -> Iterator[ChronicleEntry]:
-    with open(path) as f:
-        yield from (json.loads(line) for line in f)
-
-
-def batch_by_minute(iterable: Iterable[ChronicleEntry]) -> Iterator[list[ChronicleEntry]]:
-    """
-    Split the given iterable into batches of size 60.
-    """
-    previous_time = None
-    batch = []
-    for entry in iterable:
-        if not previous_time:
-            previous_time = entry['now']
-
-        if previous_time != entry['now']:
-            yield sorted(batch, key=lambda e: e['ticker']['T'])
-            batch = []
-            previous_time = entry['now']
-
-        batch.append(entry)
-
-    if batch:
-        yield batch
+from src.backtest.chronicle.read import ChronicleEntry, batch_by_minute, read_backtest_chronicle, read_recorded_chronicle
 
 
 def batch_by_minute_and_link_feeds(feed1: Iterable[ChronicleEntry], feed2: Iterable[ChronicleEntry]) -> Iterator[Tuple[list[ChronicleEntry], list[ChronicleEntry]]]:
@@ -67,10 +37,10 @@ def batch_by_minute_and_link_feeds(feed1: Iterable[ChronicleEntry], feed2: Itera
 def main():
     scanner_name = "meemaw"
 
-    live_chronicle_feed = read_chronicle(get_scanner_live_chronicle_path(
-        scanner_name, date(2022, 3, 22), "dev"))
-    backtest_chronicle_feed = read_chronicle(get_scanner_backtest_chronicle_path(
-        scanner_name, date(2022, 3, 22), "dev"))
+    live_chronicle_feed = read_recorded_chronicle(
+        scanner_name, date(2022, 3, 22), "dev")
+    backtest_chronicle_feed = read_backtest_chronicle(
+        scanner_name, date(2022, 3, 22), "dev")
 
     # Scroll feeds to the same time
     live_entry = next(live_chronicle_feed)

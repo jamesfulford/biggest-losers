@@ -5,6 +5,7 @@ import logging
 import os
 from typing import Iterable, Optional, TypedDict, cast
 from src import jsonl_dump
+from src.backtest.chronicle.read import HistoricalChronicleEntry, get_scanner_backtest_chronicle_path
 from src.data.finnhub.finnhub import CandleIntraday, get_candles
 from src.data.polygon.grouped_aggs import Ticker, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
 from src.parse_period import add_range_args, interpret_args
@@ -13,15 +14,6 @@ from src.pathing import get_paths
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.strat.utils.scanners import PrescannerFilter, ScannerFilter, get_leadup_period, get_prescanner_filter, get_scanner_filter
 from src.trading_day import MARKET_TIMEZONE, generate_trading_days
-
-
-class ChronicleEntry(TypedDict):
-    now: datetime
-    ticker: Ticker
-
-
-class HistoricalChronicleEntry(ChronicleEntry):
-    true_ticker: Ticker
 
 
 # TODO: to parallelize, need to synchronize cache read/writes by cache key to avoid potential data corruption issues
@@ -153,16 +145,6 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
                 "true_ticker": symbol_to_true_ticker[ticker['T']]
             }
             yield entry
-
-
-def get_scanner_backtest_chronicle_path(scanner: str, cache_built_date: date, commit_id: Optional[str] = None):
-    if not commit_id:
-        commit_id = os.environ.get("GIT_COMMIT", "dev")
-
-    path = get_paths()['data']['dir']
-
-    return os.path.join(
-        path, 'chronicles', scanner, 'backtest', f'{cache_built_date.isoformat()}-{commit_id}.jsonl')
 
 
 def main():

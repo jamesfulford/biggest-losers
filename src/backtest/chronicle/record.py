@@ -7,6 +7,7 @@ from typing import Optional, cast
 from requests import HTTPError
 
 from src import jsonl_dump
+from src.backtest.chronicle.read import get_scanner_recorded_chronicle_path
 from src.data.finnhub.finnhub import get_candles
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.strat.utils.scanners import CandleGetter, Scanner, ScannerFilter, get_scanner, get_scanner_filter
@@ -51,20 +52,10 @@ def execute_phases(scanner_filters: dict[str, ScannerFilter]):
             logging.exception(f"Scanner {scanner_name} failed, skipping...")
             continue
 
-        jsonl_dump.append_jsonl(get_scanner_live_chronicle_path(scanner_name, day), ({
+        jsonl_dump.append_jsonl(get_scanner_recorded_chronicle_path(scanner_name, day), ({
             "now": next_min,
             "ticker": c,
         } for c in candidates))
-
-
-def get_scanner_live_chronicle_path(scanner_name: str, day: date, commit_id: Optional[str] = None):
-    if not commit_id:
-        commit_id = os.environ.get("GIT_COMMIT", "dev")
-
-    path = get_paths()['data']['dir']
-
-    return os.path.join(
-        path, 'chronicles', scanner_name, 'live', f'{day.isoformat()}-{commit_id}.jsonl')
 
 
 def main():
@@ -81,7 +72,8 @@ def main():
 
     # pre-create folders
     for scanner_name in scanner_filters.keys():
-        chronicle_path = get_scanner_live_chronicle_path(scanner_name, today())
+        chronicle_path = get_scanner_recorded_chronicle_path(
+            scanner_name, today())
         try:
             os.makedirs(os.path.dirname(chronicle_path))
         except FileExistsError:
