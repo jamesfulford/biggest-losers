@@ -201,6 +201,7 @@ case $action in
         ./run.sh prepare-ticker-details-cache --end $today --start end-2y # match grouped-aggs cache
 
         ./run.sh create-chronicle supernovas --start end-1y --end $today  # finnhub free tier limits data to 1 year back
+        # TODO: make compute faster, is slow on server (takes hour to do 1 day's worth)
         ./run.sh create-chronicle meemaw --start 2022-02-15 --end $today  # cache does not have data applicable for tickers we care about before 2022-02-15
 
         ./run.sh create-csv meemaw backtest $today $GIT_COMMIT
