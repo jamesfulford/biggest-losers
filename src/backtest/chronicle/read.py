@@ -7,6 +7,13 @@ from typing import Iterable, Iterator, Optional, TypedDict, cast
 from src.data.polygon.grouped_aggs import Ticker
 from src.pathing import get_paths
 
+#
+# TODO: instead of Chronicle being an array of scanner tickers,
+#      it should be an array of snapshots, where each snapshot
+#      is a timestamp, some metadata, and a list of scanner tickers, if any.
+#      (otherwise, a gap and an empty scanner result are indistinguishable)
+#
+
 
 def _read_jsonl_lines(path: str) -> Iterator[dict]:
     with open(path) as f:
