@@ -182,6 +182,10 @@ case $action in
     "create-chronicle")
         run_python -c "import src.log; from src.backtest.chronicle.create import main; main()" "$@"
         ;;
+    
+    "create-csv")
+        run_python -c "import src.log; from src.backtest.chronicle.to_csv import main; main()" "$@"
+        ;;
 
     "prepare-grouped-aggs-cache")
         run_python -c 'import src.log;from src.download.build_grouped_aggs_cache import main; main()' $@
@@ -192,12 +196,15 @@ case $action in
         ;;
 
     "collector-nightly")
-        ./run.sh prepare-grouped-aggs-cache --end today --start end-2y --clear # polygon free tier limits data to 2 years back
-        ./run.sh prepare-ticker-details-cache --end today --start end-2y # match grouped-aggs cache
+        today=`date +%Y-%m-%d`
+        ./run.sh prepare-grouped-aggs-cache --end $today --start end-2y --clear # polygon free tier limits data to 2 years back
+        ./run.sh prepare-ticker-details-cache --end $today --start end-2y # match grouped-aggs cache
 
-        # TODO: check at 9:00am, cancel this job if it's still running
-        ./run.sh create-chronicle supernovas --start end-1y --end today
-        ./run.sh create-chronicle meemaw --start 2022-02-15 --end today
+        ./run.sh create-chronicle supernovas --start end-1y --end $today  # finnhub free tier limits data to 1 year back
+        ./run.sh create-chronicle meemaw --start 2022-02-15 --end $today  # cache does not have data applicable for tickers we care about before 2022-02-15
+
+        ./run.sh create-csv meemaw backtest $today $GIT_COMMIT
+        ./run.sh create-csv supernovas backtest $today $GIT_COMMIT
         ;;
 
     "collector-morningly")
