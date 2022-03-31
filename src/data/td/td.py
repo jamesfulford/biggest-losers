@@ -1,7 +1,8 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import json
 import logging
 import os
+from pprint import pprint
 from time import sleep
 from typing import Optional
 import requests
@@ -297,11 +298,108 @@ def get_floats(symbols: list[str], day: date) -> dict[str, int]:
         })
     return floats
 
+#
+# Options
+#
+
+
+def get_option_chain(symbol: str, latest_expiration: date):
+    """
+    Gets current option chain for a symbol. (No historical data)
+    """
+    response = _get_data("/v1/marketdata/chains", params={
+        "symbol": symbol,
+        "optionType": "S",  # standard options only
+        "toDate": latest_expiration.isoformat(),
+        "includeQuotes": 'TRUE',
+    })
+    raw_chain = response.json()
+    assert raw_chain['symbol'] == symbol
+    assert raw_chain['status'] == 'SUCCESS'
+    if raw_chain['isDelayed']:
+        logging.warn(f"Option chain for {symbol} is delayed!")
+
+    chain = []
+    for put_strikes in raw_chain['putExpDateMap'].values():
+        for puts in put_strikes.values():
+            for contract in puts:  # usually a 1-element list
+                chain.append(contract)
+
+    for call_strikes in raw_chain['callExpDateMap'].values():
+        for calls in call_strikes.values():
+            for contract in calls:  # usually a 1-element list
+                chain.append(contract)
+
+    return {
+        "price": raw_chain['underlyingPrice'],
+        "volatility": raw_chain['volatility'],
+        "contracts": [_build_contract(link) for link in chain],
+    }
+
+
+def _build_contract(contract: dict) -> dict:
+    expiration = datetime.fromtimestamp(contract['expirationDate'] / 1000)
+    return {
+        # 'CALL' or 'PUT'
+        "type": contract['putCall'],
+        "strike_price": contract['strikePrice'],
+        "expiration": expiration.date(),
+
+        "greek": {
+            "delta": contract['delta'],
+            "gamma": contract['gamma'],
+            "theta": contract['theta'],
+            "vega": contract['vega'],
+            "rho": contract['rho'],
+            "volatility": contract['volatility'],
+            "time_value": contract['timeValue'],
+            "theoretical_volatility": contract['theoreticalVolatility'],
+            "theoretical_value": contract['theoreticalOptionValue'],
+        },
+        "daily": {
+            "open": contract['openPrice'],
+            "high": contract['highPrice'],
+            "low": contract['lowPrice'],
+            "close": contract['closePrice'],
+            "volume": contract['totalVolume'],
+        },
+
+        "open_interest": contract['openInterest'],
+        "volume_revolutions": contract['totalVolume'] / (contract['openInterest'] or 1),
+
+        "bid": contract['bid'],
+        "ask": contract['ask'],
+        "last": contract['last'],
+        "is_itm": contract['inTheMoney'],
+    }
+
 
 def main():
+    market_today = today()
+    chain = get_option_chain("AAPL", market_today + timedelta(days=8))
+    price = chain['price']
+
+    contracts = [c for c in chain['contracts']]
+    contracts = [c for c in contracts if c['type'] == 'CALL']
+    contracts = [c for c in contracts if c['open_interest'] >= 1000]
+    contracts = [c for c in contracts if c['daily']['volume'] >= 1000]
+
+    soonest_contract_date = min(c['expiration']
+                                for c in contracts if c['expiration'] > market_today)
+    contracts = [c for c in contracts if c['expiration']
+                 == soonest_contract_date]
+
+    # TODO: do we want closest to the money, or highest volume / OI?
+    target_contract = max(
+        contracts, key=lambda c: c['volume_revolutions'])
+
+    print(
+        f"{target_contract['expiration']} {target_contract['strike_price']} {target_contract['type']} (price is currently ${price:.2f})")
+
+    exit()
+
     day = date(2021, 3, 25)
     print(get_floats(["ZYNE", "AAPL", 'VISL'], day))
-    exit()
 
     fundamentals = get_fundamentals(
         ["AAPL", "MSFT", "AMZN", "FB", "GOOG", "TSLA", "NFLX"])
