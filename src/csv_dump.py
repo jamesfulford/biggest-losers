@@ -1,6 +1,7 @@
 from datetime import datetime, date
+from itertools import chain
 import logging
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Iterator, Optional
 
 
 def serialize(v: Any) -> str:
@@ -22,12 +23,12 @@ def serialize(v: Any) -> str:
         return str(v)
 
 
-def write_csv(path: Optional[str], lines: Iterable[dict], headers: Optional[list[str]] = None) -> int:
-    # TODO: handle `lines` as a generator
-    # so server doesn't run out of memory
-    lines = list(lines)
-    if not lines:
-        logging.warning(f"WARNING: no lines to write to csv {path}")
+def write_csv(path: Optional[str], lines: Iterator[dict], headers: Optional[list[str]] = None) -> int:
+    first_line = next(lines, None)
+    if not first_line:
+        logging.warning(
+            f"write_csv: no data to write to {path}, not writing anything.")
+        return 0
 
     if not headers:
         headers = []
@@ -35,16 +36,17 @@ def write_csv(path: Optional[str], lines: Iterable[dict], headers: Optional[list
     f = open(path, "w") if path else None
 
     # write provided headers first, in order, then rest of keys in alphabetical order
-    existing_headers = set()
-    for line in lines:
-        existing_headers.update(line.keys())
+    existing_headers = set(first_line.keys())
     headers = headers + sorted(existing_headers.difference(set(headers)))
     print(",".join(headers), file=f)
 
     line_count = 0
-    for line in lines:
-        line_count += 1
+    for line in chain([first_line], lines):
         print(",".join(map(lambda h: serialize(line.get(h, None)), headers)), file=f)
+        line_count += 1
+        if line_count % 200 == 0:
+            logging.info(
+                f"write_csv: wrote {line_count} lines so far, continuing...")
 
     if f:
         f.close()
