@@ -32,7 +32,13 @@ def get_scanner_recorded_chronicle_path(scanner_name: str, day: date, commit_id:
 
 
 def read_recorded_chronicle(scanner_name: str, day: date, commit_id: Optional[str] = None) -> Iterator[ChronicleEntry]:
-    return cast(Iterator[HistoricalChronicleEntry], _read_jsonl_lines(get_scanner_recorded_chronicle_path(scanner_name, day, commit_id)))
+    jsonl_feed = _read_jsonl_lines(
+        get_scanner_recorded_chronicle_path(scanner_name, day, commit_id))
+    feed = ({
+        "now": datetime.strptime(entry['now'], "%Y-%m-%dT%H:%M:%S%z"),
+        "ticker": entry['ticker']
+    } for entry in jsonl_feed)
+    return cast(Iterator[ChronicleEntry], feed)
 
 
 #
@@ -53,7 +59,14 @@ def get_scanner_backtest_chronicle_path(scanner: str, cache_built_date: date, co
 
 
 def read_backtest_chronicle(scanner: str, cache_built_date: date, commit_id: Optional[str] = None) -> Iterator[HistoricalChronicleEntry]:
-    return cast(Iterator[HistoricalChronicleEntry], _read_jsonl_lines(get_scanner_backtest_chronicle_path(scanner, cache_built_date, commit_id)))
+    jsonl_feed = _read_jsonl_lines(
+        get_scanner_backtest_chronicle_path(scanner, cache_built_date, commit_id))
+    feed = ({
+        "now": datetime.strptime(entry['now'], "%Y-%m-%dT%H:%M:%S%z"),
+        "ticker": entry['ticker'],
+        "true_ticker": entry['true_ticker'],
+    } for entry in jsonl_feed)
+    return cast(Iterator[HistoricalChronicleEntry], feed)
 
 
 #
