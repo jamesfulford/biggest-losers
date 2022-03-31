@@ -19,26 +19,46 @@ class ChronicleEntry(TypedDict):
 
 
 #
-# Recorded chronicle
+# Generic chronicle
 #
-def get_scanner_recorded_chronicle_path(scanner_name: str, day: date, commit_id: Optional[str] = None):
-    if not commit_id:
-        commit_id = os.environ.get("GIT_COMMIT", "dev")
+def get_chronicle_path(scanner_name: str, chron_type: str, day: date, name: str):
+    chron_type_folder_name = {
+        'recorded': 'live',
+        'backtest': 'backtest',
+    }[chron_type]
 
     path = get_paths()['data']['dir']
 
     return os.path.join(
-        path, 'chronicles', scanner_name, 'live', f'{day.isoformat()}-{commit_id}.jsonl')
+        path, 'chronicles', scanner_name, chron_type_folder_name, f'{day.isoformat()}-{name}.jsonl')
 
 
-def read_recorded_chronicle(scanner_name: str, day: date, commit_id: Optional[str] = None) -> Iterator[ChronicleEntry]:
+def read_chronicle(scanner_name: str, chron_type: str, day: date, name: str) -> Iterator[ChronicleEntry]:
     jsonl_feed = _read_jsonl_lines(
-        get_scanner_recorded_chronicle_path(scanner_name, day, commit_id))
+        get_chronicle_path(scanner_name, chron_type, day, name))
     feed = ({
         "now": datetime.strptime(entry['now'], "%Y-%m-%dT%H:%M:%S%z"),
         "ticker": entry['ticker']
     } for entry in jsonl_feed)
     return cast(Iterator[ChronicleEntry], feed)
+
+
+#
+# Recorded chronicle
+#
+def get_scanner_recorded_chronicle_path(scanner_name: str, day: date, commit_id: Optional[str] = None):
+    name = commit_id
+    if not name:
+        name = os.environ.get("GIT_COMMIT", "dev")
+
+    return get_chronicle_path(scanner_name, 'recorded', day, name)
+
+
+def read_recorded_chronicle(scanner_name: str, day: date, commit_id: Optional[str] = None) -> Iterator[ChronicleEntry]:
+    name = commit_id
+    if not name:
+        name = os.environ.get("GIT_COMMIT", "dev")
+    return read_chronicle(scanner_name, 'recorded', day, name)
 
 
 #
@@ -48,14 +68,12 @@ class HistoricalChronicleEntry(ChronicleEntry):
     true_ticker: Ticker
 
 
-def get_scanner_backtest_chronicle_path(scanner: str, cache_built_date: date, commit_id: Optional[str] = None) -> str:
-    if not commit_id:
-        commit_id = os.environ.get("GIT_COMMIT", "dev")
+def get_scanner_backtest_chronicle_path(scanner_name: str, cache_built_date: date, commit_id: Optional[str] = None) -> str:
+    name = commit_id
+    if not name:
+        name = os.environ.get("GIT_COMMIT", "dev")
 
-    path = get_paths()['data']['dir']
-
-    return os.path.join(
-        path, 'chronicles', scanner, 'backtest', f'{cache_built_date.isoformat()}-{commit_id}.jsonl')
+    return get_chronicle_path(scanner_name, 'backtest', cache_built_date, name)
 
 
 def read_backtest_chronicle(scanner: str, cache_built_date: date, commit_id: Optional[str] = None) -> Iterator[HistoricalChronicleEntry]:

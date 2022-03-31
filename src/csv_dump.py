@@ -22,7 +22,7 @@ def serialize(v: Any) -> str:
         return str(v)
 
 
-def write_csv(path: Optional[str], lines: Iterable[dict], headers: Optional[list[str]] = None):
+def write_csv(path: Optional[str], lines: Iterable[dict], headers: Optional[list[str]] = None) -> int:
     # TODO: handle `lines` as a generator
     # so server doesn't run out of memory
     lines = list(lines)
@@ -41,13 +41,15 @@ def write_csv(path: Optional[str], lines: Iterable[dict], headers: Optional[list
     headers = headers + sorted(existing_headers.difference(set(headers)))
     print(",".join(headers), file=f)
 
+    line_count = 0
     for line in lines:
+        line_count += 1
         print(",".join(map(lambda h: serialize(line.get(h, None)), headers)), file=f)
 
     if f:
         f.close()
 
-    return headers
+    return line_count
 
 
 if __name__ == "__main__":
