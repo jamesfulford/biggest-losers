@@ -376,13 +376,13 @@ def _build_contract(contract: dict) -> dict:
 
 def main():
     market_today = today()
-    chain = get_option_chain("AAPL", market_today + timedelta(days=8))
+    chain = get_option_chain("TSLA", market_today + timedelta(days=8))
     price = chain['price']
 
     contracts = [c for c in chain['contracts']]
     contracts = [c for c in contracts if c['type'] == 'CALL']
     contracts = [c for c in contracts if c['open_interest'] >= 1000]
-    contracts = [c for c in contracts if c['daily']['volume'] >= 1000]
+    # contracts = [c for c in contracts if c['daily']['volume'] >= 1000]
 
     soonest_contract_date = min(c['expiration']
                                 for c in contracts if c['expiration'] > market_today)
