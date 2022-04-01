@@ -9,4 +9,4 @@ LOG_FILE=/root/rothira-data/logs/run.log
 0,20,40 * * * 1-5 root cronitor exec JV4GCg "cd $ENVIRONMENT_HOME_DIR && ./run.sh refresh-tokens >> $LOG_FILE 2>&1"
 
 # minion
-29 13 * * 1-5     root cronitor exec PHuCpg "cd $ENVIRONMENT_HOME_DIR && ./run.sh minion >> $LOG_FILE 2>&1"
+# 29 13 * * 1-5     root cronitor exec PHuCpg "cd $ENVIRONMENT_HOME_DIR && ./run.sh minion >> $LOG_FILE 2>&1"
