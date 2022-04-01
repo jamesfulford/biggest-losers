@@ -25,12 +25,6 @@ def interpret_args(args: argparse.Namespace) -> Tuple[date, date]:
 
     assert end <= market_today, "cannot query the future"
 
-    if end == market_today and market_now < cast(date, get_market_open_on_day(today_or_previous_trading_day(market_today))):
-        logging.warning(
-            "cannot query today's data before market open, using previous trading day instead"
-        )
-        end = previous_trading_day(market_today)
-
     start = market_today
     if "end-" in args.start:
         start_str = args.start.replace("end-", "")

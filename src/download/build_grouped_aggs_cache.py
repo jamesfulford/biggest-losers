@@ -60,6 +60,12 @@ def main():
 
     start, end = interpret_args(args)
 
+    if end == market_today and market_now < cast(date, get_market_open_on_day(today_or_previous_trading_day(market_today))):
+        logging.warning(
+            "cannot query today's data before market open, using previous trading day instead"
+        )
+        end = previous_trading_day(market_today)
+
     if (market_today - start) > timedelta(days=500):
         logging.info(f"checking whether API allows us to go back to {start}")
         while True:
