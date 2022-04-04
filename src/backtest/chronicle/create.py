@@ -41,6 +41,17 @@ def build_daily_candle_from_1m_candles(symbol: str, candles: list[CandleIntraday
             low = min(low, candle['low'])
 
         close = candle['close']
+
+        # https://forum.alpaca.markets/t/unstable-minute-bar-real-time-data-2022-03-30-googl/8996/9
+        # > Volume is a dilemma. Most trades, including most of those excluded above, are included in volume calculations.
+        # > If there is a bar, then the trades are included in volume. However, if there isn’t a bar then the volume for
+        # > any ‘excluded’ trades doesn’t get counted (ie there isn’t a bar to attach it to).
+        # > **Summing the bars for the day will therefore generally sum to less than the volume for the day.**
+        # > The ‘best practice’ to getting the current volume for the day is to fetch a snapshot and use the daily_bar.volume which is returned.
+        # > That will be the actual daily volume up to the current time.
+
+        # This will *underestimate* volume. This is a consequence of how candles work and how some trades are excluded from candles.
+
         volume += candle['volume']
 
     dcandle: Ticker = {
