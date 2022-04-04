@@ -21,7 +21,6 @@ class CandleIntraday(TypedDict):
     low: float
     close: float
     volume: float
-    t: int
     datetime: datetime
 
 
@@ -122,7 +121,6 @@ def _convert_candles_format_logic(response_json, resolution) -> list[Union[Candl
             "low": response_json["l"][i],
             "close": response_json["c"][i],
             "volume": response_json["v"][i],
-            "t": response_json["t"][i],
         }
         if should_interpret_timezones:
             # time at the *open* of the candle. Close is however long after `resolution` was
