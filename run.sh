@@ -74,7 +74,7 @@ shift 1
 
 case $action in
     "account")
-        run_python -c 'import src.log;import json;from src.broker.generic import get_account;print(json.dumps(get_account(), indent=2, sort_keys=True))'
+        run_python -c 'import src.outputs.log;import json;from src.broker.generic import get_account;print(json.dumps(get_account(), indent=2, sort_keys=True))'
         ;;
 
     #
@@ -90,21 +90,21 @@ case $action in
     # Strategy: biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
-        run_python -c 'import src.log; from src.strat.losers.stocks import main; main()' "buy"
+        run_python -c 'import src.outputs.log; from src.strat.losers.stocks import main; main()' "buy"
         ;;
     "biggest-loser-stocks-sell")
         refresh_tokens_if_needed
-        run_python -c 'import src.log; from src.strat.losers.stocks import main; main()' "sell"
+        run_python -c 'import src.outputs.log; from src.strat.losers.stocks import main; main()' "sell"
         ;;
 
     # Strategy: biggest loser warrants
     "biggest-loser-warrants-buy")
         refresh_tokens_if_needed
-        run_python -c 'import src.log; from src.strat.losers.warrants import main; main()' "buy"
+        run_python -c 'import src.outputs.log; from src.strat.losers.warrants import main; main()' "buy"
         ;;
     "biggest-loser-warrants-sell")
         refresh_tokens_if_needed
-        run_python -c 'import src.log; from src.strat.losers.warrants import main; main()' "sell"
+        run_python -c 'import src.outputs.log; from src.strat.losers.warrants import main; main()' "sell"
         ;;
 
     # Strategy: meemaw
@@ -115,31 +115,31 @@ case $action in
         ;;
 
     "meemaw")
-        run_python -c 'import src.log;from src.strat.meemaw.live import main; main()'
+        run_python -c 'import src.outputs.log;from src.strat.meemaw.live import main; main()'
         ;;
 
     "clear-account")
-        run_python -c 'import src.log;from src.exits.clear_account import main; main()'
+        run_python -c 'import src.outputs.log;from src.exits.clear_account import main; main()'
         ;;
 
     # Strategy: daily bracketing on NRGU
     "bracketing")
-        run_python -c 'import src.log; from src.strat.brackets.live import main; main()'
+        run_python -c 'import src.outputs.log; from src.strat.brackets.live import main; main()'
         ;;
 
     # Strategy: Minion (NRGU 1m)
     "minion")
-        run_python -c 'import src.log; from src.strat.minion.live import main; main()'
+        run_python -c 'import src.outputs.log; from src.strat.minion.live import main; main()'
         ;;
     
     # Supernovas
     "supernovas")
         refresh_tokens_if_needed
         echo "Entering..."
-        run_python -c "import src.log; from src.strat.supernovas.enter import main; main()"
+        run_python -c "import src.outputs.log; from src.strat.supernovas.enter import main; main()"
         echo
         echo "Setting up exit..."
-        run_python -c "import src.log; from src.strat.supernovas.egress import main; main()" 1.1 0.9
+        run_python -c "import src.outputs.log; from src.strat.supernovas.egress import main; main()" 1.1 0.9
         ;;
 
     # Operations
@@ -156,7 +156,7 @@ case $action in
     # Performance
     "dump-orders")
         refresh_tokens_if_needed
-        run_python -c "import src.log; from src.reporting.dump_orders import main; main()" $1
+        run_python -c "import src.outputs.log; from src.reporting.dump_orders import main; main()" $1
         echo "(return code was $?)"
         ;;
 
@@ -170,29 +170,29 @@ case $action in
         # for script in $(ls $APP_DIR/src/scan/*.py | grep -v __init__); do
         #     module=`basename $script .py`
         #     echo "# running $module"
-        #     run_python -c "import src.log; from src.scan.$module import prepare_csv; prepare_csv()"
+        #     run_python -c "import src.outputs.log; from src.scan.$module import prepare_csv; prepare_csv()"
         #     echo
         # done
         ;;
     
     "cache-migrate-v1-to-v2")
-        run_python -c "import src.log; from src.caching.migrate import main; main()"
+        run_python -c "import src.outputs.log; from src.caching.migrate import main; main()"
         ;;
     
     "create-chronicle")
-        run_python -c "import src.log; from src.backtest.chronicle.create import main; main()" "$@"
+        run_python -c "import src.outputs.log; from src.backtest.chronicle.create import main; main()" "$@"
         ;;
     
     "create-csv")
-        run_python -c "import src.log; from src.backtest.chronicle.to_csv import main; main()" "$@"
+        run_python -c "import src.outputs.log; from src.backtest.chronicle.to_csv import main; main()" "$@"
         ;;
 
     "prepare-grouped-aggs-cache")
-        run_python -c 'import src.log;from src.scripts.build_grouped_aggs_cache import main; main()' $@
+        run_python -c 'import src.outputs.log;from src.scripts.build_grouped_aggs_cache import main; main()' $@
         ;;
     
     "prepare-ticker-details-cache")
-        run_python -c 'import src.log;from src.scripts.build_ticker_details_cache import main; main()' $@
+        run_python -c 'import src.outputs.log;from src.scripts.build_ticker_details_cache import main; main()' $@
         ;;
 
     "collector-nightly")
@@ -220,7 +220,7 @@ case $action in
     #
     #
     "record-chronicle")
-        run_python -c "import src.log; from src.backtest.chronicle.record import main; main()" $1
+        run_python -c "import src.outputs.log; from src.backtest.chronicle.record import main; main()" $1
         ;;
 
     #
@@ -240,7 +240,7 @@ case $action in
         ;;
 
     "analyze-performance")
-        run_python -c "import src.log; from src.reporting.performance import main; main()" "$@"
+        run_python -c "import src.outputs.log; from src.reporting.performance import main; main()" "$@"
         ;;
 
     "build-drive-outputs")

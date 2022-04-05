@@ -16,4 +16,4 @@ ENV_NAME=paper dev_source_env
 ENV_NAME=cash1 dev_source_env
 ENV_FILE=cash1.env ./run.sh refresh-tokens
 
-nodemon -e py -x "DRY_RUN=1 python3 -c 'import src.log; from src.broker.generic import main; main()'"
+nodemon -e py -x "DRY_RUN=1 python3 -c 'import src.outputs.log; from src.broker.generic import main; main()'"
