@@ -117,10 +117,9 @@ def main():
                 logging.info(
                     f"close mismatch T={live_entry['ticker']['T']} @ {live_entry['now']} live={live_entry['ticker']['c']} backtest={backtest_entry['ticker']['c']} ratio={close_ratio:.2f}")
 
+            # NOTE: 1m candle reconstructions are known to be lower than the actual volume
             volume_ratio = live_entry['ticker']['v'] / \
                 (backtest_entry['ticker']['v'] + 1)
-            if volume_ratio > 1.05 or volume_ratio < 0.95:
-                # Observed once (cleared on next minute)
-                # 2022-03-23 00:41:07,562   INFO     volume mismatch T=AVCT @ 2022-03-22T10:29:00-04:00 live=12217160.0 backtest=12887997 ratio=0.95
+            if volume_ratio > 1.01:
                 logging.info(
                     f"volume mismatch T={live_entry['ticker']['T']} @ {live_entry['now']} live={live_entry['ticker']['v']} backtest={backtest_entry['ticker']['v']} ratio={volume_ratio:.2f}")
