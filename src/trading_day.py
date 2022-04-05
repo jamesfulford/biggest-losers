@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 # date logic
 #
 
-# TODO: holidays (usually handled elsewhere dynamically), days to skip (also usually handled elsewhere)
+# TODO: holidays (usually handled elsewhere dynamically), days to skip
 
 
 def next_trading_day(day: date) -> date:
