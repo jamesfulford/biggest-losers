@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 from pprint import pprint
 from typing import Iterable, Optional, Tuple, TypeVar, TypedDict, Union
-from src.data.aggregate_candles import aggregate_intraday_candles, filter_candles_during_market_hours
+from src.data.finnhub.aggregate_candles import aggregate_intraday_candles, filter_candles_during_market_hours
 from src.data.finnhub.finnhub import Candle, CandleInterday, CandleIntraday, get_1m_candles, get_candles, get_d_candles
 from src.trading_day import previous_trading_day, today
 

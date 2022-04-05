@@ -1,4 +1,3 @@
-from datetime import time
 from pprint import pprint
 from typing import cast
 from src.data.finnhub.finnhub import CandleIntraday, get_candles
