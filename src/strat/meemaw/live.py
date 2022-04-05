@@ -56,7 +56,7 @@ import ta
 from src.data.finnhub.finnhub import get_candles
 from src.entries.market import buy_symbols
 from src.exits.oco import place_ocos
-from src.strat.meemaw.settle import await_buy_order_settling
+from src.entries.settle import await_buy_order_settling
 from src.strat.pdt import assert_pdt
 from src.scan.utils.scanners import get_scanner
 

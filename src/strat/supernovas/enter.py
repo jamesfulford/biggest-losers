@@ -1,6 +1,6 @@
 import logging
 from src.entries.market import buy_symbols
-from src.strat.meemaw.settle import await_buy_order_settling
+from src.entries.settle import await_buy_order_settling
 from src.scan.utils.scanners import get_scanner
 
 ALGO_NAME = "supernovas"
