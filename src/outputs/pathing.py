@@ -4,7 +4,7 @@ from typing import Optional
 
 def get_paths(target_environment_name: Optional[str] = None):
     app_dir = os.path.abspath(os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), '..'))
+        os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 
     if app_dir == "/app":
         current_environment_name = "docker"
