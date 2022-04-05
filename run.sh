@@ -177,17 +177,31 @@ case $action in
         #     echo
         # done
         ;;
-    
-    "cache-migrate-v1-to-v2")
-        run_python -c "import src.outputs.log; from src.caching.migrate import main; main()"
-        ;;
-    
-    "create-chronicle")
-        run_python -c "import src.outputs.log; from src.backtest.chronicle.create import main; main()" "$@"
-        ;;
-    
-    "create-csv")
-        run_python -c "import src.outputs.log; from src.backtest.chronicle.to_csv import main; main()" "$@"
+
+    "chronicle")
+        chronicle_action="$1"
+        shift 1
+        case $chronicle_action in
+            "describe")
+                ;;
+            
+            "record")
+                run_py_main src.backtest.chronicle.record "$@"
+                ;;
+            
+            "create")
+                run_py_main src.backtest.chronicle.create "$@"
+                ;;
+            
+            "csv")
+                run_py_main src.backtest.chronicle.to_csv "$@"
+                ;;
+
+            *)
+                echo "ERROR: unknown chronicle action $chronicle_action"
+                exit 1
+                ;;
+        esac
         ;;
 
     "prepare-grouped-aggs-cache")
@@ -203,8 +217,8 @@ case $action in
         ./run.sh prepare-grouped-aggs-cache --end $today --start end-2y --clear # polygon free tier limits data to 2 years back
         ./run.sh prepare-ticker-details-cache --end $today --start end-2y # match grouped-aggs cache
 
-        ./run.sh create-chronicle supernovas --start end-1y --end $today  # finnhub free tier limits data to 1 year back
-        ./run.sh create-csv supernovas backtest $today $GIT_COMMIT
+        ./run.sh chronicle create supernovas --start end-1y --end $today  # finnhub free tier limits data to 1 year back
+        ./run.sh chronicle csv supernovas backtest $today $GIT_COMMIT
 
         # TODO: make compute faster, is slow on server (takes hour to do 1 day's worth)
         # ./run.sh create-chronicle meemaw --start 2022-02-15 --end $today  # cache does not have data applicable for tickers we care about before 2022-02-15
@@ -216,14 +230,7 @@ case $action in
         ;;
     
     "collector-sessionly")
-        ./run.sh record-chronicle supernovas,meemaw
-        ;;
-    
-    #
-    #
-    #
-    "record-chronicle")
-        run_python -c "import src.outputs.log; from src.backtest.chronicle.record import main; main()" $1
+        ./run.sh chronicle record supernovas,meemaw
         ;;
 
     #
