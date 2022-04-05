@@ -35,6 +35,7 @@ def batch_by_minute_and_link_feeds(feed1: Iterable[ChronicleEntry], feed2: Itera
 
 
 def main():
+    # TODO: choose chronicles from command line
     scanner_name = "meemaw"
 
     live_chronicle_feed = read_recorded_chronicle(
