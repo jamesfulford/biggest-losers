@@ -51,6 +51,7 @@ def get_candles(symbol: str, resolution: str, start: date, end: date) -> Optiona
     # do not cache candles for today or in the future, since that list will change
     should_cache = not (end >= date.today()) and _is_intraday(resolution)
 
+    # TODO: hit cache if is subset of another cache entry (e.g. 1m candles on April 2 is included in 1m candles from April 1 to April 8)
     cache_key = f"finnhub/candles/{symbol}_{resolution}_{start.isoformat()}_{end.isoformat()}"
 
     if should_cache:
