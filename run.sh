@@ -182,7 +182,8 @@ case $action in
         chronicle_action="$1"
         shift 1
         case $chronicle_action in
-            "describe")
+            "describe"|"list")
+                run_py_main src.backtest.chronicle.describe "$@"
                 ;;
             
             "record")
