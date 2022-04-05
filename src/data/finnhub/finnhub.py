@@ -2,7 +2,7 @@ import logging
 import time
 import os
 from datetime import datetime, date, timedelta
-from typing import Optional, TypedDict, Union
+from typing import Optional, TypedDict, Union, cast
 from zoneinfo import ZoneInfo
 
 import requests
@@ -15,23 +15,34 @@ FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
 
-class CandleIntraday(TypedDict):
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: float
-    datetime: datetime
-
-
-class CandleInterday(TypedDict):
+class Candle(TypedDict):
     open: float
     high: float
     low: float
     close: float
     volume: int
-    t: int
+
+
+class CandleIntraday(Candle):
     datetime: datetime
+
+
+class CandleInterday(Candle):
+    date: date
+
+
+def get_1m_candles(symbol: str, start: date, end: date) -> Optional[list[CandleIntraday]]:
+    candles_1m = get_candles(symbol, "1", start, end)
+    if candles_1m is None:
+        return None
+    return cast(list[CandleIntraday], candles_1m)
+
+
+def get_d_candles(symbol: str, start: date, end: date) -> Optional[list[CandleInterday]]:
+    candles_d = get_candles(symbol, "D", start, end)
+    if candles_d is None:
+        return None
+    return cast(list[CandleInterday], candles_d)
 
 
 def get_candles(symbol: str, resolution: str, start: date, end: date) -> Optional[list[Union[CandleInterday, CandleIntraday]]]:
@@ -121,7 +132,7 @@ def _convert_candles_format_logic(response_json, resolution) -> list[Union[Candl
             "high": response_json["h"][i],
             "low": response_json["l"][i],
             "close": response_json["c"][i],
-            "volume": response_json["v"][i],
+            "volume": int(response_json["v"][i]),
         }
         if should_interpret_timezones:
             # time at the *open* of the candle. Close is however long after `resolution` was
