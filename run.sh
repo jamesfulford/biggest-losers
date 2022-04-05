@@ -119,12 +119,12 @@ case $action in
         ;;
 
     "clear-account")
-        run_python -c 'import src.log;from src.strat.meemaw.clear_account import main; main()'
+        run_python -c 'import src.log;from src.exits.clear_account import main; main()'
         ;;
 
     # Strategy: daily bracketing on NRGU
     "bracketing")
-        run_python -c 'import src.log; from src.strat.bracketing.bracketing import main; main()'
+        run_python -c 'import src.log; from src.strat.brackets.live import main; main()'
         ;;
 
     # Strategy: Minion (NRGU 1m)

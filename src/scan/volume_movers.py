@@ -7,8 +7,8 @@ from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle
 from src.scan.utils.rank import rank_candidates_by
-from src.strat.utils.prescanner import build_prescanner_with_empty_candle_getter
-from src.strat.utils.scanners import CandleGetter, ScannerFilter
+from src.backtest.chronicle.prescanner import build_prescanner_with_empty_candle_getter
+from src.scan.utils.scanners import CandleGetter, ScannerFilter
 
 
 LEADUP_PERIOD = 1

@@ -1,8 +1,8 @@
 import logging
 import sys
-from src.strat.entries.market import buy_symbols
+from src.entries.market import buy_symbols
 from src.strat.meemaw.settle import await_buy_order_settling
-from src.strat.utils.scanners import get_scanner
+from src.scan.utils.scanners import get_scanner
 
 import os
 

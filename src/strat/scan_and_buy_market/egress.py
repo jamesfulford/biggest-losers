@@ -1,4 +1,4 @@
-from src.strat.exits.oco import place_ocos
+from src.exits.oco import place_ocos
 import sys
 
 

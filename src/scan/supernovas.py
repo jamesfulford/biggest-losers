@@ -3,8 +3,8 @@ from typing import cast
 
 from src.data.polygon.asset_class import is_stock
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
-from src.strat.utils.prescanner import build_prescanner_with_empty_candle_getter, with_high_bias_prescan_strategy
-from src.strat.utils.scanners import CandleGetter, ScannerFilter
+from src.backtest.chronicle.prescanner import build_prescanner_with_empty_candle_getter, with_high_bias_prescan_strategy
+from src.scan.utils.scanners import CandleGetter, ScannerFilter
 from src.data.polygon.grouped_aggs import Ticker
 from src.scan.utils.rank import rank_candidates_by
 

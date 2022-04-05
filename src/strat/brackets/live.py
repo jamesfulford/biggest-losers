@@ -2,7 +2,7 @@ from datetime import timedelta
 import logging
 
 from requests.models import HTTPError
-from src.strat.brackets.brackets_realtime import execute_brackets
+from src.strat.brackets.execute_brackets import execute_brackets
 
 from src.broker.alpaca import (
     buy_symbol_market,

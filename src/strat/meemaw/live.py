@@ -54,11 +54,11 @@ from talib.abstract import RSI
 from requests.exceptions import HTTPError
 import ta
 from src.data.finnhub.finnhub import get_candles
-from src.strat.entries.market import buy_symbols
-from src.strat.exits.oco import place_ocos
+from src.entries.market import buy_symbols
+from src.exits.oco import place_ocos
 from src.strat.meemaw.settle import await_buy_order_settling
-from src.strat.utils.pdt import assert_pdt
-from src.strat.utils.scanners import get_scanner
+from src.strat.pdt import assert_pdt
+from src.scan.utils.scanners import get_scanner
 
 from src.trading_day import now, previous_trading_day, today
 from src.wait import get_next_minute_mark, wait_until

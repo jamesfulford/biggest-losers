@@ -5,7 +5,7 @@ from pprint import pformat
 from typing import cast
 
 from requests.exceptions import HTTPError
-from src.strat.utils.scanners import get_scanner
+from src.scan.utils.scanners import get_scanner
 from src.scan.meemaw import Candidate as MeemawCandidate
 
 from src.trading_day import now

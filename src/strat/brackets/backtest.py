@@ -1,6 +1,6 @@
 
 from datetime import date, timedelta
-from src.strat.brackets.brackets_historical import backtest_brackets
+from src.backtest.brackets_historical import backtest_brackets
 from src.trading_day import generate_trading_days, get_market_close_on_day, get_market_open_on_day, is_during_market_hours
 from src.data.polygon.get_candles import get_candles
 

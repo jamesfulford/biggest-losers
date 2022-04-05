@@ -10,7 +10,7 @@ from src.outputs import jsonl_dump
 from src.backtest.chronicle.read import get_scanner_recorded_chronicle_path
 from src.data.finnhub.finnhub import get_candles
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
-from src.strat.utils.scanners import CandleGetter, Scanner, ScannerFilter, get_scanner, get_scanner_filter
+from src.scan.utils.scanners import CandleGetter, Scanner, ScannerFilter, get_scanner, get_scanner_filter
 from src.trading_day import now, today
 from src.wait import get_next_minute_mark, wait_until
 from src.outputs.pathing import get_paths

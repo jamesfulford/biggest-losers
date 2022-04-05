@@ -1,6 +1,6 @@
 from datetime import date
 from src.data.polygon.grouped_aggs import Ticker
-from src.strat.utils.scanners import PrescannerFilter, ScannerFilter
+from src.scan.utils.scanners import PrescannerFilter, ScannerFilter
 
 
 def build_prescanner_with_empty_candle_getter(scanner: ScannerFilter) -> PrescannerFilter:

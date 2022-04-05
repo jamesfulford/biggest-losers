@@ -12,7 +12,7 @@ from src.scripts.helpers.parse_period import add_range_args, interpret_args
 from src.outputs.pathing import get_paths
 
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
-from src.strat.utils.scanners import PrescannerFilter, ScannerFilter, get_leadup_period, get_prescanner_filter, get_scanner_filter
+from src.scan.utils.scanners import PrescannerFilter, ScannerFilter, get_leadup_period, get_prescanner_filter, get_scanner_filter
 from src.trading_day import MARKET_TIMEZONE, generate_trading_days
 
 
