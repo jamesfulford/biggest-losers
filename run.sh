@@ -136,10 +136,10 @@ case $action in
     "supernovas")
         refresh_tokens_if_needed
         echo "Entering..."
-        ALGO_NAME="supernovas" run_python -c "import src.log; from src.strat.scan_and_buy_market.enter import main; main()" "supernovas"
+        run_python -c "import src.log; from src.strat.supernovas.enter import main; main()"
         echo
         echo "Setting up exit..."
-        run_python -c "import src.log; from src.strat.scan_and_buy_market.egress import main; main()" 1.1 0.9
+        run_python -c "import src.log; from src.strat.supernovas.egress import main; main()" 1.1 0.9
         ;;
 
     # Operations

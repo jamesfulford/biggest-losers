@@ -1,19 +1,16 @@
 import logging
-import sys
 from src.entries.market import buy_symbols
 from src.strat.meemaw.settle import await_buy_order_settling
 from src.scan.utils.scanners import get_scanner
 
-import os
-
-ALGO_NAME = os.environ.get("ALGO_NAME", "scan_and_buy_market")
+ALGO_NAME = "supernovas"
 
 
 #
 # Buys the symbols returned by scanner if not already owned.
 #
 def main():
-    scanner = sys.argv[1]
+    scanner = "supernovas"
     logging.info(f"Scanning with scanner '{scanner}'...")
 
     tickers = get_scanner(scanner)()
