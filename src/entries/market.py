@@ -1,7 +1,7 @@
 import logging
 from typing import Set
 from src.broker.alpaca import get_account
-from src.sizing import allocate_cash, exponential_apportionment, size_shares_from_allocation
+from src.entries.sizing import allocate_cash, exponential_apportionment, size_shares_from_allocation
 from src.trading_day import now
 from src.broker.generic import get_positions, buy_symbol_market
 from src.outputs.intention import log_intentions

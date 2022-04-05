@@ -1,7 +1,7 @@
 # `brew install ta-lib`, then `pip3 install TA-Lib`
 # To read ta-lib docs for a function (to see parameters like windows/timeperiods), do:
 #   >>> from talib import RSI; print(RSI.__doc__)
-from src.sizing import size_buy
+from src.entries.sizing import size_buy
 import json
 from datetime import datetime, timedelta, time
 import logging
