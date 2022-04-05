@@ -2,7 +2,7 @@ from datetime import date, datetime
 import os
 
 from src.intention import log_intentions
-from src.criteria import is_stock
+from src.data.polygon.asset_class import is_stock
 
 from src.strat.losers.logic import buy_biggest_losers, sell_biggest_losers_at_open
 from src.trading_day import today_or_previous_trading_day

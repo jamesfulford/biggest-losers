@@ -1,7 +1,7 @@
 from datetime import date
 from typing import cast
 
-from src.criteria import is_etf, is_stock
+from src.data.polygon.asset_class import is_etf, is_stock
 from src.data.polygon.grouped_aggs import Ticker
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class

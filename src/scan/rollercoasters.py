@@ -1,7 +1,7 @@
 from datetime import date
 import logging
 
-from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
+from src.data.polygon.asset_class import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, extract_from_n_candles_ago

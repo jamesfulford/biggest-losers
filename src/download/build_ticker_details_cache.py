@@ -3,7 +3,7 @@ from datetime import date, timedelta
 
 from requests import HTTPError
 
-from src.criteria import is_etf, is_right, is_stock, is_unit, is_warrant
+from src.data.polygon.asset_class import is_etf, is_right, is_stock, is_unit, is_warrant
 from src.parse_period import add_range_args, interpret_args
 from src.trading_day import generate_trading_days, next_trading_day, today
 import logging

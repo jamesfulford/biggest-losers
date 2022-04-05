@@ -4,7 +4,7 @@ import logging
 
 from src.broker.generic import buy_symbol_at_close, get_account, get_positions, sell_symbol_at_open
 from src.scan.losers import get_all_candidates_on_day
-from src.criteria import is_skipped_day
+from src.data.polygon.asset_class import is_skipped_day
 
 
 def buy_biggest_losers(

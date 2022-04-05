@@ -1,5 +1,4 @@
-from datetime import date, datetime
-import os
+from datetime import date
 from typing import Optional
 
 from src.data.polygon.polygon import is_ticker_one_of
@@ -42,43 +41,3 @@ def is_unit_format(ticker: str) -> bool:
 # - FUND
 # - BASKET
 # - LT (Liquidating Trust)
-
-#
-# Skipping days
-#
-
-
-dir_of_script = os.path.dirname(os.path.abspath(__file__))
-days_to_skip_csv_path = os.path.abspath(
-    os.path.join(dir_of_script, "..", "days_to_skip.csv")
-)
-
-
-def get_skipped_days():
-    lines = []
-    with open(days_to_skip_csv_path, "r") as f:
-        lines.extend(f.readlines())
-
-    headers = lines[0].strip().split(",")
-    # remove newlines and header row
-    lines = [l.strip() for l in lines[1:]]
-
-    # convert to dicts
-    raw_dict_lines = [dict(zip(headers, l.strip().split(","))) for l in lines]
-
-    lines = [
-        {"date": datetime.strptime(
-            d["date"], "%Y-%m-%d").date(), "reason": d["reason"]}
-        for d in raw_dict_lines
-    ]
-
-    return lines
-
-
-_skipped_days_set = set(
-    map(lambda d: d["date"].strftime("%Y-%m-%d"), get_skipped_days())
-)
-
-
-def is_skipped_day(today):
-    return today.strftime("%Y-%m-%d") in _skipped_days_set

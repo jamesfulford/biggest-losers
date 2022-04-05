@@ -1,7 +1,7 @@
 from typing import cast
 from datetime import date
 
-from src.criteria import is_stock
+from src.data.polygon.asset_class import is_stock
 from src.data.yh.stats import get_short_interest
 from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, from_yesterday_candle

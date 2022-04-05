@@ -3,7 +3,7 @@ import os
 from src.strat.losers.stocks import get_biggest_loser_filter_criteria_kwargs
 
 from src.intention import log_intentions
-from src.criteria import is_warrant
+from src.data.polygon.asset_class import is_warrant
 from src.broker.generic import buy_symbol_market
 
 from src.strat.losers.logic import buy_biggest_losers, sell_biggest_losers_at_open
