@@ -8,5 +8,6 @@ Each environment will have 2 folders each:
     -   `./outputs` (spreadsheets, for example)
     -   `./logs`
     -   `./cache` (API results. Can copy from cache to cache if we wish, but sharing cache can lead to bad things)
+    -   `./chronicles` (JSONL files of scanning results)
 
 Additionally, each environment will have its own separate set of cron jobs.
