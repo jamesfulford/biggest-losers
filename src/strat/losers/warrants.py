@@ -2,7 +2,7 @@ from datetime import date, datetime
 import os
 from src.strat.losers.stocks import get_biggest_loser_filter_criteria_kwargs
 
-from src.intention import log_intentions
+from src.outputs.intention import log_intentions
 from src.data.polygon.asset_class import is_warrant
 from src.broker.generic import buy_symbol_market
 

@@ -4,8 +4,8 @@ import logging
 import os
 from typing import Iterable, Tuple, TypedDict
 from src.backtest.chronicle.read import ChronicleEntry, batch_by_minute, read_backtest_chronicle, read_chronicle
-from src.csv_dump import write_csv
-from src.pathing import get_paths
+from src.outputs.csv_dump import write_csv
+from src.outputs.pathing import get_paths
 
 
 def collect_scanner_ticker_spans(feed: Iterable[ChronicleEntry]) -> Iterable[Tuple[ChronicleEntry, datetime]]:

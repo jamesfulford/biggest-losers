@@ -188,11 +188,11 @@ case $action in
         ;;
 
     "prepare-grouped-aggs-cache")
-        run_python -c 'import src.log;from src.download.build_grouped_aggs_cache import main; main()' $@
+        run_python -c 'import src.log;from src.scripts.build_grouped_aggs_cache import main; main()' $@
         ;;
     
     "prepare-ticker-details-cache")
-        run_python -c 'import src.log;from src.download.build_ticker_details_cache import main; main()' $@
+        run_python -c 'import src.log;from src.scripts.build_ticker_details_cache import main; main()' $@
         ;;
 
     "collector-nightly")

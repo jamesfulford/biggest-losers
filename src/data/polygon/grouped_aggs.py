@@ -4,7 +4,7 @@ from time import sleep
 from typing import Optional, Tuple, TypeVar, TypedDict, cast
 import requests
 
-from src.cache import (
+from src.caching.basics import (
     clear_json_cache,
     get_entry_time,
     get_matching_entries,

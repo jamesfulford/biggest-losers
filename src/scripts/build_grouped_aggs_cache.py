@@ -3,7 +3,7 @@ import argparse
 import logging
 from typing import cast
 from requests import HTTPError
-from src.cache import clear_json_cache
+from src.caching.basics import clear_json_cache
 
 from src.data.polygon.grouped_aggs import (
     fetch_grouped_aggs,
@@ -11,7 +11,7 @@ from src.data.polygon.grouped_aggs import (
     get_current_cache_range,
     prepare_cache_grouped_aggs,
 )
-from src.parse_period import add_range_args, interpret_args
+from src.scripts.helpers.parse_period import add_range_args, interpret_args
 from src.trading_day import (
     generate_trading_days,
     get_market_open_on_day,

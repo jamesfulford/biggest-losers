@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 import json
 
-from src.pathing import get_paths
+from src.outputs.pathing import get_paths
 
 
 def _get_cache_path(key: str) -> str:

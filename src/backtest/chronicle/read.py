@@ -5,7 +5,7 @@ import os
 from typing import Iterable, Iterator, Optional, TypedDict, cast
 
 from src.data.polygon.grouped_aggs import Ticker
-from src.pathing import get_paths
+from src.outputs.pathing import get_paths
 
 #
 # TODO: instead of Chronicle being an array of scanner tickers,

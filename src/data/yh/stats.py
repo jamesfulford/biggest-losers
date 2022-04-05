@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Optional, cast
 import requests
-from src.cache import get_matching_entries, read_json_cache, write_json_cache
+from src.caching.basics import get_matching_entries, read_json_cache, write_json_cache
 from src.trading_day import get_last_market_close, now
 
 

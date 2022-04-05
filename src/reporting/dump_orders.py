@@ -3,7 +3,7 @@ import logging
 import sys
 
 from src.broker.generic import get_filled_orders
-from src.pathing import get_paths
+from src.outputs.pathing import get_paths
 
 
 def main():

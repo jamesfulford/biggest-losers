@@ -6,8 +6,8 @@ from copy import copy
 import json
 
 from src.broker.dry_run import DRY_RUN
-from src.jsonl_dump import append_jsonl
-from src.pathing import get_paths
+from src.outputs.jsonl_dump import append_jsonl
+from src.outputs.pathing import get_paths
 
 
 MARKET_TZ = ZoneInfo("America/New_York")

@@ -8,7 +8,7 @@ from src.scan.utils.asset_class import enrich_tickers_with_asset_class
 from src.scan.utils.indicators import enrich_tickers_with_indicators, use_indicator
 from src.trading_day import generate_trading_days
 from src.data.polygon.grouped_aggs import Ticker, get_cache_prepared_date_range_with_leadup_days
-from src.csv_dump import write_csv
+from src.outputs.csv_dump import write_csv
 
 from talib.abstract import RSI
 
@@ -116,7 +116,7 @@ def prepare_biggest_losers_csv(path: str, start: date, end: date):
 
 
 def prepare_csv():
-    from src.pathing import get_paths
+    from src.outputs.pathing import get_paths
 
     path = get_paths()["data"]["outputs"]["daily_rsi_oversold_csv"]
 

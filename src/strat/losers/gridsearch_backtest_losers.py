@@ -520,7 +520,7 @@ def build_criteria_set():
 
 
 if __name__ == "__main__":
-    from src.pathing import get_paths
+    from src.outputs.pathing import get_paths
 
     path = get_paths()["data"]["outputs"]["biggest_losers_csv"]
 

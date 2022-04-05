@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from src.cache import read_json_cache, write_json_cache
+from src.caching.basics import read_json_cache, write_json_cache
 
 FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
 

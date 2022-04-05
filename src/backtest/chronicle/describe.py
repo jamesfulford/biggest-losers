@@ -5,7 +5,7 @@ import os
 from typing import Iterator, Optional, Tuple
 from src.backtest.chronicle.read import ChronicleEntry, read_backtest_chronicle, read_recorded_chronicle
 
-from src.pathing import get_paths
+from src.outputs.pathing import get_paths
 
 
 def get_chronicled_scanners() -> list[str]:

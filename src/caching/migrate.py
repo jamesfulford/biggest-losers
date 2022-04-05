@@ -2,8 +2,8 @@ from functools import cache
 import logging
 import os
 import shutil
-from src.cache import get_matching_entries
-from src.pathing import get_paths
+from src.caching.basics import get_matching_entries
+from src.outputs.pathing import get_paths
 
 
 def main():

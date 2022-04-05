@@ -1,6 +1,6 @@
 from datetime import date
 
-from src.cache import read_json_cache, write_json_cache
+from src.caching.basics import read_json_cache, write_json_cache
 
 
 #
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     write_new_model = True
     model_cache_entry = "modelv2"
 
-    from src.pathing import get_paths
+    from src.outputs.pathing import get_paths
 
     path = get_paths()["data"]["outputs"]["biggest_losers_csv"]
     baseline_start_date = date(2021, 1, 1)

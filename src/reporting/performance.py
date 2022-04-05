@@ -4,9 +4,9 @@ from typing import Any, Mapping, Optional, cast
 import argparse
 
 
-from src.csv_dump import write_csv
-from src.intention import get_intentions_by_algo
-from src.pathing import get_paths
+from src.outputs.csv_dump import write_csv
+from src.outputs.intention import get_intentions_by_algo
+from src.outputs.pathing import get_paths
 from src.reporting.trades import Trade, get_closed_trades_from_orders_csv
 
 

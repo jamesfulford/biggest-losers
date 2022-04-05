@@ -9,7 +9,7 @@ import logging
 import numpy as np
 from talib.abstract import RSI, WILLR
 from requests.exceptions import HTTPError
-from src.intention import log_intentions
+from src.outputs.intention import log_intentions
 from src.strat.utils.pdt import assert_pdt
 
 from src.trading_day import now, today

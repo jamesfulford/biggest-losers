@@ -6,7 +6,7 @@ from typing import Optional, cast
 import requests
 from src.data.td.td import get_quote
 
-from src.pathing import get_paths
+from src.outputs.pathing import get_paths
 from src.broker.dry_run import DRY_RUN
 from src.trading_day import MARKET_TIMEZONE
 
