@@ -39,6 +39,10 @@ function run_python () {
     run python3 -u "$@"
 }
 
+function run_py_main () {
+    run_python -c "import src.outputs.log; from $1 import main; main()" "${@:2}"
+}
+
 function fail_script() {
     echo "ERROR $1"
     exit 1
@@ -90,21 +94,21 @@ case $action in
     # Strategy: biggest loser stocks
     "biggest-loser-stocks-buy")
         refresh_tokens_if_needed
-        run_python -c 'import src.outputs.log; from src.strat.losers.stocks import main; main()' "buy"
+        run_py_main src.strat.losers.stocks "buy"
         ;;
     "biggest-loser-stocks-sell")
         refresh_tokens_if_needed
-        run_python -c 'import src.outputs.log; from src.strat.losers.stocks import main; main()' "sell"
+        run_py_main src.strat.losers.stocks "sell"
         ;;
 
     # Strategy: biggest loser warrants
     "biggest-loser-warrants-buy")
         refresh_tokens_if_needed
-        run_python -c 'import src.outputs.log; from src.strat.losers.warrants import main; main()' "buy"
+        run_py_main src.strat.losers.warrants "buy"
         ;;
     "biggest-loser-warrants-sell")
         refresh_tokens_if_needed
-        run_python -c 'import src.outputs.log; from src.strat.losers.warrants import main; main()' "sell"
+        run_py_main src.strat.losers.warrants "sell"
         ;;
 
     # Strategy: meemaw
@@ -115,31 +119,31 @@ case $action in
         ;;
 
     "meemaw")
-        run_python -c 'import src.outputs.log;from src.strat.meemaw.live import main; main()'
+        run_py_main src.strat.meemaw.live
         ;;
 
     "clear-account")
-        run_python -c 'import src.outputs.log;from src.exits.clear_account import main; main()'
+        run_py_main src.exits.clear_account
         ;;
 
     # Strategy: daily bracketing on NRGU
     "bracketing")
-        run_python -c 'import src.outputs.log; from src.strat.brackets.live import main; main()'
+        run_py_main src.strat.brackets.live
         ;;
 
     # Strategy: Minion (NRGU 1m)
     "minion")
-        run_python -c 'import src.outputs.log; from src.strat.minion.live import main; main()'
+        run_py_main src.strat.minion.live
         ;;
     
     # Supernovas
     "supernovas")
         refresh_tokens_if_needed
         echo "Entering..."
-        run_python -c "import src.outputs.log; from src.strat.supernovas.enter import main; main()"
+        run_py_main src.strat.supernovas.enter
         echo
         echo "Setting up exit..."
-        run_python -c "import src.outputs.log; from src.strat.supernovas.egress import main; main()" 1.1 0.9
+        run_py_main src.strat.supernovas.egress 1.1 0.9
         ;;
 
     # Operations
@@ -156,8 +160,7 @@ case $action in
     # Performance
     "dump-orders")
         refresh_tokens_if_needed
-        run_python -c "import src.outputs.log; from src.reporting.dump_orders import main; main()" $1
-        echo "(return code was $?)"
+        run_py_main src.reporting.dump_orders $1
         ;;
 
     #
@@ -188,11 +191,11 @@ case $action in
         ;;
 
     "prepare-grouped-aggs-cache")
-        run_python -c 'import src.outputs.log;from src.scripts.build_grouped_aggs_cache import main; main()' $@
+        run_py_main src.scripts.build_grouped_aggs_cache "$@"
         ;;
     
     "prepare-ticker-details-cache")
-        run_python -c 'import src.outputs.log;from src.scripts.build_ticker_details_cache import main; main()' $@
+        run_py_main src.scripts.build_ticker_details_cache "$@"
         ;;
 
     "collector-nightly")
@@ -240,7 +243,7 @@ case $action in
         ;;
 
     "analyze-performance")
-        run_python -c "import src.outputs.log; from src.reporting.performance import main; main()" "$@"
+        run_py_main src.reporting.performance "$@"
         ;;
 
     "build-drive-outputs")
