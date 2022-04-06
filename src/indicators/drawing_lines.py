@@ -21,6 +21,9 @@ def pair_indices_with_values(values: list[T], indices: list[int]) -> list[Tuple[
 
 
 def yield_rising_highs(values: list):
+    if len(values) <= 2:
+        return
+
     max_value = values[0]
 
     if max_value > values[1]:
@@ -38,6 +41,9 @@ def find_local_maximas(values: list[float]) -> list[int]:
     Includes ends as local maxima.
     In case of ties, prefers the rightmost index.
     """
+    if len(values) <= 2:
+        return []
+
     local_maximas = []
     first, second = values[0], values[1]
     if first > second:
@@ -65,12 +71,14 @@ def find_lines(candles: list[CandleLike]) -> Tuple[list[Tuple[Union[datetime, da
         i.e. the last high line is higher than the first high line.
         i.e. the last low line is lower than the first low line.
     """
+    if not candles:
+        return [], []
 
     highs = [c['high'] for c in candles]
     local_maxima_with_index = pair_indices_with_values(
         highs, find_local_maximas(highs))
     rising_highs = list(yield_rising_highs(
-        list(reversed(local_maxima_with_index))))
+        list(reversed(local_maxima_with_index)))) if local_maxima_with_index else []
     rising_high_candles = [candles[i] for _, i in rising_highs]
     high_lines = [(c.get('datetime', c.get('date')), c['high'])
                   for c in rising_high_candles]
@@ -79,7 +87,7 @@ def find_lines(candles: list[CandleLike]) -> Tuple[list[Tuple[Union[datetime, da
     local_maxima_with_index = pair_indices_with_values(
         negative_lows, find_local_maximas(negative_lows))
     declining_lows_with_negated_values = list(yield_rising_highs(
-        list(reversed(local_maxima_with_index))))
+        list(reversed(local_maxima_with_index)))) if local_maxima_with_index else []
     declining_low_candles = [candles[i]
                              for _, i in declining_lows_with_negated_values]
     low_lines = [(c.get('datetime', c.get('date')), c['low'])
@@ -157,14 +165,17 @@ def extract_james_lines(*, candles_intraday: list[CandleIntraday], candles_d: li
     past_low_lines = list(remove_duplicate_lines(
         low_lines_before_today_intraday + low_lines_d))
 
-    today_high, today_low = high_lines_today_intraday[-1]['value'], low_lines_today_intraday[-1]['value']
+    if high_lines_today_intraday:
+        today_high = high_lines_today_intraday[-1]['value']
+        for line in past_high_lines:
+            if line['value'] <= today_high:
+                line['state'] = 'inactive'
 
-    for line in past_high_lines:
-        if line['value'] <= today_high:
-            line['state'] = 'inactive'
-    for line in past_low_lines:
-        if line['value'] >= today_low:
-            line['state'] = 'inactive'
+    if low_lines_today_intraday:
+        today_low = low_lines_today_intraday[-1]['value']
+        for line in past_low_lines:
+            if line['value'] >= today_low:
+                line['state'] = 'inactive'
 
     return sorted(past_low_lines + low_lines_today_intraday + past_high_lines + high_lines_today_intraday, key=lambda x: x['value'], reverse=True)
 
