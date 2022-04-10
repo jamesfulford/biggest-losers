@@ -112,15 +112,25 @@ def find_james_lines(symbol: str, day: Optional[date] = None, ignore_last_n_5m_c
                                 timedelta(days=7), this_day)
     if not candles_1m:
         return None
+
+    candles_d = get_d_candles(symbol, today() -
+                              timedelta(days=180), previous_trading_day(today()))
+    if not candles_d:
+        return None
+
+    return get_james_lines(candles_1m, candles_d, ignore_last_n_5m_candles)
+
+
+def get_james_lines(candles_1m: list[CandleIntraday], candles_d: list[CandleInterday], ignore_last_n_5m_candles: int = 5) -> list[Line]:
     candles_1m = filter_candles_during_market_hours(candles_1m)
     # TODO: candles_1m are unadjusted candles, need to detect if is an issue
     candles_5m = aggregate_intraday_candles(candles_1m, minute_candles=5)
     candles_5m = candles_5m[:-ignore_last_n_5m_candles]
 
-    candles_d = get_d_candles(symbol, today() -
-                              timedelta(days=180), today())
-    if not candles_d:
-        return None
+    candles_5m = [c for c in candles_5m if c['datetime']
+                  > candles_5m[-1]['datetime'] - timedelta(days=7)]
+    candles_d = [c for c in candles_d if c['date'] >
+                 candles_d[-1]['date'] - timedelta(days=180)]
 
     return extract_james_lines(candles_intraday=candles_5m, candles_d=candles_d)
 
