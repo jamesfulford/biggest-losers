@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart</title>
+    <script src="https://unpkg.com/lightweight-charts@3.4.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <script type="module">
+
+const data = await fetch("./chart.json").then(response => response.json());
+
+const chart = LightweightCharts.createChart(document.body, {
+  width: window.innerWidth,
+  height: window.innerHeight,
+  layout: {
+        backgroundColor: '#2B2B43',
+        lineColor: '#2B2B43',
+        textColor: '#D9D9D9',
+    },
+    watermark: {
+        color: 'rgba(0, 0, 0, 0)',
+    },
+    crosshair: {
+        color: '#758696',
+    },
+    grid: {
+        vertLines: {
+            color: '#2B2B43',
+        },
+        horzLines: {
+            color: '#363C4E',
+        },
+    },
+    timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+    },
+});
+
+var series = chart.addCandlestickSeries();
+
+series.setData(data.candles);
+
+data.lines.forEach(l => {
+    const line = {
+        lineWidth: 1,
+        axisLabelVisible: true,
+        ...l,
+        lineStyle: l.lineStyle == "solid" ? LightweightCharts.LineStyle.Solid : LightweightCharts.LineStyle.Dashed,
+    }
+    series.createPriceLine(line);
+})
+chart.timeScale().scrollToPosition(100);
+
+window.chart = chart
+
+    </script>
+    
+</body>
+</html>
