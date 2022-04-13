@@ -3,13 +3,13 @@ from copy import deepcopy
 from datetime import date, datetime, time, timedelta
 import logging
 import os
-from typing import Iterable, Optional, TypedDict, cast
+from typing import Iterable, Optional, cast
 from src.outputs import jsonl_dump
 from src.backtest.chronicle.read import HistoricalChronicleEntry, get_scanner_backtest_chronicle_path
-from src.data.finnhub.finnhub import CandleIntraday, get_candles
+from src.data.finnhub.finnhub import get_candles
+from src.data.types.candles import CandleIntraday
 from src.data.polygon.grouped_aggs import Ticker, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
 from src.scripts.helpers.parse_period import add_range_args, interpret_args
-from src.outputs.pathing import get_paths
 
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.scan.utils.scanners import PrescannerFilter, ScannerFilter, get_leadup_period, get_prescanner_filter, get_scanner_filter

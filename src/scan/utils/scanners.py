@@ -3,7 +3,8 @@ from importlib import import_module
 from types import ModuleType
 from typing import Callable, cast
 
-from src.data.finnhub.finnhub import CandleIntraday, get_candles
+from src.data.finnhub.finnhub import get_candles
+from src.data.types.candles import CandleIntraday
 from src.data.polygon.grouped_aggs import Ticker
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
 from src.trading_day import today

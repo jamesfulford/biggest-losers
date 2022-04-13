@@ -5,7 +5,7 @@ from typing import cast
 from src.data.finnhub.aggregate_candles import aggregate_intraday_candles, filter_candles_during_market_hours
 
 from src.data.finnhub.finnhub import get_1m_candles, get_d_candles
-from src.indicators.drawing_lines import get_james_lines
+from src.indicators.drawing_lines_logic import get_james_lines
 from src.trading_day import now, today
 from src.wait import get_next_minute_mark, wait_until
 

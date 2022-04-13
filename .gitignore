@@ -1,3 +1,4 @@
 *.env
 __pycache__
 view/chart.json
+view/code.tar

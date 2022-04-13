@@ -1,6 +1,6 @@
 from pprint import pprint
 from typing import cast
-from src.data.finnhub.finnhub import CandleIntraday, get_candles
+from src.data.types.candles import CandleIntraday
 from src.trading_day import is_during_market_hours, today
 
 
@@ -42,6 +42,7 @@ def filter_candles_during_market_hours(candles: list[CandleIntraday]) -> list[Ca
 
 
 def main():
+    from src.data.finnhub.finnhub import get_candles
     candles_1m = get_candles("AAPL", "1", today(), today())
     if not candles_1m:
         print("No candles for 1m")

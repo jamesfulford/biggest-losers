@@ -1,9 +1,10 @@
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Iterable
 from src.data.finnhub.aggregate_candles import aggregate_intraday_candles, filter_candles_during_market_hours
-from src.data.finnhub.finnhub import CandleIntraday, get_1m_candles, get_d_candles
-from src.indicators.drawing_lines import extract_james_lines
+from src.data.finnhub.finnhub import get_1m_candles, get_d_candles
+from src.data.types.candles import CandleIntraday
+from src.indicators.drawing_lines_logic import extract_james_lines
 from src.trading_day import generate_trading_days, previous_trading_day, today
 
 

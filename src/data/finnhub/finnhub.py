@@ -8,27 +8,12 @@ from zoneinfo import ZoneInfo
 import requests
 
 from src.caching.basics import read_json_cache, write_json_cache
+from src.data.types.candles import CandleInterday, CandleIntraday
 
 FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
 
 
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
-
-
-class Candle(TypedDict):
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: int
-
-
-class CandleIntraday(Candle):
-    datetime: datetime
-
-
-class CandleInterday(Candle):
-    date: date
 
 
 def get_1m_candles(symbol: str, start: date, end: date) -> Optional[list[CandleIntraday]]:
