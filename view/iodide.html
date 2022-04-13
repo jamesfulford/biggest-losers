@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>
+  </head>
+  <body>
+    Pyodide test page <br>
+    Open your browser console to see Pyodide output
+    <script type="text/javascript">
+
+
+        function get_candles(symbol, resolution, start, end) {
+          const _start = new Date(start.getTime())
+          _start.setHours(0, 0, 0)
+          const _end = new Date(end.getTime())
+          _end.setHours(23, 59, 59)
+          
+          const startTime = Math.floor(_start.getTime() / 1000);
+          const endTime = Math.ceil(_end.getTime() / 1000);
+          // get candles from finnhub
+          const token = new URLSearchParams(window.location.search).get('token');
+          return fetch(
+            'https://finnhub.io/api/v1/stock/candle?symbol=' + symbol + '&resolution=' + resolution + '&from=' + startTime + '&to=' + endTime + '&token=' + token,
+            {
+              method: 'GET',
+            }
+          ).then(response => response.json())
+          .then(data => {
+            return data.t.map((t, i) => {
+              const d = new Date(t * 1000)
+              return {
+                date: d,
+                datetime: d,
+                open: data.o[i],
+                high: data.h[i],
+                low: data.l[i],
+                close: data.c[i],
+                volume: data.v[i],
+              }
+              
+            })
+          })
+        }
+
+
+        async function main() {
+            let pyodide = await loadPyodide();
+            await pyodide.runPythonAsync(`
+                from pyodide.http import pyfetch
+                response = await pyfetch("./code.tar") # .zip, .whl, ...
+                await response.unpack_archive() # by default, unpacks to the current dir
+            `)
+
+            const now = Date.now()
+            const yesterday = now - 24 * 60 * 60 * 1000
+            const seven_days_ago = now - 7 * 24 * 60 * 60 * 1000
+            const onehundred_eighty_days_ago = now - 180 * 24 * 60 * 60 * 1000
+            
+            candles_1m = await get_candles('AAPL', '1', new Date(seven_days_ago), new Date(now))
+            candles_d = await get_candles('AAPL', 'D', new Date(onehundred_eighty_days_ago), new Date(yesterday))
+
+            pyodide.registerJsModule("inputs", {
+              candles_1m, candles_d
+            })
+            console.log((await pyodide.runPythonAsync(`
+              from src.indicators.drawing_lines_logic import get_james_lines
+              from datetime import datetime, date
+              from zoneinfo import ZoneInfo
+              MARKET_TIMEZONE = ZoneInfo("America/New_York")
+              import inputs
+
+              def convert_candles(candles):
+                return [{
+                  'date': datetime.fromtimestamp(candle['date'].getTime() / 1000).astimezone(MARKET_TIMEZONE).date(),
+                  'datetime': datetime.fromtimestamp(candle['datetime'].getTime() / 1000).astimezone(MARKET_TIMEZONE),
+                  'open': candle['open'],
+                  'high': candle['high'],
+                  'low': candle['low'],
+                  'close': candle['close'],
+                  'volume': candle['volume'],
+                } for candle in candles]
+              inputs.candles_1m.to_py(depth=20)[0]['date']
+
+              candles_1m = convert_candles(inputs.candles_1m.to_py())
+              candles_d = convert_candles(inputs.candles_d.to_py())
+
+              get_james_lines(candles_1m=candles_1m, candles_d=candles_d)
+            `)).toJs({ dict_converter: Object.fromEntries }).map(l => ({
+              ...l,
+              time: new Date(l.time.timestamp() * 1000),
+            })))
+        }
+        main();
+    </script>
+  </body>
+</html>
