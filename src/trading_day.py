@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, date
-import logging
 from typing import Optional, cast
 from zoneinfo import ZoneInfo
 

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Pyodide: run Python interpreter (compiled to WebAssembly) in browser  -->
+        <script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>
+        <!-- lightweight-charts: easily display TradingView-style charts -->
+        <script src="https://unpkg.com/lightweight-charts@3.4.0/dist/lightweight-charts.standalone.production.js"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: sans-serif;
+            }
+        </style>
+    </head>
+    <body>
+        <script type="text/javascript">
+            function get_candles(symbol, resolution, start, end) {
+                const _start = new Date(start.getTime());
+                _start.setHours(0, 0, 0);
+                const _end = new Date(end.getTime());
+                _end.setHours(23, 59, 59);
+
+                const startTime = Math.floor(_start.getTime() / 1000);
+                const endTime = Math.ceil(_end.getTime() / 1000);
+                // get candles from finnhub
+                const token = new URLSearchParams(window.location.search).get(
+                    "token"
+                );
+                return fetch(
+                    "https://finnhub.io/api/v1/stock/candle?symbol=" +
+                        symbol +
+                        "&resolution=" +
+                        resolution +
+                        "&from=" +
+                        startTime +
+                        "&to=" +
+                        endTime +
+                        "&token=" +
+                        token,
+                    {
+                        method: "GET",
+                    }
+                )
+                    .then((response) => response.json())
+                    .then((data) => {
+                        return data.t.map((t, i) => {
+                            const d = new Date(t * 1000);
+                            return {
+                                date: d,
+                                datetime: d,
+                                open: data.o[i],
+                                high: data.h[i],
+                                low: data.l[i],
+                                close: data.c[i],
+                                volume: data.v[i],
+                            };
+                        });
+                    });
+            }
+
+            async function prepareScript() {
+                window.pyodide = await loadPyodide();
+                await pyodide.runPythonAsync(`
+              from pyodide.http import pyfetch
+              response = await pyfetch("./code.tar") # .zip, .whl, ...
+              await response.unpack_archive() # by default, unpacks to the current dir
+          `);
+            }
+
+            async function find_james_lines_with_candles(symbol) {
+                const now = Date.now();
+                const yesterday = now - 24 * 60 * 60 * 1000;
+                const seven_days_ago = now - 7 * 24 * 60 * 60 * 1000;
+                const onehundred_eighty_days_ago =
+                    now - 180 * 24 * 60 * 60 * 1000;
+
+                candles_1m = await get_candles(
+                    symbol,
+                    "1",
+                    new Date(seven_days_ago),
+                    new Date(now)
+                );
+                candles_d = await get_candles(
+                    symbol,
+                    "D",
+                    new Date(onehundred_eighty_days_ago),
+                    new Date(yesterday)
+                );
+
+                // Pass it off to my scripts in pyodide
+                pyodide.registerJsModule("inputs", {
+                    candles_1m,
+                    candles_d,
+                });
+                const { lines, candles_5m } = (
+                    await pyodide.runPythonAsync(`
+              from datetime import datetime, date
+              from zoneinfo import ZoneInfo
+
+              from src.indicators.drawing_lines_logic import get_james_lines
+              from src.data.finnhub.aggregate_candles import aggregate_intraday_candles, filter_candles_during_market_hours
+
+              import inputs
+
+              MARKET_TIMEZONE = ZoneInfo("America/New_York")
+
+              def convert_candles(candles):
+                return [{
+                  'date': datetime.fromtimestamp(candle['date'].getTime() / 1000).astimezone(MARKET_TIMEZONE).date(),
+                  'datetime': datetime.fromtimestamp(candle['datetime'].getTime() / 1000).astimezone(MARKET_TIMEZONE),
+                  'open': candle['open'],
+                  'high': candle['high'],
+                  'low': candle['low'],
+                  'close': candle['close'],
+                  'volume': candle['volume'],
+                } for candle in candles]
+
+              candles_1m = convert_candles(inputs.candles_1m.to_py())
+              candles_1m = filter_candles_during_market_hours(candles_1m)
+              candles_5m = aggregate_intraday_candles(candles_1m, minute_candles=5)
+              candles_d = convert_candles(inputs.candles_d.to_py())
+
+              lines = get_james_lines(candles_1m=candles_1m, candles_d=candles_d)
+              {
+                'lines': lines,
+                'candles_5m': candles_5m,
+              }
+            `)
+                ).toJs({ dict_converter: Object.fromEntries });
+
+                return {
+                    lines: lines.map((l) => ({
+                        ...l,
+                        time: new Date(l.time.timestamp() * 1000),
+                    })),
+                    candles: candles_5m.map((c) => ({
+                        ...c,
+                        datetime: new Date(c.datetime.timestamp() * 1000),
+                    })),
+                };
+            }
+        </script>
+
+        <script type="module">
+            //
+            // Input validation
+            //
+            const params = new URLSearchParams(window.location.search);
+
+            const symbol = params.get("symbol");
+            if (!symbol) {
+                alert(
+                    "Ticker symbol not specified! Please add ?symbol=<ticker> to URL."
+                );
+                throw new Error("symbol not specified");
+            }
+            document.title = symbol;
+
+            const token = params.get("token");
+            if (!token) {
+                alert(
+                    "Finnhub.io API key not specified! Please add ?token=<API_KEY> to URL."
+                );
+                throw new Error("token not specified");
+            }
+
+            //
+            // Setup
+            //
+            await prepareScript();
+
+            const chart = LightweightCharts.createChart(document.body, {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                layout: {
+                    backgroundColor: "#2B2B43",
+                    lineColor: "#2B2B43",
+                    textColor: "#D9D9D9",
+                },
+                watermark: {
+                    color: "rgba(0, 0, 0, 0)",
+                },
+                crosshair: {
+                    color: "#758696",
+                },
+                grid: {
+                    vertLines: {
+                        color: "#2B2B43",
+                    },
+                    horzLines: {
+                        color: "#363C4E",
+                    },
+                },
+                timeScale: {
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+            });
+
+            const series = chart.addCandlestickSeries();
+
+            chart.timeScale().scrollToPosition(100);
+
+            window.chart = chart;
+            window.priceLines = [];
+
+            console.log("Loading data...");
+            await updateChart(true);
+            console.log("Initial data loaded.");
+
+            //
+            // Loop
+            //
+            // TODO: longevity test, Pyodide docs warn about memory leaks
+            setInterval(async () => {
+                console.log("Updating data...");
+                await updateChart();
+                console.log("Update completed.");
+            }, 30 * 1000);
+
+            async function updateChart(should_set = false) {
+                const { lines: raw_lines, candles: raw_candles } =
+                    await find_james_lines_with_candles(symbol);
+
+                const candles = raw_candles.map((c) => ({
+                    ...c,
+                    time:
+                        c["datetime"].getTime() / 1000 -
+                        c["datetime"].getTimezoneOffset() * 60,
+                }));
+
+                if (should_set) {
+                    series.setData(candles);
+                } else {
+                    series.update(candles[candles.length - 1]);
+                }
+
+                // TODO: speed this up, do a diff instead of a full redraw
+                window.priceLines.forEach((l) => {
+                    series.removePriceLine(l);
+                });
+                window.priceLines = [];
+                const lines = raw_lines.map((l) => ({
+                    title: l["source"],
+                    price: l["value"],
+                    color: l["state"] == "active" ? "#2962ff" : "#00bcd4",
+                    lineWidth: l["state"] == "active" ? 2 : 0.5,
+                    lineStyle: l["state"] == "active" ? "solid" : "dashed",
+                    axisLabelVisible: l["state"] == "active",
+                }));
+                lines.forEach((l) => {
+                    const line = {
+                        lineWidth: 1,
+                        axisLabelVisible: true,
+                        ...l,
+                        lineStyle:
+                            l.lineStyle == "solid"
+                                ? LightweightCharts.LineStyle.Solid
+                                : LightweightCharts.LineStyle.Dashed,
+                    };
+                    const priceLine = series.createPriceLine(line);
+                    window.priceLines.push(priceLine);
+                });
+            }
+        </script>
+    </body>
+</html>
