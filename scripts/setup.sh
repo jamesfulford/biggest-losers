@@ -20,6 +20,7 @@ mkdir -p $DATA_DIR/cache/finnhub/candles
 mkdir -p $DATA_DIR/cache/polygon/candles
 mkdir -p $DATA_DIR/cache/polygon/ticker_details
 mkdir -p $DATA_DIR/cache/polygon/grouped_aggs
+mkdir -p $DATA_DIR/cache/polygon/option_chains
 mkdir -p $DATA_DIR/cache/yh_finance/v3_stats
 mkdir -p $DATA_DIR/cache/td/fundamentals
 
