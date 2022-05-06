@@ -3,6 +3,7 @@ from datetime import date, datetime
 import json
 import os
 from typing import Iterable, Iterator, Optional, TypedDict, cast
+from src.outputs.jsonl_dump import read_jsonl_lines
 
 from src.data.polygon.grouped_aggs import Ticker
 from src.outputs.pathing import get_paths
@@ -13,11 +14,6 @@ from src.outputs.pathing import get_paths
 #      is a timestamp, some metadata, and a list of scanner tickers, if any.
 #      (otherwise, a gap and an empty scanner result are indistinguishable)
 #
-
-
-def _read_jsonl_lines(path: str) -> Iterator[dict]:
-    with open(path) as f:
-        yield from (json.loads(line) for line in f)
 
 
 class ChronicleEntry(TypedDict):
@@ -41,7 +37,7 @@ def get_chronicle_path(scanner_name: str, chron_type: str, day: date, name: str)
 
 
 def read_chronicle(scanner_name: str, chron_type: str, day: date, name: str) -> Iterator[ChronicleEntry]:
-    jsonl_feed = _read_jsonl_lines(
+    jsonl_feed = read_jsonl_lines(
         get_chronicle_path(scanner_name, chron_type, day, name))
     feed = ({
         "now": datetime.strptime(entry['now'], "%Y-%m-%dT%H:%M:%S%z"),
@@ -84,7 +80,7 @@ def get_scanner_backtest_chronicle_path(scanner_name: str, cache_built_date: dat
 
 
 def read_backtest_chronicle(scanner: str, cache_built_date: date, commit_id: Optional[str] = None) -> Iterator[HistoricalChronicleEntry]:
-    jsonl_feed = _read_jsonl_lines(
+    jsonl_feed = read_jsonl_lines(
         get_scanner_backtest_chronicle_path(scanner, cache_built_date, commit_id))
     feed = ({
         "now": datetime.strptime(entry['now'], "%Y-%m-%dT%H:%M:%S%z"),

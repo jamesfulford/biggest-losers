@@ -1,10 +1,12 @@
 from datetime import datetime
 import logging
-from typing import Iterable, Optional, TypedDict
+import typing
 from zoneinfo import ZoneInfo
 
+from src.outputs.jsonl_dump import read_jsonl_lines
 
-class Trade(TypedDict):
+
+class Trade(typing.TypedDict):
     symbol: str
     opened_at: datetime
     closed_at: datetime
@@ -19,7 +21,28 @@ class Trade(TypedDict):
     is_win: bool
 
 
-def build_trade(trade_orders: list) -> Optional[Trade]:
+def read_trades(path: str) -> typing.Iterator[Trade]:
+    for d in read_jsonl_lines(path):
+        trade = {
+            "symbol": d["symbol"],
+
+            "opened_at": datetime.fromisoformat(d["opened_at"]),
+            "closed_at": datetime.fromisoformat(d["closed_at"]),
+            "quantity": float(d["quantity"]),
+            # TODO: bought_cost being negative doesn't make sense for short/put trades
+            "bought_cost": round(float(d["bought_cost"]), 4),
+            "sold_cost": round(float(d["sold_cost"]), 4),
+            "bought_price": round(float(d["bought_price"]), 4),
+            "sold_price": round(float(d["sold_price"]), 4),
+            "price_difference": round(float(d["price_difference"]), 4),
+            "profit_loss": round(float(d["profit_loss"]), 4),
+            "roi": round(float(d["roi"]), 4),
+            "is_win": bool(d["is_win"]),
+        }
+        yield typing.cast(Trade, trade)
+
+
+def build_trade(trade_orders: list) -> typing.Optional[Trade]:
     # NOTE: this function assumes every buy has 1 sell and no overlapping trades for same symbol.
     symbol = trade_orders[0]["symbol"]
 
@@ -51,7 +74,6 @@ def build_trade(trade_orders: list) -> Optional[Trade]:
         "symbol": symbol,
         "opened_at": buy_order["datetime"],
         "closed_at": sell_order["datetime"],
-        # "orders": trade_orders,
 
         "quantity": quantity,
         "bought_cost": quantity * bought_price,
@@ -95,7 +117,7 @@ def get_filled_orders_from_csv(path):
     return lines
 
 
-def get_closed_trades_from_orders_csv(path, build_trade=build_trade) -> Iterable[Trade]:
+def get_closed_trades_from_orders_csv(path, build_trade=build_trade) -> typing.Iterable[Trade]:
     filled_orders = get_filled_orders_from_csv(path)
     # group orders by symbol, then build trades for each set of orders that bring quantity to 0
     for trade_orders in group_orders_by_trade(filled_orders):

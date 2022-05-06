@@ -1,15 +1,16 @@
 
-from datetime import date
+from datetime import date, datetime
 import logging
-import pprint
-from typing import Iterator
+from typing import Iterator, Optional
+import typing
 from src.chain.utils import filter_option_chain_for_calls, filter_option_chain_for_expiration, filter_option_chain_for_near_the_money, filter_option_chain_for_normality, filter_option_chain_for_out_of_the_money, filter_option_chain_for_puts
 from src.data.finnhub.aggregate_candles import filter_candles_during_market_hours
-from src.data.polygon.get_candles import get_candles
+from src.data.polygon.get_candles import MARKET_TIMEZONE
 from src.data.polygon.get_option_candles import get_option_candles
 from src.data.polygon.option_chain import PolygonOptionChainContract, format_contract_specifier_to_polygon_option_ticker, get_option_chain
 import src.data.finnhub.finnhub as finnhub
-from src.data.types.contracts import OptionCandleGetter
+from src.data.types.candles import CandleIntraday
+from src.data.types.contracts import OptionCandleGetter, OptionContractSpecifier
 
 
 def pick_favorite_contracts(contracts: list[PolygonOptionChainContract], current_price: float, candle_getter: OptionCandleGetter, option_price_range: tuple[int, int] = (1, 5)) -> Iterator[PolygonOptionChainContract]:
@@ -61,28 +62,66 @@ def pick_favorite_contracts(contracts: list[PolygonOptionChainContract], current
             yield contract
 
 
-def main():
-    underlying_symbol = 'AAPL'
-    day = date(2022, 4, 27)
+class OptionSimulation(typing.TypedDict):
+    contract: PolygonOptionChainContract
+    open: float
+    close: float
+    high: float
+    low: float
+    was_low_first: bool
 
+
+def simulate_trade_in_options(underlying_symbol: str, start: datetime, end: datetime, upside: bool) -> Optional[OptionSimulation]:
     # Get necessary data
+    day = start.date()
     candles = finnhub.get_1m_candles(underlying_symbol, day, day)
     if not candles:
         print(f"{underlying_symbol} no candles found")
-        return
+        raise ValueError(f"{underlying_symbol} no candles found")
     candles = filter_candles_during_market_hours(candles)
-    current_price = candles[0]['open']
-    upside = False
+    current_price = [c for c in candles if c['datetime'] <= start][0]['close']
 
     # Find contract
+    def get_truncated_option_candles(spec: OptionContractSpecifier, resolution: str, start_date: date, end_date: date) -> list[CandleIntraday]:
+        candles = get_option_candles(spec, resolution, start_date, end_date)
+        return [c for c in candles if c['datetime'] <= start]
+
     contracts = get_option_chain(underlying_symbol, day)
     if upside:
         contracts = filter_option_chain_for_calls(contracts)
     else:
         contracts = filter_option_chain_for_puts(contracts)
     contract = next(pick_favorite_contracts(
-        contracts, current_price, get_option_candles), None)
+        contracts, current_price, get_truncated_option_candles), None)
     if not contract:
-        print('No contract found')
+        logging.debug("No contract found")
         return
-    pprint.pprint(contract)
+
+    option_candles = get_option_candles(contract['spec'], '1', day, day)
+    entry_candle = next(c for c in reversed(
+        option_candles) if c['datetime'] <= start)
+    exit_candle = next(c for c in option_candles if c['datetime'] >= end)
+    holding_candles = [
+        c for c in option_candles if c['datetime'] >= entry_candle['datetime'] and c['datetime'] <= exit_candle['datetime']]
+
+    entry_candle = holding_candles[0]
+    exit_candle = holding_candles[-1]
+    peak_candle = max(holding_candles, key=lambda c: c['high'])
+    valley_candle = min(holding_candles, key=lambda c: c['low'])
+
+    open_price = entry_candle['open']
+    close_price = exit_candle['close']
+    high_price = peak_candle['high']
+    low_price = valley_candle['low']
+
+    was_low_first = valley_candle['datetime'] <= peak_candle['datetime']
+
+    return {
+        "open": open_price,
+        "close": close_price,
+        "high": high_price,
+        "low": low_price,
+        "was_low_first": was_low_first,
+
+        "contract": contract,
+    }
