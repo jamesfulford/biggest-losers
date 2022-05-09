@@ -29,7 +29,7 @@ def daily_rois(trades: typing.Iterator[Trade]) -> typing.Iterator[typing.Tuple[d
 
 def main():
     # TODO: cli
-    input_path = "/Users/jamesfulford/Downloads/options_trades.jsonl"
+    input_path = "/tmp/options_trades.jsonl"
 
     trades = list(read_trades(input_path))
     rois = list(daily_rois(iter(trades)))
