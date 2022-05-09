@@ -6,19 +6,62 @@ from zoneinfo import ZoneInfo
 from src.outputs.jsonl_dump import read_jsonl_lines
 
 
+class Order(typing.TypedDict):
+    symbol: str
+    datetime: datetime
+    quantity: float
+    is_long: bool
+
+    # + and is_long=True : entered long  position
+    # - and is_long=True : exited  long  position
+
+    # - and is_long=False: entered short position
+    # + and is_long=False: exited  short position
+
+    # if is short, then entering is negative
+
+
 class Trade(typing.TypedDict):
     symbol: str
+
     opened_at: datetime
     closed_at: datetime
     quantity: float
+
+    bought_price: float  # average
+    sold_price: float    # average
+
+    # TODO: make these computed fields
     bought_cost: float
     sold_cost: float
-    bought_price: float
-    sold_price: float
     price_difference: float
     profit_loss: float
     roi: float
     is_win: bool
+
+
+class SimpleTrade(Trade):
+    pass
+
+
+def get_virtual_orders_of_simple_trade(trade: SimpleTrade) -> typing.Tuple[Order, Order]:
+    symbol = trade["symbol"]
+    is_long = trade['quantity'] > 0
+    entry: Order = {
+        "symbol": symbol,
+        "datetime": trade["opened_at"],
+        # if it is short, then quantity is negative
+        "quantity": trade["quantity"],
+        "is_long": is_long,
+    }
+    ex_t: Order = {
+        "symbol": symbol,
+        "datetime": trade["closed_at"],
+        # if it is long, then quantity is negative
+        "quantity": -trade["quantity"],
+        "is_long": is_long,
+    }
+    return entry, ex_t
 
 
 def read_trades(path: str) -> typing.Iterator[Trade]:
