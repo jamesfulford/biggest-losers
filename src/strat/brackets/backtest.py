@@ -1,6 +1,7 @@
 
 from datetime import date, timedelta
-from src.backtest.brackets_historical import backtest_brackets
+import datetime
+from src.backtest.brackets_historical import Bracket, backtest_brackets
 from src.trading_day import generate_trading_days, get_market_close_on_day, get_market_open_on_day, is_during_market_hours
 from src.data.polygon.get_candles import get_candles
 
@@ -20,16 +21,16 @@ def open_bracket_close(day: date):
     market_open = get_market_open_on_day(market_today)
     market_close = get_market_close_on_day(market_today)
     # TODO: try buying more intraday
-    brackets = [
+    brackets: list[Bracket] = [
         {
             "take_profit_percentage": 0.02,
             "stop_loss_percentage": 0.25,  # unusually low please
-            "until": market_open + timedelta(minutes=90),
+            "until": datetime.time(10, 30),
         },
         {
             "take_profit_percentage": 0.02,
             "stop_loss_percentage": 0.005,
-            "until": market_close - timedelta(minutes=1),
+            "until": datetime.time(15, 59),
         },
     ]
 

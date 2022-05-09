@@ -44,6 +44,28 @@ class SimpleTrade(Trade):
     pass
 
 
+def build_trade_object(symbol: str, opened_at: datetime, closed_at: datetime, quantity: float, bought_price: float, sold_price: float) -> Trade:
+    bought_cost = quantity*bought_price
+    sold_cost = quantity*sold_price
+    return {
+        "symbol": symbol,
+        "opened_at": opened_at,
+        "closed_at": closed_at,
+        "quantity": quantity,
+
+        "bought_price": round(bought_price, 4),
+        "sold_price": round(sold_price, 4),
+
+        "bought_cost": round(bought_cost, 4),
+        "sold_cost": round(sold_cost, 4),
+
+        "price_difference": round(sold_price - bought_price, 4),
+        "profit_loss": round(sold_cost - bought_cost, 4),
+        "roi": round((sold_cost - bought_cost) / bought_cost, 4),
+        "is_win": sold_cost > bought_cost,
+    }
+
+
 def get_virtual_orders_of_simple_trade(trade: SimpleTrade) -> typing.Tuple[Order, Order]:
     symbol = trade["symbol"]
     is_long = trade['quantity'] > 0
@@ -85,6 +107,7 @@ def read_trades(path: str) -> typing.Iterator[Trade]:
         yield typing.cast(Trade, trade)
 
 
+# TODO: list[Order]
 def build_trade(trade_orders: list) -> typing.Optional[Trade]:
     # NOTE: this function assumes every buy has 1 sell and no overlapping trades for same symbol.
     symbol = trade_orders[0]["symbol"]
