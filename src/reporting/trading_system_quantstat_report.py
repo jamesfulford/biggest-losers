@@ -35,7 +35,7 @@ def main():
     rois = list(daily_rois(iter(trades)))
     for day, roi in rois:
         print(f'{day}: {roi:>6.1%}',
-              f"{int(roi * -200) * '=':>30}|{int(roi * 200) * '=':<30}")
+              f"{int(roi * -100) * '=':>50}|{int(roi * 100) * '=':<50}")
 
     print()
     print(f'{len(trades)} trades')
