@@ -3,7 +3,9 @@ import json
 import logging
 import os
 from typing import Optional, cast
+import typing
 import requests
+from src.broker.types import Account, FilledOrder, Order, Position
 from src.data.td.td import get_quote
 
 from src.outputs.pathing import get_paths
@@ -64,7 +66,7 @@ def _request(url: str, method: str, **kwargs) -> requests.Response:
 #
 
 
-def _build_account(account):
+def _build_account(account) -> Account:
     """
     Map TD API account to a dict similar to Alpaca API account
     """
@@ -94,7 +96,7 @@ def _build_account(account):
     }
 
 
-def get_account(account_id: Optional[str] = None):
+def get_account(account_id: Optional[str] = None) -> Account:
     response = _get(_build_account_specific_base_url(
         "", account_id=account_id))
 
@@ -110,7 +112,7 @@ def get_accounts():
 #
 # Orders
 #
-def get_filled_orders(start: datetime, end: datetime, account_id: Optional[str] = None):
+def get_filled_orders(start: datetime, end: datetime, account_id: Optional[str] = None) -> list[FilledOrder]:
     if not account_id:
         account_id = get_account_id()
 
@@ -122,7 +124,7 @@ def get_filled_orders(start: datetime, end: datetime, account_id: Optional[str] 
 
     filled_orders = list(
         filter(bool, list(map(_build_order, response.json()))))
-    filled_orders = cast(list[dict], filled_orders)
+    filled_orders = cast(list[FilledOrder], filled_orders)
     filled_orders.sort(key=lambda x: x['filled_at'])
     return filled_orders
 
@@ -140,7 +142,7 @@ def _get_average_fill_price(order):
     return total_cost / total_quantity
 
 
-def _build_order(order) -> Optional[dict]:
+def _build_order(order) -> Optional[Order]:
     """
     Map TD API order to a dict similar to Alpaca API order
     Assumes order has been filled.
@@ -205,7 +207,7 @@ def _build_order(order) -> Optional[dict]:
         logging.warning(
             f"{order['orderId']} has unexpected status {order['status']}")
 
-    new_order = {
+    new_order: Order = {
         'id': str(order['orderId']),
         'symbol': instruction["instrument"]["symbol"].replace("+", ".WS"),
         'qty': order["quantity"],
@@ -222,7 +224,7 @@ def _build_order(order) -> Optional[dict]:
         .replace(tzinfo=timezone.utc)
         .astimezone(MARKET_TIMEZONE),
 
-        'account_id': str(order['accountId']),  # TD-specific
+        # 'account_id': str(order['accountId']),  # TD-specific
     }
 
     if order['status'] == "FILLED":
@@ -234,7 +236,8 @@ def _build_order(order) -> Optional[dict]:
 
         average_fill_price = _get_average_fill_price(order)
 
-        new_order.update({
+        temp = typing.cast(dict, new_order)
+        temp.update({
             'filled_qty': order['filledQuantity'],
             'filled_avg_price': average_fill_price,
             # "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -243,6 +246,7 @@ def _build_order(order) -> Optional[dict]:
             .replace(tzinfo=timezone.utc)
             .astimezone(MARKET_TIMEZONE),
         })
+        new_order = typing.cast(FilledOrder, temp)
 
     return new_order
 
@@ -251,7 +255,7 @@ def _build_order(order) -> Optional[dict]:
 #
 
 
-def _build_position(position):
+def _build_position(position: dict) -> Position:
     """
     Map TD API position to a dict similar to Alpaca API position
     """
@@ -262,7 +266,7 @@ def _build_position(position):
     }
 
 
-def get_positions(account_id: Optional[str] = None):
+def get_positions(account_id: Optional[str] = None) -> list[Position]:
     response = _get(_build_account_specific_base_url("", account_id=account_id), params={
         'fields': 'positions'
     })
@@ -505,27 +509,11 @@ def sell_limit(symbol: str, quantity: int, price: float, allow_premarket: bool =
     }, account_id=account_id)
 
 
-def buy_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
-    quote = get_quote(symbol)
-    price = _round_price(quote['ask'] + buffer)
-    logging.debug(
-        f"Buying {quantity} shares of {symbol} at {price} ({quote['ask']} + {buffer})")
-    buy_limit(symbol, quantity, price, **limit_args)
-
-
-def sell_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
-    quote = get_quote(symbol)
-    price = _round_price(quote['bid'] - buffer)
-    logging.debug(
-        f"Buying {quantity} shares of {symbol} at {price} ({quote['bid']} - {buffer})")
-    sell_limit(symbol, quantity, price, **limit_args)
-
-
 def cancel_order(order_id: str, account_id: Optional[str] = None):
     return _request(_build_account_specific_base_url(f"/orders/{order_id}", account_id=account_id), "DELETE")
 
 
-def get_open_orders(account_id: Optional[str] = None) -> list[dict]:
+def get_open_orders(account_id: Optional[str] = None) -> list[Order]:
     """
     Gets all orders.
     This is TD-specific format, not mapped to shared open-order json format
@@ -537,7 +525,7 @@ def get_open_orders(account_id: Optional[str] = None) -> list[dict]:
     }).json()
     orders = list(filter(lambda o: o['cancelable'], orders))
     orders = list(map(_build_order, orders))
-    orders = cast(list[dict], list(filter(bool, orders)))
+    orders = typing.cast(list[Order], list(filter(bool, orders)))
     return orders
 
 

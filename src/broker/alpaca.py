@@ -4,11 +4,13 @@ import os
 from datetime import datetime, timedelta, timezone
 from time import sleep
 from typing import Optional
+import typing
 import uuid
 
 import requests
 
 from src.broker.dry_run import DRY_RUN
+from src.broker.types import Account, FilledOrder, Order, Position
 from src.data.td.td import get_quote
 from src.trading_day import MARKET_TIMEZONE
 
@@ -207,7 +209,7 @@ def cancel_all_orders() -> None:
     response.raise_for_status()
 
 
-def _build_position(raw_position):
+def _build_position(raw_position) -> Position:
     return {
         "symbol": raw_position["symbol"],
         "qty": float(raw_position["qty"]),
@@ -215,11 +217,11 @@ def _build_position(raw_position):
     }
 
 
-def get_positions():
+def get_positions() -> list[Position]:
     return list(map(_build_position, _get_alpaca("/v2/positions")))
 
 
-def _build_account(account):
+def _build_account(account) -> Account:
     """
     {
         "account_blocked": false,
@@ -262,10 +264,12 @@ def _build_account(account):
         "cash": float(account['cash']),
         "equity": float(account['equity']),
         "long_market_value": float(account['long_market_value']),
+
+        "unsettled_cash": None,
     }
 
 
-def get_account():
+def get_account() -> Account:
     return _build_account(_get_alpaca("/v2/account"))
 
 #
@@ -273,8 +277,8 @@ def get_account():
 #
 
 
-def _build_order(order: dict) -> dict:
-    new_order = {
+def _build_order(order: dict) -> Order:
+    new_order: Order = {
         "id": order["id"],
         "symbol": order["symbol"],
 
@@ -297,7 +301,8 @@ def _build_order(order: dict) -> dict:
         ),
     }
     if order['status'] == 'filled':
-        new_order.update({
+        temp = typing.cast(dict, new_order)
+        temp.update({
             "filled_qty": float(order['filled_qty']),
             "filled_avg_price": float(order['filled_avg_price']),
             "filled_at": datetime.strptime(
@@ -305,11 +310,12 @@ def _build_order(order: dict) -> dict:
             .replace(tzinfo=timezone.utc)
             .astimezone(MARKET_TIMEZONE),
         })
+        new_order = typing.cast(FilledOrder, temp)
 
     return new_order
 
 
-def get_filled_orders(start: datetime, end: datetime):
+def get_filled_orders(start: datetime, end: datetime) -> list[FilledOrder]:
     # inclusive (API is exclusive)
     # sorted from earliest to latest
 
@@ -359,10 +365,10 @@ def get_filled_orders(start: datetime, end: datetime):
     # should already be sorted, but put this here to be safe
     deduped_results.sort(key=lambda x: x["submitted_at"])
 
-    return list(map(_build_order, deduped_results))
+    return [typing.cast(FilledOrder, _build_order(order)) for order in deduped_results]
 
 
-def get_open_orders():
+def get_open_orders() -> list[Order]:
     results = _get_alpaca(f"/v2/orders", params={'status': 'open'})
 
     # should already be sorted, but put this here to be safe
@@ -397,22 +403,6 @@ def sell_limit(symbol: str, quantity: int, price: float, allow_premarket: bool =
         "extended_hours": allow_premarket,
         "time_in_force": "gtc" if gtc else "day",
     })
-
-
-def buy_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
-    quote = get_quote(symbol)
-    price = quote['ask'] + buffer
-    logging.debug(
-        f"Buying {quantity} shares of {symbol} at {price} ({quote['ask']} + {buffer})")
-    buy_limit(symbol, quantity, price, **limit_args)
-
-
-def sell_limit_thru(symbol: str, quantity: int, buffer: float = .05, **limit_args):
-    quote = get_quote(symbol)
-    price = quote['bid'] - buffer
-    logging.debug(
-        f"Buying {quantity} shares of {symbol} at {price} ({quote['bid']} - {buffer})")
-    sell_limit(symbol, quantity, price, **limit_args)
 
 
 def main():
