@@ -11,6 +11,11 @@ from src.outputs.jsonl_dump import append_jsonl
 
 from src.reporting.trades import Trade, build_trade_object, read_trades
 
+# TODO: add new bracket types
+# - trailing stop-loss
+# - leading take-profit (I made this up)
+# - narrowing brackets?
+
 
 class Bracket(typing.TypedDict):
     # TODO: non-percentage limits
@@ -48,6 +53,7 @@ def backtest_brackets(input_candles: list[CandleIntraday], input_brackets: list[
             is_stop_loss = candle["low"] < stop_loss
             is_take_profit = candle["high"] > take_profit
 
+            # TODO: order of conditions as a parameter (so short/put positions can be handled by caller)
             if is_stop_loss:
                 return stop_loss, candle, bracket
             if is_take_profit:
