@@ -40,9 +40,10 @@ def translate_trades_to_options(trades: typing.Iterator[Trade]) -> typing.Iterat
 
 
 def main():
+    from src.outputs import pathing
     # TODO: make this a command line argument
-    input_path = "/tmp/trades.jsonl"
-    output_path = "/tmp/options_trades.jsonl"
+    input_path = pathing.get_paths()['data']["dir"] + '/trades.jsonl'
+    output_path = pathing.get_paths()['data']["dir"] + '/options_trades.jsonl'
     try:
         os.remove(output_path)
     except FileNotFoundError:

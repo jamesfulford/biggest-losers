@@ -233,6 +233,10 @@ case $action in
     "collector-sessionly")
         ./run.sh chronicle record supernovas,meemaw
         ;;
+    
+    "trades-to-pine-script")
+        run_py_main src.outputs.to_pine_script | pbcopy
+        ;;
 
     #
     # Client Operations (across environments/accounts)

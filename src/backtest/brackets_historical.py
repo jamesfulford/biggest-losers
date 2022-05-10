@@ -117,8 +117,11 @@ def get_bracketed_trade(trade: Trade, brackets: list[Bracket]) -> Trade:
 
 
 def main():
-    input_path = "/tmp/options_trades.jsonl"
-    output_path = '/tmp/bracketed_trades.jsonl'
+    from src.outputs import pathing
+
+    input_path = pathing.get_paths()['data']["dir"] + '/options_trades.jsonl'
+    output_path = pathing.get_paths(
+    )['data']["dir"] + '/bracketed_trades.jsonl'
     try:
         os.remove(output_path)
     except FileNotFoundError:

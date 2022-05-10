@@ -1,5 +1,5 @@
+from src.outputs import pathing
 from src.reporting.trades import Order, SimpleTrade, get_virtual_orders_of_simple_trade, read_trades
-import datetime
 import typing
 
 
@@ -23,6 +23,7 @@ int[] trade_times = array.new_int(0)
 bool[] trade_is_long = array.new_bool(0)
 bool[] trade_is_add = array.new_bool(0)
     """
+    script += "\n"
 
     for order in orders:
         script += serialize_order_to_pine_script(order) + '\n'
@@ -44,7 +45,7 @@ plotshape(x and not is_long and not is_add, style=shape.labeldown, color=color.r
 
 def main():
     # TODO: read orders, not trades
-    input_path = "/Users/jamesfulford/Downloads/trades.jsonl"
+    input_path = pathing.get_paths()['data']["dir"] + '/trades.jsonl'
 
     orders = []
     for trade in read_trades(input_path):
