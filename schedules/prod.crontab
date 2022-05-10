@@ -6,5 +6,5 @@ LOG_FILE=/root/prod-data/logs/run.log
 0 0 * * *     root cd $ENVIRONMENT_HOME_DIR && ./run.sh rotate-logs
 
 # supernovas
-0 14 * * 1-5  root cronitor exec J83GTN "cd $ENVIRONMENT_HOME_DIR && ./run.sh supernovas >> $LOG_FILE 2>&1"
-59 19 * * 1-5 root cd $ENVIRONMENT_HOME_DIR && ./run.sh clear-account >> $LOG_FILE 2>&1
+# 0 14 * * 1-5  root cronitor exec J83GTN "cd $ENVIRONMENT_HOME_DIR && ./run.sh supernovas >> $LOG_FILE 2>&1"
+# 59 19 * * 1-5 root cd $ENVIRONMENT_HOME_DIR && ./run.sh clear-account >> $LOG_FILE 2>&1
