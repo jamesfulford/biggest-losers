@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+import datetime
 import json
 import logging
 import os
@@ -6,7 +6,6 @@ from typing import Optional, cast
 import typing
 import requests
 from src.broker.types import Account, FilledOrder, Order, Position
-from src.data.td.td import get_quote
 
 from src.outputs.pathing import get_paths
 from src.broker.dry_run import DRY_RUN
@@ -92,7 +91,7 @@ def _build_account(account) -> Account:
         "equity": round(equity, 2),
         "long_market_value": round(long_market_value, 2),
         # cash accounts only, not on Alpaca
-        "unsettled_cash": round(account['securitiesAccount']['currentBalances']['unsettledCash'], 2) if account_type == 'CASH' else 0,
+        "unsettled_cash": round(account['securitiesAccount']['currentBalances']['unsettledCash'], 2) if account_type == 'CASH' else None,
     }
 
 
@@ -112,7 +111,7 @@ def get_accounts():
 #
 # Orders
 #
-def get_filled_orders(start: datetime, end: datetime, account_id: Optional[str] = None) -> list[FilledOrder]:
+def get_filled_orders(start: datetime.datetime, end: datetime.datetime, account_id: Optional[str] = None) -> list[FilledOrder]:
     if not account_id:
         account_id = get_account_id()
 
@@ -150,6 +149,7 @@ def _build_order(order) -> Optional[Order]:
     if len(order.get('orderLegCollection', [])) != 1:
         # TODO: resolve multi-leg orders
         logging.warning(f"{order['orderId']} has multiple legs, skipping")
+        # print(order)
         return None
 
     instruction = order['orderLegCollection'][0]
@@ -207,21 +207,29 @@ def _build_order(order) -> Optional[Order]:
         logging.warning(
             f"{order['orderId']} has unexpected status {order['status']}")
 
+    side_map = {
+        'BUY': 'BUY',
+        'SELL': 'SELL',
+        'BUY_TO_OPEN': 'BUY',
+        'SELL_TO_CLOSE': 'SELL',
+    }
+    side = side_map.get(instruction["instruction"], "UNKNOWN")
+
     new_order: Order = {
         'id': str(order['orderId']),
         'symbol': instruction["instrument"]["symbol"].replace("+", ".WS"),
         'qty': order["quantity"],
 
-        'side': instruction["instruction"],
+        'side': side,
         'type': order_type,
         'limit_price': order.get("price", None),
         'stop_price': order.get("stopPrice", None),
         'tif': tif,
         'status': status,
 
-        'submitted_at': datetime.strptime(
+        'submitted_at': datetime.datetime.strptime(
             order["enteredTime"].replace("+0000", ".000Z"), "%Y-%m-%dT%H:%M:%S.%fZ")
-        .replace(tzinfo=timezone.utc)
+        .replace(tzinfo=datetime.timezone.utc)
         .astimezone(MARKET_TIMEZONE),
 
         # 'account_id': str(order['accountId']),  # TD-specific
@@ -241,9 +249,9 @@ def _build_order(order) -> Optional[Order]:
             'filled_qty': order['filledQuantity'],
             'filled_avg_price': average_fill_price,
             # "%Y-%m-%dT%H:%M:%S.%fZ"
-            'filled_at': datetime.strptime(
+            'filled_at': datetime.datetime.strptime(
                 order["closeTime"].replace("+0000", ".000Z"), "%Y-%m-%dT%H:%M:%S.%fZ")
-            .replace(tzinfo=timezone.utc)
+            .replace(tzinfo=datetime.timezone.utc)
             .astimezone(MARKET_TIMEZONE),
         })
         new_order = typing.cast(FilledOrder, temp)
@@ -515,13 +523,12 @@ def cancel_order(order_id: str, account_id: Optional[str] = None):
 
 def get_open_orders(account_id: Optional[str] = None) -> list[Order]:
     """
-    Gets all orders.
-    This is TD-specific format, not mapped to shared open-order json format
+    Gets all orders which are cancellable entered in last 90 days
     """
     orders = _get(_build_account_specific_base_url(
         "/orders", account_id=account_id), params={
-            'fromEnteredTime': (date.today() - timedelta(days=90)).isoformat(),
-            'toEnteredTime': date.today().isoformat()
+            'fromEnteredTime': (datetime.date.today() - datetime.timedelta(days=90)).isoformat(),
+            'toEnteredTime': datetime.date.today().isoformat()
     }).json()
     orders = list(filter(lambda o: o['cancelable'], orders))
     orders = list(map(_build_order, orders))
