@@ -10,5 +10,6 @@ def get_option_candles(spec: OptionContractSpecifier, resolution: str, start_dat
     ticker = format_contract_specifier_to_polygon_option_ticker(spec)
     candles = get_candles(ticker, resolution, start_date, end_date)
     if not candles:
-        raise ValueError(f"No candles found for {spec}")
+        raise ValueError(
+            f"No candles found for {spec} {start_date} {end_date}")
     return candles
