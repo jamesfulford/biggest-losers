@@ -3,3 +3,4 @@ __pycache__
 view/chart.json
 view/code.tar
 coverage.xml
+.coverage
