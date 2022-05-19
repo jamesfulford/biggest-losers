@@ -386,6 +386,10 @@ case $action in
             "create-empty")
                 run_py_main src.results.crud create "$@"
                 ;;
+
+            "to-options")
+                run_py_main src.chain.enhance_trades "$@"
+                ;;
             
             "export-pine")
                 run_py_main src.outputs.to_pine_script "$@" | pbcopy
