@@ -374,6 +374,18 @@ case $action in
             # "update-intention-filled-orders")
             #     run_py_main src.results.intention_filled_orders "$@"
             #     ;;
+
+            "list")
+                run_py_main src.results.crud list
+                ;;
+            
+            "delete")
+                run_py_main src.results.crud delete "$@"
+                ;;
+            
+            "create-empty")
+                run_py_main src.results.crud create "$@"
+                ;;
             
             "export-pine")
                 run_py_main src.outputs.to_pine_script "$@" | pbcopy
