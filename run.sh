@@ -233,10 +233,6 @@ case $action in
     "collector-sessionly")
         ./run.sh chronicle record supernovas,meemaw
         ;;
-    
-    "trades-to-pine-script")
-        run_py_main src.outputs.to_pine_script | pbcopy
-        ;;
 
     #
     # Client Operations (across environments/accounts)
@@ -361,6 +357,33 @@ case $action in
         SERVER_NAME="$SERVER_NAME" ./run.sh td-login-remote "$TARGET_ENV"
 
         ./scripts/deploy/send-to-server.sh "$TARGET_ENV"
+        ;;
+    
+
+    #
+    # Results reporting
+    #
+    "results")
+        results_action="$1"
+        shift 1
+        case $results_action in
+            # TODO: live has 2 entry points:
+            # - recording intentions
+            # - fetching/updating orders from broker
+            # when doing broker update/orders (outside of live process), should update intention-filled-orders then.
+            # "update-intention-filled-orders")
+            #     run_py_main src.results.intention_filled_orders "$@"
+            #     ;;
+            
+            "export-pine")
+                run_py_main src.outputs.to_pine_script "$@" | pbcopy
+                echo "Pine script copied to clipboard!"
+                ;;
+            *)
+                echo "Unknown results action: $results_action"
+                exit 1
+                ;;
+        esac
         ;;
 
     # Catchall
