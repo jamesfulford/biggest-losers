@@ -52,6 +52,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("result_name", type=str)
     parser.add_argument("output_result_name", type=str)
+    # TODO: select option-picker algorithm
     args = parser.parse_args()
 
     assert args.result_name != args.output_result_name, "result_name and output_result_name must be different"
