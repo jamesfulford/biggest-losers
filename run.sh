@@ -390,6 +390,10 @@ case $action in
             "to-options")
                 run_py_main src.chain.enhance_trades "$@"
                 ;;
+
+            "basic-report")
+                run_py_main src.reporting.trading_system_quantstat_report "$@"
+                ;;
             
             "export-pine")
                 run_py_main src.outputs.to_pine_script "$@" | pbcopy

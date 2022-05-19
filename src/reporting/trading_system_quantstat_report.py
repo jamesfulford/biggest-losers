@@ -1,16 +1,14 @@
 import datetime
 import typing
-import quantstats
-import pandas as pd
 
-from src.reporting.trades import Trade, read_trades
+from src import types, trading_day
 
 
-def trades_by_day(trades: typing.Iterator[Trade]) -> typing.Iterator[typing.Tuple[datetime.date, typing.List[Trade]]]:
+def trades_by_day(trades: typing.Iterable[types.Trade]) -> typing.Iterator[typing.Tuple[datetime.date, list[types.Trade]]]:
     current_day = None
     trades_on_day = []
     for trade in trades:
-        day = trade['closed_at'].date()
+        day = trade.get_end().date()
         if day != current_day:
             if current_day:
                 yield current_day, trades_on_day
@@ -20,34 +18,56 @@ def trades_by_day(trades: typing.Iterator[Trade]) -> typing.Iterator[typing.Tupl
     yield typing.cast(datetime.date, current_day), trades_on_day
 
 
-def daily_rois(trades: typing.Iterator[Trade]) -> typing.Iterator[typing.Tuple[datetime.date, float]]:
-    # how much money made on day for amount of money used
-    for day, trades_on_day in trades_by_day(trades):
-        # `abs` here because bought_cost is negative for short/put trades
-        yield day, sum(trade['profit_loss'] for trade in trades_on_day) / sum(abs(trade['bought_cost']) for trade in trades_on_day) if trades_on_day else 0
+def get_profit_usage_ratio(trades: typing.Iterable[types.Trade]) -> float:
+    total_profit = sum(trade.get_profit_loss() for trade in trades)
+    total_usage = sum(trade.get_value_spent() for trade in trades)
+    return total_profit / total_usage if total_usage else 0
 
 
 def main():
-    # TODO: make this a command line argument
-    from src.outputs import pathing
-    input_path = pathing.get_paths()['data']["dir"] + '/options_trades.jsonl'
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("result_name", type=str)
+    args = parser.parse_args()
 
-    trades = list(read_trades(input_path))
-    rois = list(daily_rois(iter(trades)))
-    for day, roi in rois:
-        print(f'{day}: {roi:>6.1%}',
-              f"{int(roi * -100) * '=':>50}|{int(roi * 100) * '=':<50}")
+    from src.results import read_results
+    trades = list(read_results.get_trades(args.result_name))
+
+    trade_days = dict(trades_by_day(trades))
+
+    max_day_usage_day_trades_tuple = max(trade_days.items(), key=lambda day_trades_tuple: sum(
+        t.get_value_spent() for t in day_trades_tuple[1]))
+
+    # TODO: enhance metadata to have start and end days
+    # TODO: enhance metadata to have params too (probably useful, but not in this file)
+    # meta = read_results.get_metadata(args.result_name)
+    for day in trading_day.generate_trading_days(trades[0].get_start().date(), trades[-1].get_end().date()):
+        days_trades = trade_days.get(day, [])
+        profit_usage_ratio = get_profit_usage_ratio(days_trades)
+        print(f'{day} ({len(days_trades):>2}): {profit_usage_ratio:>6.1%}',
+              f"{int(profit_usage_ratio * -100) * '=':>50}|{int(profit_usage_ratio * 100) * '=':<50}")
 
     print()
     print(f'{len(trades)} trades')
-    print(f'{sum(t["profit_loss"] for t in trades)} profit/loss total ({sum(t["profit_loss"] for t in trades) / len(rois)})')
-    print(f'{sum(abs(t["bought_cost"]) for t in trades)} bought cost total ({sum(abs(t["bought_cost"]) for t in trades) / len(rois)} / day, max {max(abs(t["bought_cost"]) for t in trades)})')
 
-    # roi = sum(trade['profit_loss'] for trade in trades) / \
-    #     sum(abs(trade['bought_cost']) for trade in trades) if trades else 0
-    # print(" " * 18, f"{int(roi * -200) * '=':>30}|{int(roi * 200) * '=':<30}")
+    total_profit = sum(trade.get_profit_loss() for trade in trades)
+    total_usage = sum(trade.get_value_spent() for trade in trades)
+    profit_usage_ratio = total_profit / total_usage if total_usage else 0
+    print(f'{total_profit=:>+10.2f} {total_usage=:>+10.2f} {profit_usage_ratio=:>+10.2%}')
 
-    # s = pd.Series(r for _, r in rois)
-    # s.index = pd.DatetimeIndex(d for d, _ in rois)
+    max_day_usage_day = max_day_usage_day_trades_tuple[0]
+    max_day_usage = sum(
+        t.get_value_spent() for t in max_day_usage_day_trades_tuple[1])
+    print(f'Maximum usage: {max_day_usage_day.isoformat()} {max_day_usage=}')
 
-    # print(quantstats.reports.basic(s))
+    # ROI depends on how the account is managed. profit_usage_ratio is an efficiency metric, not ROI.
+
+    # TODO: simulate an account with exactly enough starting money so we can always do every day of trading
+    # this is a bad assumption:
+    account_balance = max_day_usage
+    for day, trades in sorted(trade_days.items()):
+        # arithmetic, not compounding:
+        account_balance += sum(t.get_profit_loss() for t in trades)
+        # print(f'{day.isoformat()} {account_balance:>+10.2f}')
+
+    print(f"Raw ROI: {(account_balance / max_day_usage) - 1:>+10.2%} (initial: {max_day_usage:>+10.2f} final: {account_balance:>+10.2f})")
