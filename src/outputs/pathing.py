@@ -2,6 +2,21 @@ import os
 from typing import Optional
 
 
+def get_results_folder_paths(results_folder_name: str, target_environment_name: Optional[str] = None):
+    paths = get_paths(target_environment_name=target_environment_name)
+    dir_path = os.path.join(
+        paths['data']['results']['dir'], results_folder_name)
+
+    return {
+        "dir": dir_path,
+        "plain-filled-orders.jsonl": os.path.join(dir_path, "plain-filled-orders.jsonl"),
+        "intentions.jsonl": os.path.join(dir_path, "intentions.jsonl"),
+        "intentioned-filled-orders.jsonl": os.path.join(dir_path, "intentioned-filled-orders.jsonl"),
+        "summary.json": os.path.join(dir_path, "summary.json"),
+        "metadata.json": os.path.join(dir_path, "metadata.json"),
+    }
+
+
 def get_paths(target_environment_name: Optional[str] = None):
     app_dir = os.path.abspath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), '..', '..'))
@@ -29,39 +44,40 @@ def get_paths(target_environment_name: Optional[str] = None):
         },
     }
 
+    results_dir = os.path.join(data_dir, 'results')
+    paths['data']['results'] = {'dir': results_dir}
+
     paths['data']["inputs"] = {
-        'dir': os.path.join(paths['data']['dir'], 'inputs')}
+        'dir': os.path.join(data_dir, 'inputs')}
     paths['data']["inputs"]["td-token_json"] = os.path.join(
         paths['data']['inputs']['dir'], "td-token", "output", 'token.json')
 
-    paths['data']["outputs"] = {
-        'dir': os.path.join(paths['data']['dir'], 'outputs')}
-    paths['data']["outputs"]["losers_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'losers.csv')
-    paths['data']["outputs"]["winners_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'winners.csv')
-    paths['data']["outputs"]["supernovas_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'supernovas.csv')
-    paths['data']["outputs"]["rollercoasters_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'rollercoasters.csv')
-    paths['data']["outputs"]["gappers_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'gappers.csv')
-    paths['data']["outputs"]["volume_movers_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'volume_movers.csv')
-    paths['data']["outputs"]["daily_rsi_oversold_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'daily_rsi_oversold.csv')
+    outputs_dir = os.path.join(data_dir, 'outputs')
+    output_paths = {'dir': outputs_dir}
+    paths['data']["outputs"] = output_paths
+    output_paths["losers_csv"] = os.path.join(outputs_dir, 'losers.csv')
+    output_paths["winners_csv"] = os.path.join(outputs_dir, 'winners.csv')
+    output_paths["supernovas_csv"] = os.path.join(
+        outputs_dir, 'supernovas.csv')
+    output_paths["rollercoasters_csv"] = os.path.join(
+        outputs_dir, 'rollercoasters.csv')
+    output_paths["gappers_csv"] = os.path.join(outputs_dir, 'gappers.csv')
+    output_paths["volume_movers_csv"] = os.path.join(
+        outputs_dir, 'volume_movers.csv')
+    output_paths["daily_rsi_oversold_csv"] = os.path.join(
+        outputs_dir, 'daily_rsi_oversold.csv')
 
-    paths['data']["outputs"]["filled_orders_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'filled_orders.csv')
-    paths['data']["outputs"]["order_intentions_jsonl"] = os.path.join(
-        paths['data']['outputs']['dir'], 'order_intentions_{algo_name}.jsonl')
-    paths['data']["outputs"]["performance_csv"] = os.path.join(
-        paths['data']['outputs']['dir'], 'performance-{environment}.csv')
+    output_paths["filled_orders_csv"] = os.path.join(
+        outputs_dir, 'filled_orders.csv')
+    output_paths["order_intentions_jsonl"] = os.path.join(
+        outputs_dir, 'order_intentions_{algo_name}.jsonl')
+    output_paths["performance_csv"] = os.path.join(
+        outputs_dir, 'performance-{environment}.csv')
 
-    paths['data']["logs"] = {'dir': os.path.join(paths['data']['dir'], 'logs')}
+    paths['data']["logs"] = {'dir': os.path.join(data_dir, 'logs')}
 
     paths['data']["cache"] = {
-        'dir': os.path.join(paths['data']['dir'], 'cache')}
+        'dir': os.path.join(data_dir, 'cache')}
 
     return paths
 

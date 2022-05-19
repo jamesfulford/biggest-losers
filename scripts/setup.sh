@@ -14,6 +14,7 @@ echo DATA_DIR $DATA_DIR
 mkdir -p $DATA_DIR/inputs
 mkdir -p $DATA_DIR/outputs
 mkdir -p $DATA_DIR/logs
+mkdir -p $DATA_DIR/results
 
 mkdir -p $DATA_DIR/cache
 mkdir -p $DATA_DIR/cache/finnhub/candles

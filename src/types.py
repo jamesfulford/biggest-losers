@@ -11,6 +11,17 @@ class Intention:
     symbol: str
     extra: dict[str, typing.Any]
 
+    def to_dict(self):
+        return {
+            "datetime": self.datetime,
+            "symbol": self.symbol,
+            "extra": self.extra,
+        }
+
+    @staticmethod
+    def from_dict(d):
+        return Intention(datetime=d['datetime'], symbol=d['symbol'], extra=d['extra'])
+
 
 @dataclasses.dataclass
 class FilledOrder:
@@ -25,8 +36,6 @@ class FilledOrder:
     price: float  # average price of all legs
 
     datetime: datetime.datetime  # END of fulfillment period
-
-    trade_is_long: bool = True
 
     def find_matching_intention(self, intentions: list[Intention]) -> typing.Optional[Intention]:
         """
@@ -50,24 +59,29 @@ class FilledOrder:
     def is_sell(self) -> bool:
         return not self.is_buy()
 
-    def is_long(self) -> bool:
-        return self.trade_is_long
+    def to_dict(self) -> dict[str, typing.Any]:
+        return {
+            "intention": self.intention.to_dict() if self.intention else None,
+            "symbol": self.symbol,
+            "quantity": self.quantity,
+            "price": self.price,
+            "datetime": self.datetime
+        }
 
-    def is_short(self) -> bool:
-        return not self.is_long()
+    @staticmethod
+    def from_dict(d):
+        return FilledOrder(intention=Intention.from_dict(d['intention']) if d.get('intention', False) else None, symbol=d['symbol'], price=d['price'], quantity=d['quantity'], datetime=d['datetime'])
 
 
 @dataclasses.dataclass
 class Trade:
     orders: list[FilledOrder]  # assumed to be ordered from first to last
 
-    @classmethod
-    def from_orders(cls, orders: list[FilledOrder]) -> typing.Iterator:
+    @staticmethod
+    def from_orders(orders: list[FilledOrder]) -> typing.Iterator:
         """
         Returns Trades grouped by symbol and related orders (when position quantity resets to 0)
         """
-        assert not any(o.is_short()
-                       for o in orders), "TODO: add support for short trades"
 
         def group_orders_by_trade(filled_orders: list[FilledOrder]) -> typing.Iterable[list[FilledOrder]]:
             # group by symbol
@@ -110,6 +124,9 @@ class Trade:
 
     # Calculations
 
+    def is_long(self) -> bool:
+        return self.orders[0].quantity > 0
+
     def get_value_spent(self):
         return sum(o.price * o.quantity for o in self.orders if o.is_buy())
 
@@ -141,8 +158,8 @@ class TradeSummary:
 
     quantity: float
 
-    @classmethod
-    def from_trade(cls, trade: Trade):
+    @staticmethod
+    def from_trade(trade: Trade):
         return TradeSummary(trade=trade, entered_at=trade.get_start(), exited_at=trade.get_end(), average_entry_price=trade.get_average_entry_price(), average_exit_price=trade.get_average_exit_price(), quantity=trade.get_quantity())
 
     def get_symbol(self) -> typing.Optional[str]:

@@ -1,6 +1,8 @@
 import datetime
 import typing
 import src.types as types
+from src.trading_day import now
+import src.outputs.json_dump as json_dump
 
 import unittest
 
@@ -8,7 +10,7 @@ import unittest
 class TestTrade(unittest.TestCase):
 
     def test_from_orders(self):
-        start = datetime.datetime.now() - datetime.timedelta(hours=7)
+        start = now() - datetime.timedelta(hours=7)
         orders = [
 
             types.FilledOrder(intention=None, symbol='AAPL', quantity=-50, price=75,
@@ -50,7 +52,6 @@ class TestTrade(unittest.TestCase):
         assert trade.get_symbol() == 'AAPL'
         assert trade.get_start() == start + datetime.timedelta(hours=5)
         assert trade.get_end() == start + datetime.timedelta(hours=5, minutes=1)
-        # TODO: assert is short
 
         trade = trades[2]
         assert trade.get_symbol() == 'TSLA'
@@ -58,7 +59,7 @@ class TestTrade(unittest.TestCase):
         assert trade.get_end() == start + datetime.timedelta(hours=9)
 
     def test_flow(self):
-        start = datetime.datetime.now() - datetime.timedelta(hours=7)
+        start = now() - datetime.timedelta(hours=7)
         orders = [
             types.FilledOrder(intention=None, symbol='AAPL', quantity=50, price=50,
                               datetime=start),
@@ -89,7 +90,7 @@ class TestTrade(unittest.TestCase):
 
 class TestTradeSummary(unittest.TestCase):
     def test_flow(self):
-        start = datetime.datetime.now() - datetime.timedelta(hours=7)
+        start = now() - datetime.timedelta(hours=7)
         orders = [
             types.FilledOrder(intention=None, symbol='AAPL', quantity=50, price=50,
                               datetime=start),
@@ -123,7 +124,7 @@ class TestTradeSummary(unittest.TestCase):
 
 class TestFilledOrder(unittest.TestCase):
     def test_find_intention(self):
-        start = datetime.datetime.now()
+        start = now()
         intentions = [
             types.Intention(datetime=start, symbol='AAPL',
                             extra={'is_cool': True}),
@@ -138,22 +139,45 @@ class TestFilledOrder(unittest.TestCase):
 
         assert order.find_matching_intention([]) == None
 
+    def test_to_dict_from_dict(self):
+        start = now()
+        order = types.FilledOrder(intention=None, symbol='AAPL', quantity=1,
+                                  price=1, datetime=start + datetime.timedelta(minutes=2))
+
+        new_order = types.FilledOrder.from_dict(order.to_dict())
+        assert order == new_order
+
+        # test that serialization preserves this property
+        message = json_dump.to_json_string(order.to_dict())
+        new_order = types.FilledOrder.from_dict(
+            json_dump.from_json_string(message))
+        assert order == new_order
+
+    def test_to_dict_from_dict_with_intention(self):
+        start = now()
+        order = types.FilledOrder(intention=types.Intention(datetime=start + datetime.timedelta(minutes=1), symbol='AAPL',
+                                                            extra={'is_cool': True}), symbol='AAPL', quantity=1,
+                                  price=1, datetime=start + datetime.timedelta(minutes=2))
+
+        new_order = types.FilledOrder.from_dict(order.to_dict())
+        assert order == new_order
+
+        # test that serialization preserves this property
+        message = json_dump.to_json_string(order.to_dict())
+        new_order = types.FilledOrder.from_dict(
+            json_dump.from_json_string(message))
+        assert order == new_order
+
     def test_order_buy_sell_long_short_interpretation(self):
-        start = datetime.datetime.now()
+        start = now()
         order = types.FilledOrder(intention=None, symbol='AAPL', quantity=1,
                                   price=1, datetime=start + datetime.timedelta(minutes=2))
 
         assert order.is_buy()
         assert not order.is_sell()
-        assert order.is_long()
-        assert not order.is_short()
 
         order = types.FilledOrder(intention=None, symbol='AAPL', quantity=-1,
                                   price=1, datetime=start + datetime.timedelta(minutes=2))
 
         assert not order.is_buy()
         assert order.is_sell()
-        assert order.is_long()
-        assert not order.is_short()
-
-        # TODO: is_short, not is_long
