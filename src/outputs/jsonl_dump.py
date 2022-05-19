@@ -1,15 +1,7 @@
 
 import logging
 import typing
-import json
-import datetime
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    # Override the default method
-    def default(self, obj):
-        if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
+import src.outputs.json_dump as json_dump
 
 
 def append_jsonl(path: typing.Optional[str], lines: typing.Iterable[dict]):
@@ -19,7 +11,7 @@ def append_jsonl(path: typing.Optional[str], lines: typing.Iterable[dict]):
     f = open(path, "a") if path else None
 
     for line in lines:
-        print(json.dumps(line, sort_keys=True, cls=DateTimeEncoder), file=f)
+        print(json_dump.to_json_string(line), file=f)
 
     if f:
         f.close()
@@ -27,7 +19,7 @@ def append_jsonl(path: typing.Optional[str], lines: typing.Iterable[dict]):
 
 def read_jsonl_lines(path: str) -> typing.Iterator[dict]:
     with open(path) as f:
-        yield from (json.loads(line) for line in f)
+        yield from (json_dump.from_json_string(line) for line in f)
 
 
 def main():
