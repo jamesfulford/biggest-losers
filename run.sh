@@ -399,6 +399,10 @@ case $action in
                 run_py_main src.reporting.trading_system_quantstat_report "$@"
                 ;;
             
+            "simulate-account")
+                run_py_main src.risk.simulate_account "$@"
+                ;;
+            
             "export-pine")
                 run_py_main src.outputs.to_pine_script "$@" | pbcopy
                 echo "Pine script copied to clipboard!"
