@@ -1,8 +1,8 @@
 import datetime
 import typing
-import src.types as types
+from src import types
 from src.trading_day import now
-import src.outputs.json_dump as json_dump
+from src.outputs import json_dump
 
 import unittest
 

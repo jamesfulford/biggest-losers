@@ -1,5 +1,5 @@
 import unittest
-import src.results.metadata as metadata
+from src.results import metadata
 import datetime
 
 

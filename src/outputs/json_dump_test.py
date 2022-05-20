@@ -1,7 +1,7 @@
 import unittest
 
 from src.trading_day import now
-import src.outputs.json_dump as json_dump
+from src.outputs import json_dump
 
 
 class TestJsonDump(unittest.TestCase):

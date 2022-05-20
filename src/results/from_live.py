@@ -1,6 +1,5 @@
-import re
-import src.types as types
-import src.results.dumping as dumping
+from src import types
+from src.results import dumping
 
 
 def update_filled_orders(result_name: str, orders: types.FilledOrder):

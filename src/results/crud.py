@@ -1,6 +1,6 @@
 import os
 import shutil
-import src.outputs.pathing as pathing
+from src.outputs import pathing
 
 
 def delete_result(result_name: str):

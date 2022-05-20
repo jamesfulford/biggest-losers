@@ -2,7 +2,7 @@
 
 import datetime
 import unittest
-import src.results.summary as summary
+from src.results import summary
 
 
 class TestMetadata(unittest.TestCase):

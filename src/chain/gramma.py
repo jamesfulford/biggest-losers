@@ -5,10 +5,9 @@ from typing import Iterator, Optional
 import typing
 from src.chain.utils import filter_option_chain_for_calls, filter_option_chain_for_expiration, filter_option_chain_for_near_the_money, filter_option_chain_for_normality, filter_option_chain_for_out_of_the_money, filter_option_chain_for_puts
 from src.data.finnhub.aggregate_candles import filter_candles_during_market_hours
-from src.data.polygon.get_candles import MARKET_TIMEZONE
 from src.data.polygon.get_option_candles import get_option_candles
 from src.data.polygon.option_chain import PolygonOptionChainContract, format_contract_specifier_to_polygon_option_ticker, get_option_chain
-import src.data.finnhub.finnhub as finnhub
+from src.data.finnhub import finnhub
 from src.data.types.candles import CandleIntraday
 from src.data.types.contracts import OptionCandleGetter, OptionContractSpecifier
 

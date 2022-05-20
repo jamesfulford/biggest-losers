@@ -14,13 +14,13 @@ def get_broker_module(broker_name: typing.Optional[str] = None) -> typing.Any:
         broker_name = os.environ.get('BROKER')
 
     if broker_name == 'alpaca':
-        import src.broker.alpaca as alpaca
+        from src.broker import alpaca
         return alpaca
     elif broker_name == 'td':
-        import src.broker.td as td
+        from src.broker import td
         return td
     elif broker_name == "pizzalabs":
-        import src.broker.pizzalabs as pizzalabs
+        from src.broker import pizzalabs
         return pizzalabs
     else:
         raise Exception(f'Unknown broker: {broker_name}')
@@ -96,8 +96,8 @@ def cancel_all_orders():
 
 
 def main():
-    import src.broker.alpaca as alpaca
-    import src.broker.td as td
+    from src.broker import alpaca
+    from src.broker import td
     import json
 
     import logging

@@ -1,11 +1,8 @@
 import os
 import typing
-import src.outputs.jsonl_dump as jsonl_dump
-import src.outputs.json_dump as json_dump
-import src.outputs.pathing as pathing
-import src.types as types
-import src.results.summary as summary
-import src.results.metadata as metadata
+from src.outputs import jsonl_dump, json_dump, pathing
+from src import types
+from src.results import summary, metadata
 
 
 def rm_f(path: str) -> None:

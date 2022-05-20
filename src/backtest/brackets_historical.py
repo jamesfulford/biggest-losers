@@ -141,7 +141,7 @@ def main():
         "until": datetime.time(15, 59),
     }]
 
-    import src.results.read_results as read_results
+    from src.results import read_results
 
     trades = read_results.get_trades(args.result_name)
 

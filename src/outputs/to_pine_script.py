@@ -1,7 +1,5 @@
-from src.outputs import pathing
-from src.reporting.trades import Order, SimpleTrade, get_virtual_orders_of_simple_trade, read_trades
 import typing
-import src.types as types
+from src import types
 
 
 def serialize_order_to_pine_script(order: types.FilledOrder) -> str:
@@ -45,7 +43,7 @@ def main():
     parser.add_argument("result_name", type=str)
     args = parser.parse_args()
 
-    import src.results.read_results as read_results
+    from src.results import read_results
 
     orders = read_results.get_orders(args.result_name)
 

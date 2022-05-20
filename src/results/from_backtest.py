@@ -1,8 +1,5 @@
-import src.types as types
-
-import src.results.dumping as dumping
-import src.results.metadata as metadata
-import src.results.crud as crud
+from src import types
+from src.results import dumping, metadata, crud
 
 
 def write_results(results_name: str, orders: list[types.FilledOrder], metadata: metadata.Metadata):

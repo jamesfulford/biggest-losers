@@ -1,12 +1,9 @@
 
 import datetime
-import os
 import typing
 
 from src.chain.gramma import simulate_trade_in_options
 from src.data.polygon.option_chain import format_contract_specifier_to_polygon_option_ticker
-from src.reporting.trades import Trade, read_trades
-from src.outputs import jsonl_dump
 
 from src import types
 
@@ -57,7 +54,7 @@ def main():
 
     assert args.result_name != args.output_result_name, "result_name and output_result_name must be different"
 
-    import src.results.read_results as read_results
+    from src.results import read_results
 
     trades = read_results.get_trades(args.result_name)
 

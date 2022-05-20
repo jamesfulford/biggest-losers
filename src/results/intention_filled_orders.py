@@ -1,6 +1,6 @@
 import logging
-import src.results.dumping as dumping
-import src.types as types
+from src.results import dumping
+from src import types
 
 
 def enhance_order_with_intention(order: types.FilledOrder, intentions: list[types.Intention]) -> types.FilledOrder:

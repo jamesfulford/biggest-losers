@@ -1,7 +1,7 @@
 
 import logging
 import typing
-import src.outputs.json_dump as json_dump
+from src.outputs import json_dump
 
 
 def append_jsonl(path: typing.Optional[str], lines: typing.Iterable[dict]):
