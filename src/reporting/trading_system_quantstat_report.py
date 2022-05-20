@@ -69,9 +69,9 @@ def main():
 
     # this is a bad assumption:
     account_balance = max_day_usage
-    for day, trades in sorted(trade_days.items()):
+    for day, trades_on_day in sorted(trade_days.items()):
         # arithmetic, not compounding:
-        account_balance += sum(t.get_profit_loss() for t in trades)
+        account_balance += sum(t.get_profit_loss() for t in trades_on_day)
         # print(f'{day.isoformat()} {account_balance:>+10.2f}')
 
     print(f"Raw ROI: {(account_balance / max_day_usage) - 1:>+10.2%} (initial: {max_day_usage:>+10.2f} final: {account_balance:>+10.2f})")
