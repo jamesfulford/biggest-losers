@@ -1,15 +1,13 @@
 from collections import Counter
 import datetime
-import os
 import typing
 from itertools import chain
 from src.data.finnhub.finnhub import get_1m_candles
 from src.data.polygon.get_option_candles import get_option_candles
 from src.data.polygon.option_chain import extract_contract_specifier_from_polygon_option_ticker
 from src.data.types.candles import CandleIntraday
-from src.outputs.jsonl_dump import append_jsonl
 
-from src.reporting.trades import Trade, build_trade_object, read_trades
+from src import types
 
 # TODO: add new bracket types
 # - trailing stop-loss
@@ -66,23 +64,23 @@ def backtest_brackets(input_candles: list[CandleIntraday], input_brackets: list[
     return None, candle, bracket
 
 
-def get_option_candles_involved_in_trade(trade: Trade):
-    start, end = trade['opened_at'], trade['closed_at']
+def get_option_candles_involved_in_trade(trade: types.Trade):
+    start, end = trade.get_start(), trade.get_end()
     # candles = get_1m_candles(trade["symbol"], start.date(), end.date())
     spec = extract_contract_specifier_from_polygon_option_ticker(
-        trade["symbol"])
+        trade.get_symbol())
     candles = get_option_candles(spec, '1', start.date(), end.date())
     if not candles:
-        raise Exception("No candles found for {}".format(trade["symbol"]))
+        raise Exception("No candles found for {}".format(trade.get_symbol()))
 
     return extract_candles_in_range(candles, start, end)
 
 
-def get_candles_involved_in_trade(trade: Trade):
-    start, end = trade['opened_at'], trade['closed_at']
-    candles = get_1m_candles(trade["symbol"], start.date(), end.date())
+def get_candles_involved_in_trade(trade: types.Trade):
+    start, end = trade.get_start(), trade.get_end()
+    candles = get_1m_candles(trade.get_symbol(), start.date(), end.date())
     if not candles:
-        raise Exception("No candles found for {}".format(trade["symbol"]))
+        raise Exception("No candles found for {}".format(trade.get_symbol()))
 
     return extract_candles_in_range(candles, start, end)
 
@@ -96,53 +94,78 @@ def extract_candles_in_range(candles: list[CandleIntraday], start: datetime.date
     return holding_candles
 
 
-def get_bracketed_trade(trade: Trade, brackets: list[Bracket]) -> Trade:
+def get_bracketed_virtual_trade(trade: types.Trade, brackets: list[Bracket]) -> types.Trade:
     candles = get_option_candles_involved_in_trade(trade)
     new_brackets: list[Bracket] = [{
         "take_profit_percentage": bracket["take_profit_percentage"],
         "stop_loss_percentage": bracket['stop_loss_percentage'],
-        "until": trade['closed_at'].time(),  # NOTE: assumes daytrade
+        "until": trade.get_end().time(),  # NOTE: assumes daytrade
     } for bracket in brackets]
     sell_price, last_candle, _last_bracket = backtest_brackets(
-        candles, new_brackets, trade['bought_price'])
+        candles, new_brackets, trade.get_average_entry_price())
 
     if not sell_price:
-        sell_price = trade['sold_price']
+        sell_price = trade.get_average_exit_price()
 
     closed_at = last_candle['datetime']
 
-    bracketed_trade: Trade = build_trade_object(
-        trade['symbol'],
-        trade['opened_at'],
-        closed_at,
-        trade['quantity'],
-        trade['bought_price'],
-        sell_price
-    )
-    return bracketed_trade
+    # TODO: how to not do virtual orders with brackets?
+    original_entry_virtual_order, _original_exit_virtual_order = trade.get_virtual_orders()
+
+    return types.Trade(orders=[
+        original_entry_virtual_order,
+        types.FilledOrder(
+            intention=None,
+            symbol=trade.get_symbol(),
+            price=sell_price,
+            quantity=-trade.get_quantity(),
+            datetime=closed_at,
+        )])
 
 
 def main():
-    from src.outputs import pathing
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("result_name", type=str)
+    parser.add_argument("output_result_name", type=str)
+    parser.add_argument("--brackets", type=str, default="20,20")
+    # TODO: select option-picker algorithm
+    args = parser.parse_args()
 
-    input_path = pathing.get_paths()['data']["dir"] + '/options_trades.jsonl'
-    output_path = pathing.get_paths(
-    )['data']["dir"] + '/bracketed_trades.jsonl'
-    try:
-        os.remove(output_path)
-    except FileNotFoundError:
-        pass
+    assert args.result_name != args.output_result_name, "result_name and output_result_name must be different"
 
+    stop_loss, take_profit = [float(x) / 100 for x in args.brackets.split(",")]
     brackets: list[Bracket] = [{
-        "take_profit_percentage": 0.1,
-        "stop_loss_percentage": 0.1,
+        "take_profit_percentage": take_profit,
+        "stop_loss_percentage": stop_loss,
         "until": datetime.time(15, 59),
     }]
 
-    trades = list(read_trades(input_path))
-    print(
-        f"Base stats: {Counter(trade['is_win'] for trade in trades)} {sum(t['profit_loss'] for t in trades)}")
-    bracketed_trades = [get_bracketed_trade(t, brackets) for t in trades]
-    print(Counter(t['is_win'] for t in bracketed_trades),
-          sum(t['profit_loss'] for t in bracketed_trades))
-    append_jsonl(output_path, [typing.cast(dict, t) for t in bracketed_trades])
+    import src.results.read_results as read_results
+
+    trades = read_results.get_trades(args.result_name)
+
+    # TODO: resolve this issue
+    # Finnhub does not allow going back too far
+    trades = [t for t in trades if t.get_start().date() > datetime.date.today(
+    ) - datetime.timedelta(days=364)]
+
+    print(f"Base stats:")
+    print(f"  win/loss: {Counter(trade.is_win() for trade in trades)}")
+    print(f"  profit:   {sum(t.get_profit_loss() for t in trades):.2f}")
+
+    brack_trades = [get_bracketed_virtual_trade(
+        trade, brackets) for trade in trades]
+
+    print(f"New stats:")
+    print(f"  win/loss: {Counter(trade.is_win() for trade in brack_trades)}")
+    print(f"  profit:   {sum(t.get_profit_loss() for t in brack_trades):.2f}")
+
+    bracketed_orders = []
+    for bracketed_trade in brack_trades:
+        bracketed_orders.extend(bracketed_trade.orders)
+
+    from src.results import from_backtest, metadata
+
+    from_backtest.write_results(args.output_result_name, bracketed_orders, metadata.Metadata(
+        commit_id="", last_updated=datetime.datetime.now()))

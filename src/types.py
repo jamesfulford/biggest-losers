@@ -142,6 +142,18 @@ class Trade:
     def get_profit_loss(self):
         return sum(o.get_position_difference() for o in self.orders)
 
+    def is_win(self):
+        return self.get_profit_loss() > 0
+
+    def get_virtual_orders(self) -> typing.Tuple[FilledOrder, FilledOrder]:
+        summary = TradeSummary.from_trade(self)
+        return (
+            FilledOrder(intention=None, symbol=self.get_symbol() or "", quantity=summary.quantity,
+                        price=summary.average_entry_price, datetime=summary.entered_at),
+            FilledOrder(intention=None, symbol=summary.get_symbol() or "", quantity=summary.quantity,
+                        price=summary.average_exit_price, datetime=summary.exited_at)
+        )
+
 # TODO: Position, also iterator through a Trade's positions after each order
 # TODO: Calculate Position's break-even point
 

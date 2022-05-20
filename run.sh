@@ -390,6 +390,10 @@ case $action in
             "to-options")
                 run_py_main src.chain.enhance_trades "$@"
                 ;;
+            
+            "with-brackets")
+                run_py_main src.backtest.brackets_historical "$@"
+                ;;
 
             "basic-report")
                 run_py_main src.reporting.trading_system_quantstat_report "$@"
