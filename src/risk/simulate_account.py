@@ -161,8 +161,9 @@ def main():
     pnl = simulate_final_profit_loss(iter(trades), simulation_parameters)
 
     print(
-        f"Perfect initial balance: {perfect_initial_balance:>8.2f} \tfinal balance: {(perfect_initial_balance + pnl):>8.2f} \tROI: {(perfect_initial_balance + pnl) / perfect_initial_balance:>8.2%}")
+        f"Perfect initial balance: {perfect_initial_balance:>8.2f} \tfinal balance: {(perfect_initial_balance + pnl):>8.2f} \tROI: {pnl / perfect_initial_balance:>8.2%}")
+    # Options actually settle in 1 day: https://td.intelliresponse.com/tddirectinvesting/public/index.jsp?interfaceID=19&sessionId=921723fb-d96f-11ec-b911-43daeb48e13c&id=7551&requestType=&source=9&question=settled+
     print(
-        f"Margin initial balance : {margin_initial_balance:>8.2f} \tfinal balance: {(margin_initial_balance + pnl):>8.2f} \tROI: {(margin_initial_balance + pnl) / margin_initial_balance:>8.2%}")
+        f"Margin initial balance : {margin_initial_balance:>8.2f} \tfinal balance: {(margin_initial_balance + pnl):>8.2f} \tROI: {pnl / margin_initial_balance:>8.2%}")
     print(
-        f"Cash initial balance   : {cash_initial_balance:>8.2f} \tfinal balance: {(cash_initial_balance + pnl):>8.2f} \tROI: {(cash_initial_balance + pnl) / cash_initial_balance:>8.2%}")
+        f"Cash initial balance   : {cash_initial_balance:>8.2f} \tfinal balance: {(cash_initial_balance + pnl):>8.2f} \tROI: {pnl / cash_initial_balance:>8.2%}")
