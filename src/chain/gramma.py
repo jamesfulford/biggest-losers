@@ -1,5 +1,5 @@
 
-from datetime import date, datetime
+import datetime
 import logging
 from typing import Iterator, Optional
 import typing
@@ -70,7 +70,20 @@ class OptionSimulation(typing.TypedDict):
     was_low_first: bool
 
 
-def simulate_trade_in_options(underlying_symbol: str, start: datetime, end: datetime, upside: bool) -> Optional[OptionSimulation]:
+def extract_close_to_start_candle(candles: list[CandleIntraday], start: datetime.datetime) -> CandleIntraday:
+    entry_candle = next((c for c in reversed(
+        candles) if c['datetime'] <= start), None)
+    entry_candle = entry_candle if entry_candle else candles[0]
+    return entry_candle
+
+
+def extract_close_to_end_candle(candles: list[CandleIntraday], end: datetime.datetime) -> CandleIntraday:
+    entry_candle = next((c for c in candles if c['datetime'] >= end), None)
+    entry_candle = entry_candle if entry_candle else candles[-1]
+    return entry_candle
+
+
+def simulate_trade_in_options(underlying_symbol: str, start: datetime.datetime, end: datetime.datetime, upside: bool) -> Optional[OptionSimulation]:
     # Get necessary data
     day = start.date()
     candles = finnhub.get_1m_candles(underlying_symbol, day, day)
@@ -78,10 +91,11 @@ def simulate_trade_in_options(underlying_symbol: str, start: datetime, end: date
         print(f"{underlying_symbol} no candles found")
         raise ValueError(f"{underlying_symbol} no candles found")
     candles = filter_candles_during_market_hours(candles)
-    current_price = [c for c in candles if c['datetime'] <= start][0]['close']
+    start_candle = extract_close_to_start_candle(candles, start)
+    current_price = start_candle['close']
 
     # Find contract
-    def get_truncated_option_candles(spec: OptionContractSpecifier, resolution: str, start_date: date, end_date: date) -> list[CandleIntraday]:
+    def get_truncated_option_candles(spec: OptionContractSpecifier, resolution: str, start_date: datetime.date, end_date: datetime.date) -> list[CandleIntraday]:
         candles = get_option_candles(spec, resolution, start_date, end_date)
         return [c for c in candles if c['datetime'] <= start]
 
@@ -97,14 +111,12 @@ def simulate_trade_in_options(underlying_symbol: str, start: datetime, end: date
         return
 
     option_candles = get_option_candles(contract['spec'], '1', day, day)
-    entry_candle = next(c for c in reversed(
-        option_candles) if c['datetime'] <= start)
-    exit_candle = next(c for c in option_candles if c['datetime'] >= end)
+    entry_candle = extract_close_to_start_candle(option_candles, start)
+    exit_candle = extract_close_to_end_candle(option_candles, end)
+
     holding_candles = [
         c for c in option_candles if c['datetime'] >= entry_candle['datetime'] and c['datetime'] <= exit_candle['datetime']]
 
-    entry_candle = holding_candles[0]
-    exit_candle = holding_candles[-1]
     peak_candle = max(holding_candles, key=lambda c: c['high'])
     valley_candle = min(holding_candles, key=lambda c: c['low'])
 
