@@ -3,59 +3,27 @@ from datetime import date, datetime
 import json
 import os
 from typing import Iterable, Iterator, Optional, TypedDict, cast
+from src.backtest.chronicle import crud
+from src.backtest.chronicle.types import ChronicleEntry
 from src.outputs.jsonl_dump import read_jsonl_lines
 
 from src.data.polygon.grouped_aggs import Ticker
 from src.outputs.pathing import get_paths
 
 #
-# TODO: instead of Chronicle being an array of scanner tickers,
-#      it should be an array of snapshots, where each snapshot
-#      is a timestamp, some metadata, and a list of scanner tickers, if any.
-#      (otherwise, a gap and an empty scanner result are indistinguishable)
-#
-
-
-class ChronicleEntry(TypedDict):
-    now: datetime
-    ticker: Ticker
-
-
-#
 # Generic chronicle
 #
-def get_chronicle_path(scanner_name: str, chron_type: str, day: date, name: str):
-    chron_type_folder_name = {
-        'recorded': 'live',
-        'backtest': 'backtest',
-    }[chron_type]
-
-    path = get_paths()['data']['dir']
-
-    return os.path.join(
-        path, 'chronicles', scanner_name, chron_type_folder_name, f'{day.isoformat()}-{name}.jsonl')
 
 
-def read_chronicle(scanner_name: str, chron_type: str, day: date, name: str) -> Iterator[ChronicleEntry]:
-    jsonl_feed = read_jsonl_lines(
-        get_chronicle_path(scanner_name, chron_type, day, name))
-    feed = ({
-        "now": entry['now'],
-        "ticker": entry['ticker']
-    } for entry in jsonl_feed)
-    return cast(Iterator[ChronicleEntry], feed)
+def read_chronicle(chronicle_name: str) -> Iterator[ChronicleEntry]:
+    chronicle = crud.get(chronicle_name)
+    for snap in chronicle.snapshots:
+        yield from snap.entries
 
 
 #
 # Recorded chronicle
 #
-def get_scanner_recorded_chronicle_path(scanner_name: str, day: date, commit_id: Optional[str] = None):
-    name = commit_id
-    if not name:
-        name = os.environ.get("GIT_COMMIT", "dev")
-
-    return get_chronicle_path(scanner_name, 'recorded', day, name)
-
 
 def read_recorded_chronicle(scanner_name: str, day: date, commit_id: Optional[str] = None) -> Iterator[ChronicleEntry]:
     name = commit_id

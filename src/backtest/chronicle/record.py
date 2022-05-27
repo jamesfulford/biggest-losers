@@ -3,17 +3,15 @@ from copy import deepcopy
 from datetime import date, time
 import logging
 import os
-from typing import Optional, cast
+from typing import cast
 from requests import HTTPError
+from src.backtest.chronicle import crud, types
 
-from src.outputs import jsonl_dump
-from src.backtest.chronicle.read import get_scanner_recorded_chronicle_path
 from src.data.finnhub.finnhub import get_candles
 from src.scan.utils.all_tickers_on_day import get_all_tickers_on_day
-from src.scan.utils.scanners import CandleGetter, Scanner, ScannerFilter, get_scanner, get_scanner_filter
-from src.trading_day import now, today
+from src.scan.utils.scanners import CandleGetter, ScannerFilter, get_scanner_filter
+from src.trading_day import now, today, get_market_close_on_day
 from src.wait import get_next_minute_mark, wait_until
-from src.outputs.pathing import get_paths
 
 
 def should_continue():
@@ -52,10 +50,12 @@ def execute_phases(scanner_filters: dict[str, ScannerFilter]):
             logging.exception(f"Scanner {scanner_name} failed, skipping...")
             continue
 
-        jsonl_dump.append_jsonl(get_scanner_recorded_chronicle_path(scanner_name, day), ({
-            "now": next_min,
-            "ticker": c,
-        } for c in candidates))
+        crud.append_snapshots(build_chronicle_name(scanner_name, day), snapshots=[types.Snapshot(now=next_min, entries=[
+                              types.ChronicleEntry(ticker=ticker, now=next_min) for ticker in candidates])])
+
+
+def build_chronicle_name(scanner_name: str, day: date) -> str:
+    return f"live-{scanner_name}-{day}"
 
 
 def main():
@@ -72,12 +72,8 @@ def main():
 
     # pre-create folders
     for scanner_name in scanner_filters.keys():
-        chronicle_path = get_scanner_recorded_chronicle_path(
-            scanner_name, today())
-        try:
-            os.makedirs(os.path.dirname(chronicle_path))
-        except FileExistsError:
-            pass
+        crud.create(build_chronicle_name(scanner_name, today()), metadata=types.ChronicleMeta(
+            start=now(), end=get_market_close_on_day(now()) or now(), commit=os.environ.get("GIT_COMMIT", 'dev'), classification='recorded', origin=scanner_name))
 
     logging.info(f"Recording live data for {scanner_names}")
 

@@ -186,16 +186,13 @@ case $action in
                 run_py_main src.backtest.chronicle.describe "$@"
                 ;;
             
+            # TODO: retest after refactor
             "record")
                 run_py_main src.backtest.chronicle.record "$@"
                 ;;
             
             "create")
                 run_py_main src.backtest.chronicle.create "$@"
-                ;;
-            
-            "csv")
-                run_py_main src.backtest.chronicle.to_csv "$@"
                 ;;
             
             "to-results")

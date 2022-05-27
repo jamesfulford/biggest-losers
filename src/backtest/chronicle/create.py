@@ -4,8 +4,8 @@ from datetime import date, datetime, time, timedelta
 import logging
 import os
 from typing import Iterable, Optional, cast
-from src.outputs import jsonl_dump
-from src.backtest.chronicle.read import HistoricalChronicleEntry, get_scanner_backtest_chronicle_path
+import typing
+from src.backtest.chronicle import types
 from src.data.finnhub.finnhub import get_candles
 from src.data.types.candles import CandleIntraday
 from src.data.polygon.grouped_aggs import Ticker, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
@@ -16,8 +16,12 @@ from src.scan.utils.scanners import PrescannerFilter, ScannerFilter, get_leadup_
 from src.trading_day import MARKET_TIMEZONE, generate_trading_days
 
 
+from src.backtest.chronicle import from_backtest
+
 # TODO: to parallelize, need to synchronize cache read/writes by cache key to avoid potential data corruption issues
 # (or demand that parallelization only be by day, then only sync when cross day boundaries? case a: float/short interest (sync). case b: yesterday's 1m candles (no sync). case c: monday of this week's 1m candles (sync))
+
+
 def build_daily_candle_from_1m_candles(symbol: str, candles: list[CandleIntraday]) -> Optional[Ticker]:
     if not candles:
         return None
@@ -83,7 +87,7 @@ def get_1m_candles_by_symbol(symbols: list[str], day: date) -> dict[str, list[Ca
 
 def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter: PrescannerFilter,
                     end_time=time(16, 0)
-                    ) -> Iterable[HistoricalChronicleEntry]:
+                    ) -> Iterable[types.Snapshot]:
     tickers = get_all_tickers_on_day(day)
 
     # Pre-scan pass on daily candles to slim down the number of candidates
@@ -99,8 +103,6 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
 
     logging.info(
         f"processing {len(tickers)} tickers for {day}")
-
-    symbol_to_true_ticker = {t['T']: t for t in tickers}
 
     # In-depth 1m candles scan
     symbol_to_candles = get_1m_candles_by_symbol(
@@ -149,21 +151,19 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
             lambda s, t, st, en: symbol_to_current_candles[s]
         )
 
-        for ticker in returned_tickers:
-            entry: HistoricalChronicleEntry = {
-                "now": current_time,
-                "ticker": ticker,
-                "true_ticker": symbol_to_true_ticker[ticker['T']]
-            }
-            yield entry
+        yield types.Snapshot(now=current_time, entries=[
+            types.ChronicleEntry(now=current_time, ticker=ticker) for ticker in returned_tickers
+        ])
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("scanner", type=str)
+    parser.add_argument("target_chronicle_name", type=str)
     parser = add_range_args(parser, required=False)
     args = parser.parse_args()
 
+    target_chronicle_name = args.target_chronicle_name
     scanner_name = args.scanner
     scanner_filter = get_scanner_filter(scanner_name)
     prescanner_filter = get_prescanner_filter(scanner_name)
@@ -191,22 +191,18 @@ def main():
     cache_built_day = get_cache_entry_refresh_time(end).date()
     logging.info(f"cache built time: {cache_built_day}")
 
-    output_path = get_scanner_backtest_chronicle_path(
-        scanner_name, cache_built_day)
-    try:
-        os.makedirs(os.path.dirname(output_path))
-    except:
-        pass
-    try:
-        os.remove(output_path)
-    except:
-        pass
-
     logging.info("Building chronicle...")
 
-    for day in generate_trading_days(start, end):
-        candidates = backtest_on_day(
-            day, scanner_filter, prescanner_filter=prescanner_filter)
-        jsonl_dump.append_jsonl(output_path, cast(Iterable[dict], candidates))
+    snapshot_feed = yield_snapshots(
+        start, end, scanner_filter, prescanner_filter)
+    from_backtest.write_snapshots(
+        target_chronicle_name,
+        snapshot_feed,
+        types.ChronicleMeta(start=start, end=end, classification='backtest',
+                            origin=scanner_name, commit=os.environ.get("GIT_COMMIT", 'dev'))
+    )
 
-    logging.info("Done building chronicle.")
+
+def yield_snapshots(start: date, end: date, scanner_filter, prescanner_filter) -> typing.Iterator[types.Snapshot]:
+    for day in generate_trading_days(start, end):
+        yield from backtest_on_day(day, scanner_filter, prescanner_filter)

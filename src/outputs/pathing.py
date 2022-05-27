@@ -2,6 +2,18 @@ import os
 from typing import Optional
 
 
+def get_chronicle_folder_paths(chronicle_name: str, target_environment_name: Optional[str] = None):
+    paths = get_paths(target_environment_name=target_environment_name)
+    dir_path = os.path.join(
+        paths['data']['chronicles']['dir'], chronicle_name)
+
+    return {
+        'dir': dir_path,
+        'metadata.json': os.path.join(dir_path, 'metadata.json'),
+        'snapshots.jsonl': os.path.join(dir_path, 'snapshots.jsonl'),
+    }
+
+
 def get_results_folder_paths(results_folder_name: str, target_environment_name: Optional[str] = None):
     paths = get_paths(target_environment_name=target_environment_name)
     dir_path = os.path.join(
@@ -46,6 +58,9 @@ def get_paths(target_environment_name: Optional[str] = None):
 
     results_dir = os.path.join(data_dir, 'results')
     paths['data']['results'] = {'dir': results_dir}
+
+    chronicles_dir = os.path.join(data_dir, 'chronicles')
+    paths['data']['chronicles'] = {'dir': chronicles_dir}
 
     paths['data']["inputs"] = {
         'dir': os.path.join(data_dir, 'inputs')}
