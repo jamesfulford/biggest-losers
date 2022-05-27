@@ -197,6 +197,10 @@ case $action in
             "csv")
                 run_py_main src.backtest.chronicle.to_csv "$@"
                 ;;
+            
+            "to-results")
+                run_py_main src.backtest.chronicle.to_results "$@"
+                ;;
 
             *)
                 echo "ERROR: unknown chronicle action $chronicle_action"

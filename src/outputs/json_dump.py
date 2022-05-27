@@ -23,7 +23,7 @@ class MarketTimezoneDateTimeDecoder(json.JSONDecoder):
 
     def object_hook(self, obj):
         for key, value in obj.items():
-            if isinstance(value, str) and "T" in value:
+            if isinstance(value, str) and len(value) > 18 and value[10] == "T":
                 obj[key] = datetime.datetime.fromisoformat(
                     value).astimezone(MARKET_TIMEZONE)
         return obj

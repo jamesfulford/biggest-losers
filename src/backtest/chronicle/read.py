@@ -40,7 +40,7 @@ def read_chronicle(scanner_name: str, chron_type: str, day: date, name: str) -> 
     jsonl_feed = read_jsonl_lines(
         get_chronicle_path(scanner_name, chron_type, day, name))
     feed = ({
-        "now": datetime.strptime(entry['now'], "%Y-%m-%dT%H:%M:%S%z"),
+        "now": entry['now'],
         "ticker": entry['ticker']
     } for entry in jsonl_feed)
     return cast(Iterator[ChronicleEntry], feed)
@@ -83,7 +83,7 @@ def read_backtest_chronicle(scanner: str, cache_built_date: date, commit_id: Opt
     jsonl_feed = read_jsonl_lines(
         get_scanner_backtest_chronicle_path(scanner, cache_built_date, commit_id))
     feed = ({
-        "now": datetime.strptime(entry['now'], "%Y-%m-%dT%H:%M:%S%z"),
+        "now": entry['now'],
         "ticker": entry['ticker'],
         "true_ticker": entry['true_ticker'],
     } for entry in jsonl_feed)
