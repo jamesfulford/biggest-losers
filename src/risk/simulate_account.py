@@ -130,8 +130,8 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("result_name", type=str)
-    parser.add_argument("--parameter-set", type=str,
-                        default="td_options[0.05]")
+    parser.add_argument("parameter_set", type=str,
+                        help="commission_free_stock, ")
 
     args = parser.parse_args()
 
@@ -147,6 +147,13 @@ def main():
         logging.info(
             f"Using TD Options simulation parameters with typical spread of {typical_spread}")
         simulation_parameters = build_td_options_simulation(typical_spread)
+    if args.parameter_set.startswith('commission_free_stock'):
+        typical_spread = args.parameter_set.split('[')[1].split(']')[0]
+        typical_spread = float(typical_spread)
+        logging.info(
+            f"Using commission free stock simulation parameters with typical spread of {typical_spread}")
+        simulation_parameters = build_commission_free_stock_simulation(
+            typical_spread)
     else:
         logging.warning(
             f"Using perfect simulation parameters, results are optimistic")
