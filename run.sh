@@ -395,6 +395,10 @@ case $action in
                 run_py_main src.chain.enhance_trades "$@"
                 ;;
             
+            "remove-reentries")
+                run_py_main src.backtest.remove_reentries "$@"
+                ;;
+            
             "with-brackets")
                 run_py_main src.backtest.brackets_historical "$@"
                 ;;
