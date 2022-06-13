@@ -62,8 +62,6 @@ def main():
 
     # ROI depends on how the account is managed. profit_usage_ratio is an efficiency metric, not ROI.
 
-    # TODO: simulate an account with exactly enough starting money so we can always do every day of trading
-    # TODO: make separate account simulator scripts that add in slippage (cents per share) and commissions (cents per share), fixed quantities
     # TODO: consider more account simulator scripts that adjust quantities dynamically or even do an exponential approach
     # TODO: show simulation results via quantstat (cannot really do quantstat without a starting balance)
 

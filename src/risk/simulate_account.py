@@ -137,6 +137,7 @@ def main():
 
     from src.results import read_results
 
+    # TODO: use orders, not trades, so we can do multi-day trades
     trades = list(read_results.get_trades(args.result_name))
 
     simulation_parameters = build_perfect_simulation()
