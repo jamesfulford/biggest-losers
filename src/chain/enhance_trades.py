@@ -32,14 +32,14 @@ def translate_trades_to_options_orders(trades: typing.Iterator[types.Trade]) -> 
             intention=None,
             symbol=symbol,
             quantity=1,
-            price=simulation_result['open'],
+            price=simulation_result['open'] * 100,
             datetime=trade.get_start(),
         )
         yield types.FilledOrder(
             intention=None,
             symbol=symbol,
             quantity=-1,
-            price=simulation_result['close'],
+            price=simulation_result['close'] * 100,
             datetime=trade.get_end(),
         )
 
