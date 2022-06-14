@@ -49,7 +49,6 @@ class FilledOrder:
 
     def get_position_difference(self) -> float:
         """Will be positive when selling long."""
-        # TODO: if option, do the 100x here? Else all clients need to do it.
         return -self.quantity * self.price
 
     def is_buy(self) -> bool:

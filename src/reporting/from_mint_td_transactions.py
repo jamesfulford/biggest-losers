@@ -125,6 +125,7 @@ def read_orders_from_mint_td_transactions(transactions_file_path) -> typing.Iter
             # NOTE: older options orders are formatted differently (says "to close" or "to open"), I have checked, it still works.
             # if option_direction:
             #     print(order, r['Description'], amount)
+            price = 100 * price
 
             matches = OPTION_SYMBOL_FORMAT.match(symbol)
             if not matches:
@@ -148,7 +149,7 @@ def read_orders_from_mint_td_transactions(transactions_file_path) -> typing.Iter
                 spec)
 
             # calculate fees
-            core_value = abs(100*price*quantity)
+            core_value = abs(price*quantity)
             true_buffer = abs(abs(amount) - core_value)
             # commission: 1.3c per share
             # reg fees: usually like 1c per share, varies, plugging in 2c per share for now
