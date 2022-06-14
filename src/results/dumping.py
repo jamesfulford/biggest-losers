@@ -65,7 +65,8 @@ def overwrite_intention_filled_orders(result_name: str, orders: list[types.Fille
     path = paths['intentioned-filled-orders.jsonl']
 
     rm_f(path)
-    jsonl_dump.append_jsonl(path, (o.to_dict() for o in orders))
+    jsonl_dump.append_jsonl(path, (o.to_dict()
+                            for o in sorted(orders, key=lambda o: o.datetime)))
 
 
 def read_intention_filled_orders(result_name: str) -> typing.Iterator[types.FilledOrder]:
