@@ -1,128 +1,117 @@
+import datetime
 import itertools
 import logging
 import typing
-from src import types
+from src import trading_day, types
 
 
 class SimulationParameters(typing.TypedDict):
     commission_per_order: float
     commission_per_share: float
-    price_slippage: float
+    commission_per_contract: float
 
 
-def build_perfect_simulation():
+def build_td_simulation() -> SimulationParameters:
     return {
         'commission_per_order': 0,
         'commission_per_share': 0,
-        'price_slippage': 0
+        'commission_per_contract': 0.0075 * 100,
     }
 
 
-def build_td_options_simulation(typical_spread: float = 0.05):
-    return {
-        'commission_per_order': 0,
-        # 0.75c per share per option contract per order. (buy+sell 1 contract of 100 -> $1.3)
-        'commission_per_share': 0.0075,
-        # assumes mark is usually halfway between bid and ask
-        'price_slippage': typical_spread * .5
-    }
-
-
-def build_commission_free_stock_simulation(typical_spread: float = 0.05):
-    return {
-        'commission_per_order': 0,
-        'commission_per_share': 0,
-        # assumes mark is usually halfway between bid and ask
-        'price_slippage': typical_spread * .5
-    }
-
-
-def simulate_account(trades: typing.Iterator[types.Trade], initial_cash: float, parameters: SimulationParameters) -> typing.Iterator[typing.Tuple[types.Trade, float, float]]:
+def simulate_account(orders: typing.Iterator[types.FilledOrder], initial_cash: float, parameters: SimulationParameters) -> typing.Iterator[typing.Tuple[types.FilledOrder, float]]:
     commission_per_order = parameters['commission_per_order']
     commission_per_share = parameters['commission_per_share']
-    price_slippage = parameters['price_slippage']
+    commission_per_contract = parameters['commission_per_contract']
 
-    cash = initial_cash
-    for trade in trades:
-        value_spent = (trade.get_average_entry_price() +
-                       price_slippage) * trade.get_quantity()
+    cash = initial_cash  # settled cash that can be used for purchasing
 
-        cash -= value_spent
-        cash -= commission_per_order
-        cash -= commission_per_share * trade.get_quantity()
+    for order in orders:
+        value = order.get_position_difference()
+        size = abs(order.quantity)
 
-        low_point = cash
+        diff = value - (commission_per_contract if order.is_option()
+                        else commission_per_share) * size - commission_per_order
+        cash += diff
 
-        value_extracted = (trade.get_average_exit_price() -
-                           price_slippage) * trade.get_quantity()
-
-        cash += value_extracted
-        cash -= commission_per_order
-
-        yield (trade, low_point, cash)
+        yield (order, cash)
 
 
-def find_perfect_initial_balance(trades, simulation_parameters: SimulationParameters) -> float:
+def find_perfect_initial_balance(orders: typing.Iterator[types.FilledOrder], simulation_parameters: SimulationParameters) -> float:
     # negative lowest low point -> just enough initial balance to never go below 0
-    return -min(simulate_account(trades, 0, simulation_parameters), key=lambda t: t[1])[1]
+    return -min(simulate_account(orders, 0, simulation_parameters), key=lambda t: t[1])[1]
 
 
-def yield_usages(trades: typing.Iterator[types.Trade], simulation_parameters: SimulationParameters) -> typing.Iterator[typing.Tuple[types.Trade, float]]:
-    """Includes commissions and simulated slippage"""
+def find_min_balance_needed_for_purchasing_power(orders: typing.Iterator[types.FilledOrder], simulation_parameters: SimulationParameters) -> float:
+    return -min(yield_running_purchasing_power_with_settling(orders, simulation_parameters), key=lambda e: e[1])[1]
+
+
+def yield_running_purchasing_power_with_settling(orders: typing.Iterator[types.FilledOrder], simulation_parameters: SimulationParameters) -> typing.Iterator[typing.Tuple[datetime.datetime, float]]:
     previous_cash = 0
-    for trade, low_point, cash in simulate_account(trades, 0, simulation_parameters):
-        yield (trade, previous_cash - low_point)
+    # when demand for cash (buying), cash goes down
+    # when supply of cash (selling), cash goes up after settling period
+    purchasing_power = 0
+    # (day when cash becomes available, cash that will become available)
+    settling_purgatory = []
+    for order, cash in simulate_account(orders, 0, simulation_parameters):
+
+        # At start of day (assumed 9:30), increase purchasing power from pending cash settling
+        if any(e[0] <= order.datetime.date() for e in settling_purgatory):
+            for settlement_date, settlement_usage in settling_purgatory:
+                if settlement_date <= order.datetime.date():
+                    purchasing_power += settlement_usage
+            settling_purgatory = [(settlement_date, settlement_usage) for settlement_date,
+                                  settlement_usage in settling_purgatory if settlement_date > order.datetime.date()]
+            yield typing.cast(datetime.datetime, trading_day.get_market_open_on_day(order.datetime.date())), purchasing_power
+
+        cash_diff = previous_cash - cash
         previous_cash = cash
 
+        if cash_diff > 0:
+            purchasing_power -= cash_diff
+            yield order.datetime, purchasing_power
+        else:
+            # money is flowing in, schedule the cash to settle in the future
+            # Options actually settle in 1 day: https://td.intelliresponse.com/tddirectinvesting/public/index.jsp?interfaceID=19&sessionId=921723fb-d96f-11ec-b911-43daeb48e13c&id=7551&requestType=&source=9&question=settled+
+            # TODO: `1 or 2` better configuration needed(?)
+            settlement_release_day = trading_day.n_trading_days_ahead(
+                order.datetime.date(), 1 if order.is_option() else 2)
+            settling_purgatory_entry = (settlement_release_day, abs(cash_diff))
+            settling_purgatory.append(settling_purgatory_entry)
 
-def find_max_usage(trades: typing.Iterator[types.Trade], simulation_parameters: SimulationParameters) -> float:
-    return max(yield_usages(trades, simulation_parameters), key=lambda t: t[1])[1]
+    prev_day = min(settling_purgatory, key=lambda t: t[0])[
+        0] if settling_purgatory else None
+    if not prev_day:
+        return
 
+    for settlement_date, settlement_usage in sorted(settling_purgatory):
+        if settlement_date > prev_day:
+            yield typing.cast(datetime.datetime, trading_day.get_market_open_on_day(prev_day)), purchasing_power
+            prev_day = settlement_date
+        purchasing_power += settlement_usage
 
-def yield_daily_usages(trades: typing.Iterator[types.Trade], simulation_parameters: SimulationParameters) -> typing.Iterator[typing.Tuple[types.Trade, float]]:
-    first_trade = next(trades)
-    current_date = first_trade.get_end().date()
-    current_usage = 0
-    for trade, usage in yield_usages(itertools.chain([first_trade], trades), simulation_parameters):
-        if trade.get_end().date() != current_date:
-            current_date = trade.get_end().date()
-            yield (trade, current_usage)
-            current_usage = 0
-        current_usage += usage
-
-
-def pairwise(l: list, n=2):
-    i = 0
-    while True:
-        slic = l[i:i+n]
-        if len(slic) != n:
-            break
-        yield slic
-        i += 1
-
-
-def find_max_rolling_daily_usage(trades: typing.Iterator[types.Trade], window_size: int, simulation_parameters: SimulationParameters) -> float:
-    tuple_pairs = pairwise(
-        [daily_usage for daily_usage in yield_daily_usages(trades, simulation_parameters)], window_size)
-    highest_usage_pair = max(
-        tuple_pairs, key=lambda tp_pair: sum(tp[1] for tp in tp_pair))
-    return sum(tp[1] for tp in highest_usage_pair)
+    yield typing.cast(datetime.datetime, trading_day.get_market_open_on_day(prev_day)), purchasing_power
 
 
-def find_perfect_initial_balance_for_cash_account(trades, simulation_parameters: SimulationParameters):
-    # settle period is 2 days
-    return find_max_rolling_daily_usage(trades, 2, simulation_parameters)
-
-
-def find_perfect_initial_balance_for_margin_account(trades, simulation_parameters: SimulationParameters):
-    return find_max_rolling_daily_usage(trades, 1, simulation_parameters)
-
-
-def simulate_final_profit_loss(trades, simulation_parameters: SimulationParameters):
+def simulate_final_profit_loss(orders: typing.Iterator[types.FilledOrder], simulation_parameters: SimulationParameters):
     last_cash = 0
-    for trade, low_point, cash in simulate_account(trades, 0, simulation_parameters):
+    for _order, cash in simulate_account(orders, 0, simulation_parameters):
         last_cash = cash
     return last_cash
+
+
+def yield_last_by_date(tuples: typing.Iterator[typing.Tuple[datetime.datetime, float]]) -> typing.Iterator[typing.Tuple[datetime.date, float]]:
+    prev_dt, prev_value = next(tuples, (None, 0))
+    if not prev_dt:
+        return
+    prev_day = prev_dt.date()
+
+    for day, value in itertools.chain([(prev_dt, prev_value)], tuples):
+        if day.date() != prev_day:
+            yield prev_day, prev_value
+        prev_day = day.date()
+        prev_value = value
+    yield prev_day, prev_value
 
 
 def main():
@@ -130,48 +119,30 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("result_name", type=str)
-    parser.add_argument("parameter_set", type=str,
-                        help="commission_free_stock, ")
 
     args = parser.parse_args()
 
     from src.results import read_results
 
-    # TODO: use orders, not trades, so we can do multi-day trades
-    trades = list(read_results.get_trades(args.result_name))
+    orders = list(read_results.get_orders(args.result_name))
 
-    simulation_parameters = build_perfect_simulation()
-    if args.parameter_set.startswith('td_options'):
-        # like "td_options[0.05]"
-        typical_spread = args.parameter_set.split('[')[1].split(']')[0]
-        typical_spread = float(typical_spread)
-        logging.info(
-            f"Using TD Options simulation parameters with typical spread of {typical_spread}")
-        simulation_parameters = build_td_options_simulation(typical_spread)
-    if args.parameter_set.startswith('commission_free_stock'):
-        typical_spread = args.parameter_set.split('[')[1].split(']')[0]
-        typical_spread = float(typical_spread)
-        logging.info(
-            f"Using commission free stock simulation parameters with typical spread of {typical_spread}")
-        simulation_parameters = build_commission_free_stock_simulation(
-            typical_spread)
-    else:
-        logging.warning(
-            f"Using perfect simulation parameters, results are optimistic")
+    simulation_parameters = build_td_simulation()
 
-    margin_initial_balance = find_perfect_initial_balance_for_margin_account(
-        iter(trades), simulation_parameters)
-    cash_initial_balance = find_perfect_initial_balance_for_cash_account(
-        iter(trades), simulation_parameters)
     perfect_initial_balance = find_perfect_initial_balance(
-        iter(trades), simulation_parameters)
+        iter(orders), simulation_parameters)
+    cash_initial_balance = find_min_balance_needed_for_purchasing_power(
+        iter(orders), simulation_parameters)
 
-    pnl = simulate_final_profit_loss(iter(trades), simulation_parameters)
+    pnl = simulate_final_profit_loss(iter(orders), simulation_parameters)
 
     print(
         f"Perfect initial balance: {perfect_initial_balance:>8.2f} \tfinal balance: {(perfect_initial_balance + pnl):>8.2f} \tROI: {pnl / perfect_initial_balance:>8.2%}")
-    # Options actually settle in 1 day: https://td.intelliresponse.com/tddirectinvesting/public/index.jsp?interfaceID=19&sessionId=921723fb-d96f-11ec-b911-43daeb48e13c&id=7551&requestType=&source=9&question=settled+
-    print(
-        f"Margin initial balance : {margin_initial_balance:>8.2f} \tfinal balance: {(margin_initial_balance + pnl):>8.2f} \tROI: {pnl / margin_initial_balance:>8.2%}")
     print(
         f"Cash initial balance   : {cash_initial_balance:>8.2f} \tfinal balance: {(cash_initial_balance + pnl):>8.2f} \tROI: {pnl / cash_initial_balance:>8.2%}")
+
+    # print()
+    # print("  Time           Purchasing power in cash account by end of day")
+    # for dt, purchasing_power in yield_last_by_date(yield_running_purchasing_power_with_settling(iter(orders), simulation_parameters)):
+    #     print(
+    #         f"  {dt} {cash_initial_balance+purchasing_power:>12.2f}")
+    # print()

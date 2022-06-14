@@ -20,6 +20,12 @@ def next_trading_day(day: date) -> date:
     raise ValueError(f"next_trading_day: {day=} is too far in the future")
 
 
+def n_trading_days_ahead(day: date, n: int) -> date:
+    for _ in range(n):
+        day = next_trading_day(day)
+    return day
+
+
 def previous_trading_day(day: date) -> date:
     while day >= date(2000, 1, 1):  # instead of infinite loop, give None
         day = day - timedelta(days=1)
@@ -27,6 +33,12 @@ def previous_trading_day(day: date) -> date:
             return day
 
     raise ValueError(f"previous_trading_day: {day=} is too far in the past")
+
+
+def n_trading_days_ago(day: date, n: int) -> date:
+    for _ in range(n):
+        day = previous_trading_day(day)
+    return day
 
 
 def today_or_next_trading_day(d: date):
