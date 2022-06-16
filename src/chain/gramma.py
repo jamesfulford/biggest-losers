@@ -8,6 +8,7 @@ from src.data.finnhub.aggregate_candles import filter_candles_during_market_hour
 from src.data.polygon.get_option_candles import get_option_candles
 from src.data.polygon.option_chain import PolygonOptionChainContract, format_contract_specifier_to_polygon_option_ticker, get_option_chain
 from src.data.finnhub import finnhub
+from src.data.polygon import get_candles
 from src.data.types.candles import CandleIntraday
 from src.data.types.contracts import OptionCandleGetter, OptionContractSpecifier
 
@@ -85,8 +86,8 @@ def extract_close_to_end_candle(candles: list[CandleIntraday], end: datetime.dat
 
 def simulate_trade_in_options(underlying_symbol: str, start: datetime.datetime, end: datetime.datetime, upside: bool) -> Optional[OptionSimulation]:
     # Get necessary data
-    day = start.date()
-    candles = finnhub.get_1m_candles(underlying_symbol, day, day)
+    candles = get_candles.get_candles(
+        underlying_symbol, '1', start.date(), end.date())
     if not candles:
         print(f"{underlying_symbol} no candles found")
         raise ValueError(f"{underlying_symbol} no candles found")
@@ -96,10 +97,12 @@ def simulate_trade_in_options(underlying_symbol: str, start: datetime.datetime, 
 
     # Find contract
     def get_truncated_option_candles(spec: OptionContractSpecifier, resolution: str, start_date: datetime.date, end_date: datetime.date) -> list[CandleIntraday]:
-        candles = get_option_candles(spec, resolution, start_date, end_date)
+        candles = get_option_candles(
+            # the `max` part is to fetch extra days of data so we populate the cache, hopefully save some requests
+            spec, resolution, start_date, max(end_date, spec['expiration_date']))
         return [c for c in candles if c['datetime'] <= start]
 
-    contracts = get_option_chain(underlying_symbol, day)
+    contracts = get_option_chain(underlying_symbol, start.date())
     if upside:
         contracts = filter_option_chain_for_calls(contracts)
     else:
@@ -110,7 +113,8 @@ def simulate_trade_in_options(underlying_symbol: str, start: datetime.datetime, 
         logging.debug("No contract found")
         return
 
-    option_candles = get_option_candles(contract['spec'], '1', day, day)
+    option_candles = get_option_candles(
+        contract['spec'], '1', start.date(), end.date())
     entry_candle = extract_close_to_start_candle(option_candles, start)
     exit_candle = extract_close_to_end_candle(option_candles, end)
 
@@ -121,7 +125,8 @@ def simulate_trade_in_options(underlying_symbol: str, start: datetime.datetime, 
     valley_candle = min(holding_candles, key=lambda c: c['low'])
 
     open_price = entry_candle['open']
-    close_price = exit_candle['close']
+    # assumes that end timestamp is an exit on the open of that 1m candle.
+    close_price = exit_candle['open']
     high_price = peak_candle['high']
     low_price = valley_candle['low']
 

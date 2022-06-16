@@ -1,28 +1,34 @@
-from datetime import date
+from datetime import date, timedelta
 import logging
 import os
-from time import sleep
+import random
 from typing import Iterable, Optional
 
 import requests
 from src.caching.basics import read_json_cache, write_json_cache
 
-from src.trading_day import today, today_or_previous_trading_day
+from src.trading_day import now, today, today_or_previous_trading_day
+from src.wait import wait_until
 
 
 def get_polygon_api_key():
     return os.environ["POLYGON_API_KEY"]
 
 
-# TODO: refactor grouped_aggs, get_candles to use these helpers
+# TODO: refactor grouped_aggs to use these helpers
 def _get_polygon(url: str, **kwargs):
     while True:
         response = requests.get(
             url, **kwargs, headers={"Authorization": f"Bearer {get_polygon_api_key()}"})
         if response.status_code == 429:
+            right_now = now()
+
+            target_time = right_now.replace(
+                # some jitter to resolve multi-process sharing/hogging of quota
+                second=random.randint(0, 10), microsecond=0) + timedelta(minutes=1)
             logging.info(
-                f"Rate limit exceeded, {url.replace('https://api.polygon.io', '')}, waiting 10s...")
-            sleep(10)
+                f"Rate limit exceeded, {url.replace('https://api.polygon.io', '')}, waiting for {target_time - right_now}...")
+            wait_until(target_time)
             continue
 
         response.raise_for_status()
