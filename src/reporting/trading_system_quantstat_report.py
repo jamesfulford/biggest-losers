@@ -32,6 +32,7 @@ def main():
 
     from src.results import read_results
     trades = list(read_results.get_trades(args.result_name))
+    trades.sort(key=lambda t: t.get_end().date())
 
     trade_days = dict(trades_by_day(trades))
 
@@ -46,6 +47,10 @@ def main():
         profit_usage_ratio = get_profit_usage_ratio(days_trades)
         print(f'{day} ({len(days_trades):>2}): {profit_usage_ratio:>6.1%}',
               f"{int(profit_usage_ratio * -100) * '=':>50}|{int(profit_usage_ratio * 100) * '=':<50}")
+        for trade in days_trades:
+            # >22 because that's an Option contract for a 5 letter ticker
+            print(
+                f'\t{trade.get_symbol():>22} {(trade.get_average_exit_price() - trade.get_average_entry_price()) / trade.get_average_entry_price():>8.1%} (days: {len(list(trading_day.generate_trading_days(trade.get_start().date(), trade.get_end().date()))):>3})')
 
     print()
     print(f'{len(trades)} trades')
