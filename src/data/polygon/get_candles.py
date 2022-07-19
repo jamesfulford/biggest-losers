@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from src import trading_day
 
 from src.caching.basics import read_json_cache, write_json_cache
-
+from src.data.types.candles import Candle
 
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
@@ -22,7 +22,7 @@ def get_candles(
     start: date,
     end: date,
     adjusted=True,
-):
+) -> list[Candle]:
     """
     Fetches candles from Polygon for `symbol` with `resolution`-sized candles (1 = 1m candles, 5 = 5m candles, D = daily, etc.)
     from `start` date to `end` date, including both days. (if both are same day, it fetches for that day)
