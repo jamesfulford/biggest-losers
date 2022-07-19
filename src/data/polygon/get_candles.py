@@ -34,13 +34,9 @@ def get_candles(
 
     results_by_day = {}
     for day in trading_day.generate_trading_days(start, end):
-        # do not cache candles for today or in the future, since that list will change
-        should_cache = not (day >= date.today())
-
-        if should_cache:
-            cache_key = f"polygon/candles/{symbol}_{resolution}_{day.isoformat()}"
-            cached = read_json_cache(cache_key)
-            results_by_day[day] = cached
+        cache_key = f"polygon/candles/{symbol}_{resolution}_{day.isoformat()}"
+        cached = read_json_cache(cache_key)
+        results_by_day[day] = cached
 
     def _build_results(results_by_day):
         candles = []
@@ -65,9 +61,12 @@ def get_candles(
                                fetch_end, adjusted=adjusted)
 
     for day in trading_day.generate_trading_days(fetch_start, fetch_end):
-        should_cache = not (day >= date.today())
-        if not should_cache or results_by_day[day]:
+
+        # intermediate days that had a cache hit; leave it as-is
+        if results_by_day[day]:
             continue
+
+        # use data in populating response dictionary
         day_dt_start = datetime.combine(
             day, datetime.min.time(), tzinfo=MARKET_TIMEZONE)
         day_dt_end = day_dt_start + timedelta(days=1)
@@ -75,8 +74,11 @@ def get_candles(
                               if c["t"] // 1000 >= day_dt_start.timestamp() and c["t"] // 1000 < day_dt_end.timestamp()]
         day_data = {'status': 'OK', 'results': raw_candle_results}
         results_by_day[day] = day_data
-        write_json_cache(
-            f"polygon/candles/{symbol}_{resolution}_{day.isoformat()}", day_data)
+
+        should_cache = not (day >= date.today())
+        if should_cache:
+            write_json_cache(
+                f"polygon/candles/{symbol}_{resolution}_{day.isoformat()}", day_data)
 
     return _build_results(results_by_day)
 
