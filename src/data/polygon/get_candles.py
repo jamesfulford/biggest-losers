@@ -1,3 +1,4 @@
+import typing
 from src.data.polygon import polygon
 import logging
 from datetime import datetime, date, timedelta
@@ -6,7 +7,7 @@ from zoneinfo import ZoneInfo
 from src import trading_day
 
 from src.caching.basics import read_json_cache, write_json_cache
-from src.data.types.candles import Candle
+from src.data.types.candles import Candle, CandleInterday, CandleIntraday
 
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
@@ -14,6 +15,23 @@ MARKET_TIMEZONE = ZoneInfo("America/New_York")
 def main():
     candles = get_candles('AAPL', '1', date(2022, 1, 1), date(2022, 6, 14))
     print(len(candles), candles[0]['datetime'], candles[-1]['datetime'])
+
+
+def get_1m_candles(symbol: str, start: date, end: date) -> typing.Optional[list[CandleIntraday]]:
+    """
+    NOTE: free tier -> same-day candles are not available.
+    """
+    candles_1m = get_candles(symbol, "1", start, end)
+    if candles_1m is None:
+        return None
+    return typing.cast(list[CandleIntraday], candles_1m)
+
+
+def get_d_candles(symbol: str, start: date, end: date) -> typing.Optional[list[CandleInterday]]:
+    candles_d = get_candles(symbol, "D", start, end)
+    if candles_d is None:
+        return None
+    return typing.cast(list[CandleInterday], candles_d)
 
 
 def get_candles(
@@ -24,6 +42,8 @@ def get_candles(
     adjusted=True,
 ) -> list[Candle]:
     """
+    NOTE: free tier -> same-day candles are not available.
+
     Fetches candles from Polygon for `symbol` with `resolution`-sized candles (1 = 1m candles, 5 = 5m candles, D = daily, etc.)
     from `start` date to `end` date, including both days. (if both are same day, it fetches for that day)
     Returns None if there is no data for the given time range.
