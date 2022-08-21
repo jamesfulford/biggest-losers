@@ -26,14 +26,11 @@ class FilledOrder:
     intention: typing.Optional[Intention]
 
     symbol: str  # for options, follows Polygon format
-
-    quantity: float  # sum of all legs
-    # quantity is positive -> adding to position, moves position away from 0
-    # quantity is negative -> removing from position, moves position closer to 0
-
-    price: float  # average price of all legs
-
-    datetime: datetime.datetime  # END of fulfillment period
+    quantity: float  # sum of all partial fills
+    # difference on position. - can mean shorting, or it can mean selling long
+    # + can mean buying long or covering short
+    price: float  # average price of all fills
+    datetime: datetime.datetime  # timestamp of last fill
 
     def find_matching_intention(self, intentions: list[Intention]) -> typing.Optional[Intention]:
         """
