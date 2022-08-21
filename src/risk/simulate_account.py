@@ -169,7 +169,7 @@ def fetch_todays_close(symbol: str, date: datetime.date) -> float:
 
 
 def evaluate_account_positions(account_state: IdealAccountState, date: datetime.date) -> dict[str, float]:
-    return {symbol: size * fetch_todays_close(symbol, date) * 100 if symbol.startswith("O:") else 1 for symbol, size in account_state.positions.items()}
+    return {symbol: size * fetch_todays_close(symbol, date) * (100 if symbol.startswith("O:") else 1) for symbol, size in account_state.positions.items()}
 
 
 def evaluate_account_position_value(account_state: IdealAccountState, date: datetime.date) -> float:
@@ -523,19 +523,20 @@ def main():
     from src.results import read_results
 
     orders = list(read_results.get_orders(args.result_name))
+    simulation = Simulation.from_orders(
+        orders, IdealAccountState.empty(build_td_simulation()))
+    simulation.get_values()
 
-    simulation_parameters = build_td_simulation()
+    # ideal_simulation = list(simulate_ideal_account(
+    #     iter(orders), IdealAccountState.empty(simulation_parameters)))
+    # ideal_initial_balance = - \
+    #     min(ideal_simulation, key=lambda t: t[1].cash)[1].cash
+    # ideal_pnl = estimate_account_value(
+    #     ideal_simulation[-1][1], ideal_simulation[-1][0].datetime.date())
 
-    ideal_simulation = list(simulate_ideal_account(
-        iter(orders), IdealAccountState.empty(simulation_parameters)))
-    ideal_initial_balance = - \
-        min(ideal_simulation, key=lambda t: t[1].cash)[1].cash
-    ideal_pnl = estimate_account_value(
-        ideal_simulation[-1][1], ideal_simulation[-1][0].datetime.date())
+    # ideal_final_balance = ideal_initial_balance + ideal_pnl
+    # print(
+    #     f"Ideal:    initial={ideal_initial_balance:>8.2f} \tfinal={(ideal_final_balance):>8.2f} \tROI={ideal_pnl / ideal_initial_balance:>8.2%}")
 
-    ideal_final_balance = ideal_initial_balance + ideal_pnl
-    print(
-        f"Ideal:    initial={ideal_initial_balance:>8.2f} \tfinal={(ideal_final_balance):>8.2f} \tROI={ideal_pnl / ideal_initial_balance:>8.2%}")
-
-    pprint(settling_stats_for_orders(
-        list(orders), IdealAccountState.empty(simulation_parameters)))
+    # pprint(settling_stats_for_orders(
+    #     list(orders), IdealAccountState.empty(simulation_parameters)))
