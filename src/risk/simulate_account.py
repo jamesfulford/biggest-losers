@@ -265,6 +265,7 @@ class Simulation:
         return estimate_account_value(final_state[1].ideal_account_state, final_state[0].date())
 
     def get_values(self) -> pd.Series:
+        """Returns account value estimates by day"""
         end_of_day_values = list(
             value_at_close_every_day(self._states_by_date))
         start, _end = end_of_day_values[0][0], end_of_day_values[-1][0]
@@ -276,6 +277,10 @@ class Simulation:
         returns = pd.Series(returns.values, [
             pd.to_datetime(dt) for dt in returns.index])
         return returns
+
+    def get_returns(self) -> pd.Series:
+        """Returns percent returns by day"""
+        return self.get_values().pct_change().dropna()
 
 
 def settling_stats_for_orders(orders: list[types.FilledOrder], initial_account: IdealAccountState, risk_free_rate: float = 0.02) -> dict:
