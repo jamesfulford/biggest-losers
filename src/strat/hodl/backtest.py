@@ -38,4 +38,6 @@ def main():
                           quantity=-1,
                           price=candles[-1]['close'],
                           datetime=trading_day.get_last_market_close(datetime.datetime.combine(candles[-1]['date'], datetime.time(16, 0))))
-    ], metadata.Metadata(commit_id="", last_updated=datetime.datetime.now()))
+    ], metadata.from_context(__file__, start, end, {
+        "symbol": symbol,
+    }))
