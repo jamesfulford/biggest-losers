@@ -6,7 +6,7 @@ import os
 from typing import Iterable, Optional, cast
 import typing
 from src.backtest.chronicle import types
-from src.data.finnhub.finnhub import get_candles
+from src.data.polygon import get_candles
 from src.data.types.candles import CandleIntraday
 from src.data.polygon.grouped_aggs import Ticker, get_cache_entry_refresh_time, get_cache_prepared_date_range_with_leadup_days
 from src.scripts.helpers.parse_period import add_range_args, interpret_args
@@ -77,17 +77,59 @@ def build_daily_candle_from_1m_candles(symbol: str, candles: list[CandleIntraday
 def get_1m_candles_by_symbol(symbols: list[str], day: date) -> dict[str, list[CandleIntraday]]:
     symbol_to_candles: dict[str, list[CandleIntraday]] = {}
     for symbol in symbols:
-        candles = get_candles(symbol, "1", day, day)
+        candles = get_candles.get_1m_candles(symbol, day, day)
         if not candles:
             logging.warn(f"no candles for {symbol} on {day}, {candles=}")
             continue
-        symbol_to_candles[symbol] = cast(list[CandleIntraday], candles)
+        symbol_to_candles[symbol] = candles
     return symbol_to_candles
 
 
+def every_minute(minutes=1):
+    times = []
+    # any day works
+    t = datetime.combine(date.today(), time(9, 30))
+    while t.time() < time(16, 0):
+        times.append(t.time())
+        t += timedelta(minutes=minutes)
+    return times
+
+
+def every_5m():
+    return every_minute(minutes=5)
+
+
+def every_15m():
+    return every_minute(minutes=15)
+
+
+def every_30m():
+    return every_minute(minutes=30)
+
+
+def every_hour():
+    return every_minute(minutes=60)
+
+
+def every_day_before_close():
+    return [time(15, 59)]
+
+
+def every_day_11m_before_close():
+    """So can do MOC and LOC orders"""
+    return [time(15, 49)]
+
+
+def every_day_15m_before_close():
+    return [time(15, 45)]
+
+
 def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter: PrescannerFilter,
-                    end_time=time(16, 0)
+                    times: typing.Optional[list[time]] = None,
                     ) -> Iterable[types.Snapshot]:
+    if not times:
+        times = every_minute()
+
     tickers = get_all_tickers_on_day(day)
 
     # Pre-scan pass on daily candles to slim down the number of candidates
@@ -123,21 +165,19 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
             logging.warn(
                 f"{day} {ticker['T']} mismatch open price! {adjusted_open=} {unadjusted_open=} ratio={open_price_ratio} TODO: implement candle adjustment")
 
-    # TODO: pass in a time iterator so we can control every 5m, 30m, once daily, etc.
     # NOTE: while we could simulate pre-market and after-market, we can't scan it live
 
-    # simulate intraday daily candles as they develop minute-by-minute
+    # simulate intraday daily candles as they develop
     # (pay attention to how we call scanner)
-    current_time = datetime(day.year, day.month,
-                            day.day, 9, 29).astimezone(MARKET_TIMEZONE)
-    while current_time.time() < end_time:
-        current_time += timedelta(minutes=1)
 
+    for current_time in times:
+        current_datetime = datetime.combine(
+            day, current_time, tzinfo=MARKET_TIMEZONE)
         # build map of symbol to candles visible at current_time
         symbol_to_current_candles = {}
         for symbol, candles in symbol_to_candles.items():
             symbol_to_current_candles[symbol] = list(
-                filter(lambda c: c["datetime"] < current_time, candles))
+                filter(lambda c: c["datetime"] < current_datetime, candles))
 
         # build simulated intraday candles
         daily_candles = [build_daily_candle_from_1m_candles(t['T'],
@@ -151,8 +191,8 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
             lambda s, t, st, en: symbol_to_current_candles[s]
         )
 
-        yield types.Snapshot(now=current_time, entries=[
-            types.ChronicleEntry(now=current_time, ticker=ticker) for ticker in returned_tickers
+        yield types.Snapshot(now=current_datetime, entries=[
+            types.ChronicleEntry(now=current_datetime, ticker=ticker) for ticker in returned_tickers
         ])
 
 
@@ -161,6 +201,8 @@ def main():
     parser.add_argument("scanner", type=str)
     parser.add_argument("target_chronicle_name", type=str)
     parser = add_range_args(parser, required=False)
+    parser.add_argument("--frequency", choices=["1m", "5m", "15m",
+                        "30m", "1h", "close", "close-11m", "close-15m"], default='close')
     args = parser.parse_args()
 
     target_chronicle_name = args.target_chronicle_name
@@ -191,10 +233,21 @@ def main():
     cache_built_day = get_cache_entry_refresh_time(end).date()
     logging.info(f"cache built time: {cache_built_day}")
 
+    times = {
+        "1m": every_minute(),
+        "5m": every_5m(),
+        "15m": every_15m(),
+        "30m": every_30m(),
+        "1h": every_hour(),
+        "close": every_day_before_close(),
+        "close-11m": every_day_11m_before_close(),
+        "close-15m": every_day_15m_before_close(),
+    }[typing.cast(str, args.frequency)]
+
     logging.info("Building chronicle...")
 
     snapshot_feed = yield_snapshots(
-        start, end, scanner_filter, prescanner_filter)
+        start, end, scanner_filter, prescanner_filter, times)
     from_backtest.write_snapshots(
         target_chronicle_name,
         snapshot_feed,
@@ -203,6 +256,6 @@ def main():
     )
 
 
-def yield_snapshots(start: date, end: date, scanner_filter, prescanner_filter) -> typing.Iterator[types.Snapshot]:
+def yield_snapshots(start: date, end: date, scanner_filter: ScannerFilter, prescanner_filter: PrescannerFilter, times: typing.Optional[list[time]] = None) -> typing.Iterator[types.Snapshot]:
     for day in generate_trading_days(start, end):
-        yield from backtest_on_day(day, scanner_filter, prescanner_filter)
+        yield from backtest_on_day(day, scanner_filter, prescanner_filter, times)
