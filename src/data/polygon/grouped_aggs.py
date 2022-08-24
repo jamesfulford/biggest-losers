@@ -1,4 +1,5 @@
 from datetime import date, datetime, time
+from functools import lru_cache
 import logging
 from time import sleep
 from typing import Optional, Tuple, TypeVar, TypedDict, cast
@@ -227,6 +228,11 @@ def get_today_grouped_aggs(today: date) -> Optional[EnrichedGroupedAggsResponse]
     return today_grouped_aggs
 
 
+@lru_cache(maxsize=256)
+def get_today_grouped_aggs_from_cache_with_lru_cache(today: date) -> Tuple[bool, Optional[EnrichedGroupedAggsResponse]]:
+    return get_today_grouped_aggs_from_cache(today)
+
+
 def get_today_grouped_aggs_from_cache(today: date) -> Tuple[bool, Optional[EnrichedGroupedAggsResponse]]:
     """
     Returns (cache_hit_bool, grouped_aggs)
@@ -255,7 +261,8 @@ def get_last_n_candles(today: date, ticker: str, n: int = 14) -> Optional[list[T
     """
     candles = []
     while len(candles) < n:
-        cache_hit, grouped_aggs = get_today_grouped_aggs_from_cache(today)
+        cache_hit, grouped_aggs = get_today_grouped_aggs_from_cache_with_lru_cache(
+            today)
         if not cache_hit:
             # we don't have enough data in the cache
             return None
