@@ -151,8 +151,7 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
         [t['T'] for t in tickers], day)
     tickers = list(filter(lambda t: t["T"] in symbol_to_candles, tickers))
 
-    # TODO: 1m candles from finnhub are unadjusted, but some data used by scanners are! (e.g. previous day candle) How to handle this?
-    # MAYBE: check ticker (in tickers), compare to 9:30 1m candle, use that ratio to adjust finnhub as we go?
+    # Adjust 1m candles as we go
     for ticker in tickers:
         adjusted_open = ticker['o']
         opening_unadjusted_candle = next(filter(lambda c: c['datetime'].time() >= time(
@@ -160,7 +159,33 @@ def backtest_on_day(day: date, scanner_filter: ScannerFilter, prescanner_filter:
         unadjusted_open = opening_unadjusted_candle['open']
 
         open_price_ratio = (adjusted_open / unadjusted_open)
-        if open_price_ratio > 1.1 or open_price_ratio < 0.9:
+        if (day, ticker['T']) in [
+            # https://finance.yahoo.com/quote/ONTX/history?period1=1596240000&period2=1601424000&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true
+            (date(2020, 8, 24), 'ONTX'),
+        ]:
+            # data from stock split is kinda screwed up
+            symbol_to_candles[ticker['T']] = []  # means: skip this one later
+            continue
+
+        if round(open_price_ratio, 3) in (
+            0.333,  # 1:3
+            0.250,  # 1:4
+            0.200,  # 1:5
+            0.100,  # 1:10
+            0.083,  # 1:12
+            0.025,  # 1:20
+            0.033,  # 1:30
+        ):
+            # 2022-08-25 09:41:03,438   WARNING  2020-08-24 ONTX mismatch open price! adjusted_open=4.128 unadjusted_open=4.779 ratio=0.8637790332705587 TODO: implement candle adjustment
+            symbol_to_candles[ticker['T']] = [{
+                'datetime': c['datetime'],
+                'close': c['close'] * open_price_ratio,
+                'open': c['open'] * open_price_ratio,
+                'high': c['high'] * open_price_ratio,
+                'low': c['low'] * open_price_ratio,
+                'volume': c['volume']
+            } for c in symbol_to_candles[ticker['T']]]
+        elif open_price_ratio > 1.01 or open_price_ratio < 0.99:
             # obvious stock split
             logging.warn(
                 f"{day} {ticker['T']} mismatch open price! {adjusted_open=} {unadjusted_open=} ratio={open_price_ratio} TODO: implement candle adjustment")
