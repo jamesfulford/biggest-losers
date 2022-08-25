@@ -39,8 +39,14 @@ def main():
     result_name = args.result_name
 
     chronicle = crud.get(chronicle_name)
+    md = metadata.from_context(
+        __file__, chronicle.metadata.start, chronicle.metadata.end, {
+            'chronicle.metadata': chronicle.metadata.to_dict(),
+            'chronicle_name': chronicle_name
+        }
+    )
     from_backtest.write_results(result_name, list(chunk_feed_into_signals_by_span(
-        iter(chronicle.snapshots))), metadata.Metadata(commit_id=os.environ.get("GIT_COMMIT", 'dev'), last_updated=datetime.datetime.now()))
+        iter(chronicle.snapshots))), md)
 
 
 def chunk_feed_into_signals_by_span(chronicle_feed: typing.Iterator[chronicle_types.Snapshot]) -> typing.Iterable[types.FilledOrder]:

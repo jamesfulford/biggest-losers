@@ -57,8 +57,8 @@ class ChronicleMeta:
     @staticmethod
     def from_dict(d: dict):
         return ChronicleMeta(
-            start=d["start"],
-            end=d["end"],
+            start=datetime.date.fromisoformat(d["start"]),
+            end=datetime.date.fromisoformat(d["end"]),
             classification=d["classification"],
             origin=d["origin"],
             commit=d["commit"],
