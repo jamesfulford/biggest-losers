@@ -464,8 +464,8 @@ def settling_stats_for_orders(orders: list[types.FilledOrder], initial_account: 
     stats['quantstats']['value_at_risk'] = quantstats.stats.value_at_risk(
         returns)  # % of investment at risk (95% confidence) on a given day
     # AKA var
-    # stats['quantstats']['volatility'] = quantstats.stats.volatility(
-    #     returns) # same as value_at_risk stddev of returns; var(sigma=1,conf=0.95)
+    stats['quantstats']['volatility'] = quantstats.stats.volatility(
+        returns)
     stats['quantstats']['win_rate_day'] = quantstats.stats.win_rate(
         returns, 'day')
     stats['quantstats']['win_rate_week'] = quantstats.stats.win_rate(
@@ -523,9 +523,11 @@ def main():
     from src.results import read_results
 
     orders = list(read_results.get_orders(args.result_name))
-    simulation = Simulation.from_orders(
-        orders, IdealAccountState.empty(build_td_simulation()))
-    simulation.get_values()
+    # simulation = Simulation.from_orders(
+    #     orders, IdealAccountState.empty(build_td_simulation()))
+    # simulation.get_values()
+    pprint(settling_stats_for_orders(
+        orders, IdealAccountState.empty(build_td_simulation())))
 
     # ideal_simulation = list(simulate_ideal_account(
     #     iter(orders), IdealAccountState.empty(simulation_parameters)))
