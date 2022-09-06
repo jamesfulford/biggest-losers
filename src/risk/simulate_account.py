@@ -307,6 +307,7 @@ def settling_stats_for_orders(orders: list[types.FilledOrder], initial_account: 
     usage = sum(o.price * o.quantity for o in orders if o.is_buy())
     stats['usage'] = usage
     stats['huff_puff_ratio'] = pnl / usage
+
     # Idea: pnl is good, usage is bad because it represents risk and work and effort
     # So use it as a ratio like Sharpe or Sortino or whatever
     # Here, however, the units are different.
@@ -314,6 +315,13 @@ def settling_stats_for_orders(orders: list[types.FilledOrder], initial_account: 
 
     values = simulation.get_values()
     returns = values.pct_change()
+
+    # TODO: get start, end from metadata
+    start = values.index[0]
+    end = values.index[-1]
+    stats['start'] = start.to_pydatetime().date()
+    stats['end'] = end.to_pydatetime().date()
+    stats['days'] = len(values)
 
     stats['quantstats'] = {}
     # stats['quantstats']['autocorr_penalty'] = quantstats.stats.autocorr_penalty(
