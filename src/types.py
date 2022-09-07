@@ -32,6 +32,13 @@ class FilledOrder:
     price: float  # average price of all fills
     datetime: datetime.datetime  # timestamp of last fill
 
+    def add_intention_field(self, key: str, value: typing.Any):
+        if not self.intention:
+            self.intention = Intention(
+                self.datetime, self.symbol, {"autocreated": True})
+
+        self.intention.extra[key] = value
+
     def find_matching_intention(self, intentions: list[Intention]) -> typing.Optional[Intention]:
         """
         Finds intention that has same symbol as order and date before but nearest this order, if any
@@ -142,6 +149,10 @@ class Trade:
 
     def is_win(self):
         return self.get_profit_loss() > 0
+
+    def get_roi(self):
+        """12% ROI -> 0.12; losses are negative. Add 1 for multiplying"""
+        return (self.get_value_extracted() / self.get_value_spent()) - 1
 
     def get_virtual_orders(self) -> typing.Tuple[FilledOrder, FilledOrder]:
         summary = TradeSummary.from_trade(self)

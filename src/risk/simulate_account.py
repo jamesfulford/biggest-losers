@@ -78,7 +78,7 @@ class SettlingAccountState:
 
     def get_settling_purgatory(self) -> list[typing.Tuple[datetime.datetime, float]]:
         """
-        (date where emerges from settlement, amount that will be added to purchasing power)
+        Tuples like: (date where emerges from settlement, amount that will be added to purchasing power)
         """
         return self.settling_purgatory
 
