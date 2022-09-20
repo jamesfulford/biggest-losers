@@ -27,8 +27,6 @@ bool[] trade_is_add = array.new_bool(0)
     script += """
 i = array.indexof(trade_times, time)
 x = i != -1
-is_long = if x
-    array.get(trade_is_long, i)
 is_add = if x
     array.get(trade_is_add, i)
 plotshape(x and is_add, style=shape.labeldown, color=color.green, text="+", textcolor=color.black)
