@@ -74,7 +74,7 @@ def get_candles(
     fetch_start = min(k for k, v in results_by_day.items() if not v)
     fetch_end = max(k for k, v in results_by_day.items() if not v)
     logging.info(
-        f"fetching resolution={resolution} candles for {symbol} from {fetch_start} to {fetch_end}"
+        f"Polygon: fetching resolution={resolution} candles for {symbol} from {fetch_start} to {fetch_end}"
     )
 
     raw_candles = _get_candles(symbol, resolution, fetch_start,
@@ -125,6 +125,7 @@ def _get_candles(symbol: str, resolution: str, start: date, end: date, adjusted=
                 'limit': limit,
             },
         )
+        logging.info(f"Received response from {response.url}")
 
         # if response is empty (holidays, etc.), then return with everything we've collected so far (if anything)
         response_json = response.json()

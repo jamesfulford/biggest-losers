@@ -1,5 +1,6 @@
 
 import logging
+import pprint
 import typing
 from src.outputs import json_dump
 
@@ -8,13 +9,13 @@ def append_jsonl(path: typing.Optional[str], lines: typing.Iterable[dict]):
     if not lines:
         logging.warning(f"no lines to write to csv {path}")
 
-    f = open(path, "a") if path else None
-
-    for line in lines:
-        print(json_dump.to_json_string(line), file=f)
-
-    if f:
+    if path:
+        f = open(path, "a")
+        for line in lines:
+            print(json_dump.to_json_string(line), file=f)
         f.close()
+    else:
+        pprint.pprint(lines)
 
 
 def read_jsonl_lines(path: str) -> typing.Iterator[dict]:

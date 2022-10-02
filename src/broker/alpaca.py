@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+import pprint
 from time import sleep
 from typing import Optional
 import typing
@@ -58,7 +59,7 @@ def _place_order(body: dict, algo_name: Optional[str] = None) -> Optional[reques
     logging.debug(f"_place_order: {json.dumps(body, sort_keys=True)}")
 
     if DRY_RUN:
-        logging.info(f'DRY_RUN: _place_order({body=})')
+        logging.info(f'DRY_RUN: _place_order({pprint.pformat(body)})')
         return
 
     response = requests.post(

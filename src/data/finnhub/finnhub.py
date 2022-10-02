@@ -56,7 +56,7 @@ def get_candles(symbol: str, resolution: str, start: date, end: date) -> Optiona
             return _convert_candles_format(cached, resolution)
 
     logging.info(
-        f"fetching resolution={resolution} candles for {symbol} from {start} to {end}"
+        f"FH: fetching resolution={resolution} candles for {symbol} from {start} to {end}"
     )
     data = _get_candles(symbol, resolution, start, end)
 
@@ -80,6 +80,7 @@ def _get_candles(symbol: str, resolution: str, start: date, end: date):
         },
         headers={"X-Finnhub-Token": FINNHUB_API_KEY},
     )
+    logging.info(f"Received response from {response.url}")
 
     if response.status_code == 429:
         logging.info("Got 429, rate limiting, waiting 10s before retrying")

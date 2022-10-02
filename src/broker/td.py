@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import pprint
 from typing import Optional, cast
 import typing
 import requests
@@ -301,7 +302,7 @@ def _place_order(body: dict, account_id: Optional[str] = None):
     logging.debug(f"_place_order: {json.dumps(body, sort_keys=True)}")
 
     if DRY_RUN:
-        logging.info(f"DRY_RUN: _place_order({body=})")
+        logging.info(f"DRY_RUN: _place_order({pprint.pformat(body)})")
         return
 
     return _request(_build_account_specific_base_url("/orders", account_id=account_id), "POST", json=body)
