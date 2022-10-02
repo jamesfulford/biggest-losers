@@ -127,7 +127,7 @@ def _convert_candles_format_logic(response_json, resolution) -> list[Union[Candl
             ).astimezone(MARKET_TIMEZONE)
         else:
             candle["date"] = datetime.fromtimestamp(
-                response_json["t"][i]).date()
+                response_json["t"][i], tz=ZoneInfo('UTC')).date()
         candles.append(candle)
 
     return candles
