@@ -32,7 +32,7 @@ function run () {
         -v "$APP_DIR":/app \
         $daemon \
         --name "$CONTAINER_NAME" \
-        "talib-py-runner" "$@"
+        "solomon-container" "$@"
 }
 
 function run_python () {

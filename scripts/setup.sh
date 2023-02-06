@@ -43,7 +43,8 @@ source $DATA_DIR/inputs/.env || fail_script "$DATA_DIR/inputs/.env must be sourc
 #
 # Build container (if already built, will hit cache)
 #
-# docker build -t "talib-py-runner" . || fail_script "Failed to build docker container"
+# docker build -t "solomon-container" . || fail_script "Failed to build docker container"
+# docker save solomon-container | bzip2 | ssh solomon docker load
 
 #
 # crontab setup
