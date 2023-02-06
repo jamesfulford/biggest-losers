@@ -8,4 +8,5 @@ LOG_FILE=/root/cash1-data/logs/run.log
 # td
 0,20,40 * * * 1-5 root cronitor exec kkdpU9 "cd $ENVIRONMENT_HOME_DIR && ./run.sh refresh-tokens >> $LOG_FILE 2>&1"
 
-# VACANT
+# minion
+29 13 * * 1-5     root cronitor exec cHfCaR "cd $ENVIRONMENT_HOME_DIR && ./run.sh minion >> $LOG_FILE 2>&1"
