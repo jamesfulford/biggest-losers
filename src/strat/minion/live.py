@@ -1,18 +1,20 @@
 # `brew install ta-lib`, then `pip3 install TA-Lib`
 # To read ta-lib docs for a function (to see parameters like windows/timeperiods), do:
 #   >>> from talib import RSI; print(RSI.__doc__)
+import typing
 from src.entries.sizing import size_buy
 import json
 from datetime import datetime, timedelta, time
 import logging
 
 import numpy as np
-from talib.abstract import RSI, WILLR
+import pandas as pd
+import pandas_ta
 from requests.exceptions import HTTPError
 from src.outputs.intention import log_intentions
 from src.strat.pdt import assert_pdt
 
-from src.trading_day import now, today
+from src.trading_day import n_trading_days_ago, now, today
 from src.wait import wait_until
 from src.data.finnhub.finnhub import get_candles
 from src.broker.generic import get_positions, get_account, buy_symbol_market, sell_symbol_market
@@ -34,34 +36,23 @@ def get_current_position(symbol: str):
     return next(filter(lambda p: p["symbol"] == symbol, positions), None)
 
 
-def get_rsi(candles, timeperiod=14):
-    inputs = {
-        "open": np.array(list(map(lambda c: float(c["open"]), candles))),
-        "high": np.array(list(map(lambda c: float(c["high"]), candles))),
-        "low": np.array(list(map(lambda c: float(c["low"]), candles))),
-        "close": np.array(list(map(lambda c: float(c["close"]), candles))),
-        "volume": np.array(list(map(lambda c: float(c["volume"]), candles))),
-    }
-    values = RSI(inputs, timeperiod=timeperiod)
-    value = float(values[-1])
-    return value
+
+
+def get_rsi(candles, timeperiod=14) -> float:
+    closes = pd.Series(list(map(lambda c: float(c["close"]), candles[-(timeperiod + 1):])))
+    rsi: pd.Series = typing.cast(pd.Series, pandas_ta.rsi(closes, length=timeperiod))
+    return typing.cast(float, rsi.values[-1])
 
 
 def get_williamsr(candles, timeperiod=20):
-    inputs = {
-        "open": np.array(list(map(lambda c: float(c["open"]), candles))),
-        "high": np.array(list(map(lambda c: float(c["high"]), candles))),
-        "low": np.array(list(map(lambda c: float(c["low"]), candles))),
-        "close": np.array(list(map(lambda c: float(c["close"]), candles))),
-        "volume": np.array(list(map(lambda c: float(c["volume"]), candles))),
-    }
-    values = WILLR(inputs, timeperiod=timeperiod)
-    value = float(values[-1])
-    return value
+    highs = pd.Series(list(map(lambda c: float(c["high"]), candles[-(timeperiod + 1):])))
+    lows = pd.Series(list(map(lambda c: float(c["low"]), candles[-(timeperiod + 1):])))
+    closes = pd.Series(list(map(lambda c: float(c["close"]), candles[-(timeperiod + 1):])))
+    willr: pd.Series = typing.cast(pd.Series, pandas_ta.willr(highs, lows, closes, length=timeperiod))
+    return typing.cast(float, willr.values[-1])
 
 
 def should_continue():
-    # return True
     return now().time() < time(16, 1)
 
 
@@ -73,7 +64,7 @@ def loop(symbol: str):
             logging.exception(
                 f"HTTP {e.response.status_code} {e.response.text}")
         except Exception as e:
-            logging.exception(f"Unexpected Exception")
+            logging.exception(f"Unexpected Exception", e)
     logging.info("Loop is finished.")
 
 
@@ -120,8 +111,9 @@ def execute_phases(symbol: str):
     wait_until(next_interval_start)
 
     # Get price action data
+    
     candles = get_candles(  # NOTE: all values are unadjusted
-        symbol, "1", (today() - timedelta(days=4)), today())
+        symbol, "1", n_trading_days_ago(today(), 4), today())
     rsi = get_rsi(candles, timeperiod=rsiperiod)
     williamsr = get_williamsr(candles, timeperiod=williamsrperiod)
     slow_williamsr = get_williamsr(candles, timeperiod=slow_williamsrperiod)
