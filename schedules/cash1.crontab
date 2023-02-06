@@ -2,7 +2,7 @@ ENVIRONMENT_NAME=cash1
 ENVIRONMENT_HOME_DIR=/root/cash1
 LOG_FILE=/root/cash1-data/logs/run.log
 
-0 0 * * *         root cd $ENVIRONMENT_HOME_DIR && ./run.sh rotate-logs
+0 0 * * * root cronitor exec 164Go1 "cd $ENVIRONMENT_HOME_DIR && ./run.sh rotate-logs"
 0 0 * * *         root cd $ENVIRONMENT_HOME_DIR && ./run.sh dump-orders >> $LOG_FILE 2>&1
 
 # td
