@@ -4,3 +4,8 @@ view/chart.json
 view/code.tar
 coverage.xml
 .coverage
+
+quantconnect/data/
+quantconnect/*/bin/
+quantconnect/*/obj/
+quantconnect/*/backtests/
