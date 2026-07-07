@@ -48,6 +48,29 @@ mkdir -p ~/biggest-losers-data/logs
 
 TODO: what to do about `~/biggest-loser-data/outputs` syncing with Google Drive?
 
+## QuantConnect / LEAN migration (pilot)
+
+Moving strategies off this custom Python stack onto QuantConnect's LEAN engine,
+written in C#. First pilot: `quantconnect/Minion/Minion.cs`, a port of
+`src/strat/minion/live.py` (NRGU, RSI(14) + Williams %R(20, 200)).
+
+Run via the official `lean` CLI (`pip install lean`), driving QuantConnect Cloud
+directly (no Docker/`.NET` install needed for cloud operations):
+
+```bash
+lean login --user-id "$QUANTCONNECT_USER_ID" --api-token "$QUANTCONNECT_API_TOKEN"
+lean cloud push --project "quantconnect/Minion"
+lean cloud backtest "quantconnect/Minion" --push
+```
+
+`QUANTCONNECT_USER_ID`/`QUANTCONNECT_API_TOKEN` come from quantconnect.com -> My
+Account -> Security -> "Request Email With Token" (see `.env.sample`).
+
+Note: `lean` needs outbound access to `www.quantconnect.com` and
+`cdn.quantconnect.com` (and `github.com`/`raw.githubusercontent.com` for `lean init`'s
+sample data download) — allow these in your environment's network policy if requests
+are being blocked by an egress proxy.
+
 ## Troubleshooting
 
 ### My TD Token is not refreshing / has expired
